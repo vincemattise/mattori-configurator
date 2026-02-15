@@ -1103,10 +1103,14 @@
     }
 
     .mattori-configurator .product-badges {
-      display: flex;
-      flex-direction: column;
-      gap: 0.7rem;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0.7rem !important;
       padding-top: 0.5rem;
+      position: static !important;
+      z-index: auto !important;
+      inset: auto !important;
+      width: auto !important;
     }
 
     .mattori-configurator .product-badge {

@@ -219,7 +219,7 @@
       orderMap.forEach(sel => {
         const el = inner.querySelector(sel);
         if (el) {
-          el.style.cssText += ';margin:0!important;order:unset!important;';
+          el.style.cssText += ';margin:0!important;order:unset!important;position:static!important;z-index:auto!important;inset:auto!important;';
           fragment.appendChild(el);
         }
       });
