@@ -366,7 +366,7 @@
       position: relative;
       width: 100%;
       overflow: hidden;
-      margin-bottom: -25%;
+      margin-bottom: -10%;
     }
 
     .mattori-configurator .frame-image {
@@ -433,7 +433,7 @@
       position: relative;
       width: 100%;
       overflow: hidden;
-      margin-top: -25%;
+      margin-top: -10%;
     }
 
     .mattori-configurator .labels-image {
