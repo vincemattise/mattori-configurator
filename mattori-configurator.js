@@ -193,6 +193,7 @@
     const stepRemarks = document.getElementById('stepRemarks');
     const stepOrder = document.getElementById('stepOrder');
     const stepDisclaimer = document.getElementById('stepDisclaimer');
+    const productHeroImage = document.getElementById('productHeroImage');
 
     // ============================================================
     // UTILITY FUNCTIONS
@@ -1349,6 +1350,9 @@
       const btnTest = document.getElementById('btnTest');
       if (btnTest) btnTest.style.display = 'none';
 
+      // Hide product hero image, show configurator instead
+      if (productHeroImage) productHeroImage.style.display = 'none';
+
       // Show order flow steps with staggered fade-in
       const stepsToShow = [stepViewers, stepLabelsPreview, stepRemarks, stepOrder, stepDisclaimer];
       stepsToShow.forEach((step, i) => {
@@ -2098,10 +2102,10 @@
 
         processFloors(data);
 
-        // Smooth scroll to the frame preview after loading
+        // Smooth scroll to the left column (configurator) after loading
         setTimeout(() => {
-          const preview = document.getElementById('framePreview');
-          if (preview) preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const leftCol = document.querySelector('.page-col-left');
+          if (leftCol) leftCol.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 300);
       } catch (err) {
         if (err.message && (err.message.includes('Load failed') || err.message.includes('Failed to fetch'))) {

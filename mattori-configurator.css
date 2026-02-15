@@ -19,9 +19,7 @@
 
     .mattori-configurator .main-wrapper {
       width: 100%;
-      max-width: 1050px;
-      margin: 0 auto;
-      padding: 2rem 3rem;
+      padding: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -30,7 +28,7 @@
     /* ── Admin panel (boven de order flow) ── */
     .mattori-configurator .admin-panel {
       width: 100%;
-      max-width: 1050px;
+      max-width: 1440px;
       margin: 0 auto;
       padding: 1rem 3rem;
       border-bottom: 2px dashed #e0ddd8;
@@ -200,7 +198,6 @@
     .mattori-configurator .order-flow {
       display: flex;
       width: 100%;
-      max-width: 1050px;
       flex-direction: column;
       gap: 0;
     }
@@ -399,7 +396,7 @@
 
     .mattori-configurator .frame-street {
       font-family: 'Nexa', Georgia, sans-serif;
-      font-size: clamp(13px, 2.3vw, 24px);
+      font-size: clamp(13px, 4.2cqi, 24px);
       font-weight: 700;
       color: #1a1a1a;
       letter-spacing: 0.4px;
@@ -411,7 +408,7 @@
 
     .mattori-configurator .frame-city {
       font-family: 'Nexa', Georgia, sans-serif;
-      font-size: clamp(8px, 1.4vw, 14px);
+      font-size: clamp(8px, 2.5cqi, 14px);
       font-weight: 700;
       color: #1a1a1a;
       margin-top: 8px;
@@ -458,7 +455,7 @@
 
     .mattori-configurator .label-item {
       font-family: 'Nexa', Georgia, sans-serif;
-      font-size: clamp(8px, 1.4vw, 14px);
+      font-size: clamp(8px, 2.5cqi, 14px);
       font-weight: 700;
       color: #1a1a1a;
       letter-spacing: 0.4px;
@@ -900,20 +897,59 @@
     }
 
     /* ═══════════════════════════════════════════ */
-    /* PRODUCT HERO                                */
+    /* TWO-COLUMN PAGE LAYOUT                      */
     /* ═══════════════════════════════════════════ */
-    .mattori-configurator .product-hero {
+    .mattori-configurator .page-columns {
+      display: grid !important;
+      grid-template-columns: 1.15fr 1fr !important;
+      gap: 3rem !important;
       width: 100%;
-      max-width: 1100px;
+      max-width: 1440px;
       margin: 0 auto;
-      padding: 2.5rem 3rem 2rem;
+      padding: 2.5rem 3rem 3rem;
+      align-items: start;
     }
 
-    .mattori-configurator .product-hero-layout {
-      display: grid !important;
-      grid-template-columns: 1.1fr 1fr !important;
-      gap: 3.5rem !important;
-      align-items: start;
+    .mattori-configurator .page-col-left {
+      min-width: 0;
+      container-type: inline-size;
+      container-name: configurator-col;
+    }
+
+    .mattori-configurator .page-col-right {
+      min-width: 0;
+    }
+
+    .mattori-configurator .page-col-right-inner {
+      position: sticky;
+      top: 1rem;
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+      padding-bottom: 2rem;
+    }
+
+    .mattori-configurator .page-col-right-inner::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .mattori-configurator .page-col-right-inner::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.1);
+      border-radius: 4px;
+    }
+
+    /* Spacing tussen elementen in rechterkolom */
+    .mattori-configurator .page-col-right-inner > * + * {
+      margin-top: 1.5rem;
+    }
+
+    .mattori-configurator .page-col-right-inner .product-price-block + .product-description {
+      margin-top: 1rem;
+    }
+
+    .mattori-configurator .page-col-right-inner .product-specs {
+      border-top: 1px solid rgba(0,0,0,0.07);
+      padding-top: 1.5rem;
+      margin-top: 2rem !important;
     }
 
     .mattori-configurator .product-hero-image {
@@ -959,10 +995,6 @@
       width: 12px;
       height: 12px;
       flex-shrink: 0;
-    }
-
-    .mattori-configurator .product-hero-info {
-      padding-top: 0.3rem;
     }
 
     .mattori-configurator .product-title {
@@ -1021,30 +1053,6 @@
       font-size: 0.8rem;
       color: #999;
       line-height: 1.5;
-    }
-
-    /* ═══════════════════════════════════════════ */
-    /* PRODUCT DETAILS (specs + badges)            */
-    /* ═══════════════════════════════════════════ */
-    .mattori-configurator .product-details {
-      width: 100%;
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 0 3rem 3rem;
-    }
-
-    .mattori-configurator .product-details-layout {
-      display: flex !important;
-      flex-wrap: wrap !important;
-      gap: 3rem !important;
-      border-top: 1px solid rgba(0,0,0,0.07);
-      padding-top: 2rem;
-    }
-
-    .mattori-configurator .product-specs,
-    .mattori-configurator .product-badges {
-      flex: 1 1 280px !important;
-      min-width: 0;
     }
 
     .mattori-configurator .product-specs-title {
@@ -1116,7 +1124,8 @@
     /* ═══════════════════════════════════════════ */
 
     @media (max-width: 1024px) {
-      .mattori-configurator .main-wrapper {
+      .mattori-configurator .page-columns {
+        gap: 2rem !important;
         padding: 2rem 1.5rem;
       }
       .mattori-configurator .admin-panel {
@@ -1125,24 +1134,21 @@
       .mattori-configurator .admin-panel-label {
         right: 1.5rem;
       }
-      .mattori-configurator .order-flow {
-        max-width: 100%;
-      }
-      .mattori-configurator .product-hero {
-        padding: 2rem 1.5rem 1.5rem;
-      }
-      .mattori-configurator .product-hero-layout {
-        gap: 2.5rem;
-      }
-      .mattori-configurator .product-details {
-        padding: 0 1.5rem 2.5rem;
-      }
     }
 
     @media (max-width: 768px) {
-      .mattori-configurator .product-hero-layout {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
+      .mattori-configurator .page-columns {
+        grid-template-columns: 1fr !important;
+        gap: 2rem !important;
+        padding: 1.5rem 1rem;
+      }
+      .mattori-configurator .page-col-right {
+        order: -1;
+      }
+      .mattori-configurator .page-col-right-inner {
+        position: static;
+        max-height: none;
+        overflow-y: visible;
       }
       .mattori-configurator .product-hero-image {
         max-width: 420px;
@@ -1150,16 +1156,9 @@
       .mattori-configurator .product-title {
         font-size: 2rem;
       }
-      .mattori-configurator .product-details-layout {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-      }
     }
 
     @media (max-width: 640px) {
-      .mattori-configurator .main-wrapper {
-        padding: 1.5rem 1rem;
-      }
       .mattori-configurator .admin-panel {
         padding: 1rem 1rem 0;
       }
@@ -1172,9 +1171,6 @@
       .mattori-configurator .floors-grid {
         grid-template-columns: 1fr;
       }
-      .mattori-configurator .product-hero {
-        padding: 1.5rem 1rem 1rem;
-      }
       .mattori-configurator .product-title {
         font-size: 1.7rem;
         letter-spacing: -0.8px;
@@ -1184,9 +1180,6 @@
       }
       .mattori-configurator .product-description {
         font-size: 0.88rem;
-      }
-      .mattori-configurator .product-details {
-        padding: 0 1rem 2rem;
       }
       .mattori-configurator .product-badge {
         font-size: 0.82rem;
