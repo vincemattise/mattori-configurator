@@ -33,6 +33,7 @@
       padding: 1rem 3rem;
       border-bottom: 2px dashed #e0ddd8;
       position: relative;
+      overflow: hidden;
     }
 
     .mattori-configurator .admin-panel-label {
@@ -938,19 +939,24 @@
     }
 
     /* Spacing rechterkolom via flex gap + expliciete volgorde */
-    .mattori-configurator .page-col-right-inner {
+    .mattori-configurator .page-col-right .page-col-right-inner {
       display: flex !important;
       flex-direction: column !important;
       gap: 1.5rem !important;
     }
 
-    .mattori-configurator .page-col-right-inner .product-title { order: 1 !important; }
-    .mattori-configurator .page-col-right-inner .product-price-block { order: 2 !important; }
-    .mattori-configurator .page-col-right-inner .product-description { order: 3 !important; }
-    .mattori-configurator .page-col-right-inner #stepFundaUrl { order: 4 !important; }
-    .mattori-configurator .page-col-right-inner .product-badges { order: 5 !important; }
-    .mattori-configurator .page-col-right-inner #stepOrder { order: 6 !important; }
-    .mattori-configurator .page-col-right-inner .product-specs {
+    /* Reset ALL child margins — flex gap handles spacing */
+    .mattori-configurator .page-col-right .page-col-right-inner > * {
+      margin: 0 !important;
+    }
+
+    .mattori-configurator .page-col-right .page-col-right-inner > .product-title { order: 1 !important; }
+    .mattori-configurator .page-col-right .page-col-right-inner > .product-price-block { order: 2 !important; }
+    .mattori-configurator .page-col-right .page-col-right-inner > .product-description { order: 3 !important; }
+    .mattori-configurator .page-col-right .page-col-right-inner > #stepFundaUrl { order: 4 !important; }
+    .mattori-configurator .page-col-right .page-col-right-inner > .product-badges { order: 5 !important; }
+    .mattori-configurator .page-col-right .page-col-right-inner > #stepOrder { order: 6 !important; }
+    .mattori-configurator .page-col-right .page-col-right-inner > .product-specs {
       order: 7 !important;
       border-top: 1px solid rgba(0,0,0,0.07);
       padding-top: 1.5rem;
@@ -1007,14 +1013,12 @@
       line-height: 1.1;
       letter-spacing: -1.2px;
       color: #1a1a1a;
-      margin: 0 0 1rem 0;
     }
 
     .mattori-configurator .product-price-block {
       display: flex;
       align-items: baseline;
       gap: 0.6rem;
-      margin: 0 0 1.5rem 0;
       flex-wrap: wrap;
     }
 
@@ -1043,7 +1047,6 @@
       font-size: 0.95rem;
       line-height: 1.7;
       color: #777;
-      margin: 0 0 1.8rem 0;
     }
 
     /* ═══════════════════════════════════════════ */
