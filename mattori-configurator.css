@@ -1034,8 +1034,8 @@
     }
 
     .mattori-configurator .product-details-layout {
-      display: grid !important;
-      grid-template-columns: 1fr 1fr !important;
+      display: flex !important;
+      flex-wrap: wrap !important;
       gap: 3rem !important;
       border-top: 1px solid rgba(0,0,0,0.07);
       padding-top: 2rem;
@@ -1043,8 +1043,8 @@
 
     .mattori-configurator .product-specs,
     .mattori-configurator .product-badges {
+      flex: 1 1 280px !important;
       min-width: 0;
-      overflow: hidden;
     }
 
     .mattori-configurator .product-specs-title {
