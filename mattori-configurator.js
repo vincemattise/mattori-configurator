@@ -345,8 +345,49 @@
     // ============================================================
     // BOUNDING BOX
     // ============================================================
+
+    // Wall-only bounding box — used to detect external surfaces (carport, terras etc.)
+    function computeWallBBox(design) {
+      const pts = [];
+      for (const wall of design.walls ?? []) {
+        pts.push(wall.a, wall.b);
+        if (wall.c && wall.c.x != null && wall.c.y != null) {
+          for (let t = 0.25; t <= 0.75; t += 0.25) {
+            pts.push({
+              x: (1-t)*(1-t)*wall.a.x + 2*(1-t)*t*wall.c.x + t*t*wall.b.x,
+              y: (1-t)*(1-t)*wall.a.y + 2*(1-t)*t*wall.c.y + t*t*wall.b.y
+            });
+          }
+        }
+      }
+      if (!pts.length) return null;
+      return {
+        minX: Math.min(...pts.map(p => p.x)),
+        minY: Math.min(...pts.map(p => p.y)),
+        maxX: Math.max(...pts.map(p => p.x)),
+        maxY: Math.max(...pts.map(p => p.y))
+      };
+    }
+
+    // Check if a surface centroid falls outside the wall bounding box (with margin).
+    // External flat surfaces like carport, terras, oprit are excluded from OBJ + bbox.
+    function isSurfaceOutsideWalls(surface, wallBBox) {
+      if (!wallBBox) return false; // no walls → can't determine, include it
+      const poly = surface.poly ?? [];
+      if (poly.length < 3) return false;
+      // Compute centroid of surface polygon
+      let cx = 0, cy = 0;
+      for (const pt of poly) { cx += (pt.x ?? 0); cy += (pt.y ?? 0); }
+      cx /= poly.length; cy /= poly.length;
+      // Allow a small margin (wall thickness ~20cm) so surfaces touching walls aren't excluded
+      const MARGIN = 25;
+      return cx < wallBBox.minX - MARGIN || cx > wallBBox.maxX + MARGIN ||
+             cy < wallBBox.minY - MARGIN || cy > wallBBox.maxY + MARGIN;
+    }
+
     function computeBoundingBox(design) {
       const points = [];
+      const wallBBox = computeWallBBox(design);
       for (const wall of design.walls ?? []) {
         points.push({ x: wall.a.x, y: wall.a.y }, { x: wall.b.x, y: wall.b.y });
         // For arc walls, sample the curve to get accurate bounding box
@@ -362,6 +403,8 @@
         for (const pt of area.poly ?? []) points.push(pt);
       }
       for (const surface of design.surfaces ?? []) {
+        // Skip external flat surfaces (carport, terras, etc.)
+        if (isSurfaceOutsideWalls(surface, wallBBox)) continue;
         const tessellated = tessellateSurfacePoly(surface.poly ?? []);
         for (const pt of tessellated) points.push(pt);
       }
@@ -1605,6 +1648,7 @@
       }
 
       const design = floor.design;
+      const wallBBox = computeWallBBox(design);
       const walls = flattenWalls(design.walls ?? []);
       const bbox = floor.bbox;
       const centerX = (bbox.minX + bbox.maxX) / 2;
@@ -1757,8 +1801,9 @@
           if (tessellated.length >= 3) floorSources.push(tessellated);
         }
 
-        // Named surfaces (skip sub-zones)
+        // Named surfaces (skip sub-zones and external flat surfaces like carport/terras)
         for (const surface of design.surfaces ?? []) {
+          if (isSurfaceOutsideWalls(surface, wallBBox)) continue;
           const sName = (surface.name ?? "").trim();
           if (!sName) continue;
           const cName = (surface.customName ?? "").trim();
