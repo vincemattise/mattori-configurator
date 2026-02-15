@@ -170,7 +170,6 @@
     const errorMsg = document.getElementById('errorMsg');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const mainWrapper = document.getElementById('mainWrapper');
-    const uploadSection = document.getElementById('uploadSection');
     const orderFlow = document.getElementById('orderFlow');
     const floorsGrid = document.getElementById('floorsGrid');
     const floorCheckboxes = document.getElementById('floorCheckboxes');
@@ -1343,22 +1342,12 @@
     let viewerContainers = [];
 
     function renderUI() {
-      // Switch to split layout
-      mainWrapper.classList.remove('centered');
-      mainWrapper.classList.add('split');
-      orderFlow.classList.add('visible');
+      // Show admin export buttons
       document.getElementById('uploadActions').classList.add('active');
 
-      // Hide initial Funda URL input (now using the one in order flow)
-      const fundaInit = document.getElementById('fundaInitial');
-      if (fundaInit) fundaInit.style.display = 'none';
-      // Also hide the divider in upload section
-      const divider = uploadSection.querySelector('.divider');
-      if (divider) divider.style.display = 'none';
-
-      // Hide test buttons after successful load
-      document.getElementById('btnTest').style.display = 'none';
-      document.getElementById('btnTestInitial').style.display = 'none';
+      // Hide test button after successful load
+      const btnTest = document.getElementById('btnTest');
+      if (btnTest) btnTest.style.display = 'none';
 
       // Show order flow steps with staggered fade-in
       const stepsToShow = [stepViewers, stepLabelsPreview, stepRemarks, stepOrder, stepDisclaimer];
@@ -2011,51 +2000,30 @@
     addressStreet.addEventListener('input', () => updateFrameAddress());
     addressCity.addEventListener('input', () => updateFrameAddress());
 
-    // Funda URL loading — both initial (centered) and order flow inputs
+    // Funda URL loading
     const fundaUrlInput = document.getElementById('fundaUrl');
-    const fundaUrlInitial = document.getElementById('fundaUrlInitial');
     const btnFunda = document.getElementById('btnFunda');
-    const btnFundaInitial = document.getElementById('btnFundaInitial');
-    const fundaInitialSection = document.getElementById('fundaInitial');
 
-    // Helper: get URL from whichever input has a value
     function getFundaUrl() {
-      return (fundaUrlInput.value.trim() || fundaUrlInitial.value.trim());
-    }
-
-    // Sync URL between both inputs
-    function syncFundaUrl(source) {
-      if (source === 'initial') {
-        fundaUrlInput.value = fundaUrlInitial.value;
-      } else {
-        fundaUrlInitial.value = fundaUrlInput.value;
-      }
+      return fundaUrlInput.value.trim();
     }
 
     fundaUrlInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { syncFundaUrl('flow'); loadFromFunda(); }
+      if (e.key === 'Enter') loadFromFunda();
     });
-    fundaUrlInitial.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { syncFundaUrl('initial'); loadFromFunda(); }
-    });
-    btnFunda.addEventListener('click', () => { syncFundaUrl('flow'); loadFromFunda(); });
-    btnFundaInitial.addEventListener('click', () => { syncFundaUrl('initial'); loadFromFunda(); });
+    btnFunda.addEventListener('click', () => loadFromFunda());
 
-    document.getElementById('btnTest').addEventListener('click', () => {
-      fundaUrlInput.value = 'https://www.funda.nl/detail/koop/arnhem/huis-madelievenstraat-61/43269652/';
-      fundaUrlInitial.value = fundaUrlInput.value;
-      loadFromFunda();
-    });
-    document.getElementById('btnTestInitial').addEventListener('click', () => {
-      fundaUrlInitial.value = 'https://www.funda.nl/detail/koop/arnhem/huis-madelievenstraat-61/43269652/';
-      fundaUrlInput.value = fundaUrlInitial.value;
-      loadFromFunda();
-    });
+    const btnTest = document.getElementById('btnTest');
+    if (btnTest) {
+      btnTest.addEventListener('click', () => {
+        fundaUrlInput.value = 'https://www.funda.nl/detail/koop/arnhem/huis-madelievenstraat-61/43269652/';
+        loadFromFunda();
+      });
+    }
 
-    // Funda status checker elements (both initial and order flow)
+    // Funda status checker
     const statusEls = [
-      { box: document.getElementById('fundaStatus'), icon: document.getElementById('fundaStatusIcon'), text: document.getElementById('fundaStatusText') },
-      { box: document.getElementById('fundaStatusInitial'), icon: document.getElementById('fundaStatusIconInitial'), text: document.getElementById('fundaStatusTextInitial') }
+      { box: document.getElementById('fundaStatus'), icon: document.getElementById('fundaStatusIcon'), text: document.getElementById('fundaStatusText') }
     ];
 
     function setFundaStatus(state, html) {
@@ -2089,7 +2057,6 @@
       setFundaStatus('loading', 'Plattegrond ophalen...');
       showLoading();
       btnFunda.disabled = true;
-      btnFundaInitial.disabled = true;
 
       try {
         const resp = await fetch('https://web-production-89353.up.railway.app/funda-fml', {
@@ -2145,7 +2112,6 @@
       } finally {
         hideLoading();
         btnFunda.disabled = false;
-        btnFundaInitial.disabled = false;
       }
     }
 
@@ -2173,22 +2139,4 @@
       }
     });
 
-    // ============================================================
-    // ADMIN / KLANT MODE TOGGLE
-    // ============================================================
-    const adminToggle = document.getElementById('adminToggle');
-
-    function applyMode() {
-      if (adminToggle.checked) {
-        // Admin mode
-        document.querySelector('.mattori-configurator').classList.remove('klant-mode');
-      } else {
-        // Klant mode — hide admin elements, full-width order flow
-        document.querySelector('.mattori-configurator').classList.add('klant-mode');
-      }
-    }
-
-    adminToggle.addEventListener('change', applyMode);
-
-    // Initialize mode from toggle state
-    applyMode();
+    // v16 — admin panel is always visible (no toggle)

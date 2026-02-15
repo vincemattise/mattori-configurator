@@ -19,36 +19,60 @@
 
     .mattori-configurator .main-wrapper {
       width: 100%;
-      max-width: 1600px;
-      padding: 3rem 3rem;
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 2rem 3rem;
       display: flex;
-      gap: 3rem;
-      justify-content: center;
-    }
-
-    .mattori-configurator .main-wrapper.centered {
       flex-direction: column;
       align-items: center;
     }
 
-    .mattori-configurator .main-wrapper.split {
-      flex-direction: row;
-      align-items: flex-start;
-    }
-
-    /* ── Left column: upload / tools ── */
-    .mattori-configurator .upload-section {
+    /* ── Admin panel (boven de order flow) ── */
+    .mattori-configurator .admin-panel {
       width: 100%;
-      max-width: 500px;
-      text-align: center;
-      flex-shrink: 0;
-      transition: max-width 0.4s ease;
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 1.2rem 3rem 0;
+      border-bottom: 2px dashed #e0ddd8;
+      position: relative;
     }
 
-    .mattori-configurator .main-wrapper.split .upload-section {
-      max-width: 260px;
-      position: sticky;
-      top: 20px;
+    .mattori-configurator .admin-panel-label {
+      position: absolute;
+      top: 0;
+      right: 3rem;
+      background: #f5e6d0;
+      color: #a07030;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding: 3px 10px;
+      border-radius: 0 0 6px 6px;
+    }
+
+    .mattori-configurator .admin-panel-content {
+      padding-bottom: 1.2rem;
+    }
+
+    .mattori-configurator .admin-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mattori-configurator .admin-row .dropzone {
+      flex: 1;
+    }
+
+    .mattori-configurator .admin-buttons {
+      display: none;
+      flex-direction: row;
+      gap: 8px;
+    }
+
+    .mattori-configurator .admin-buttons.active {
+      display: flex;
     }
 
     .mattori-configurator .dropzone {
@@ -165,16 +189,11 @@
 
     /* ── Right column: order flow ── */
     .mattori-configurator .order-flow {
-      display: none;
-      flex: 1;
-      min-width: 0;
+      display: flex;
+      width: 100%;
       max-width: 1050px;
       flex-direction: column;
       gap: 0;
-    }
-
-    .mattori-configurator .order-flow.visible {
-      display: flex;
     }
 
     .mattori-configurator .order-step {
@@ -825,104 +844,20 @@
       display: none;
     }
 
-    /* ── Admin/Klant mode toggle ── */
-    .mattori-configurator .mode-toggle-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 300;
-      background: #1a1a1a;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 8px 16px;
-      font-size: 0.78rem;
-      font-weight: 500;
-      letter-spacing: 0.3px;
-    }
-
-    .mattori-configurator .mode-toggle-bar label {
-      cursor: pointer;
-      user-select: none;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .mattori-configurator .mode-switch {
-      position: relative;
-      width: 36px;
-      height: 20px;
-      flex-shrink: 0;
-    }
-
-    .mattori-configurator .mode-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .mattori-configurator .mode-switch .slider {
-      position: absolute;
-      inset: 0;
-      background: #555;
-      border-radius: 20px;
-      transition: background 0.3s ease;
-      cursor: pointer;
-    }
-
-    .mattori-configurator .mode-switch .slider::before {
+    /* ── Admin panel visual marker ── */
+    .mattori-configurator .admin-panel::before {
       content: '';
       position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 16px;
-      height: 16px;
-      background: #fff;
-      border-radius: 50%;
-      transition: transform 0.3s ease;
-    }
-
-    .mattori-configurator .mode-switch input:checked + .slider {
-      background: #4CAF50;
-    }
-
-    .mattori-configurator .mode-switch input:checked + .slider::before {
-      transform: translateX(16px);
-    }
-
-    .mattori-configurator.has-mode-bar {
-      padding-top: 36px;
-    }
-
-    /* Admin-only elements: hidden in klant mode */
-    .mattori-configurator.klant-mode .admin-only {
-      display: none !important;
-    }
-
-    /* Klant mode: full-width layout (no left column) */
-    .mattori-configurator.klant-mode .main-wrapper.split {
-      justify-content: center;
-    }
-
-    .mattori-configurator.klant-mode .main-wrapper.split .upload-section {
-      display: none !important;
-    }
-
-    .mattori-configurator.klant-mode .order-flow {
-      max-width: 600px;
-      width: 100%;
-    }
-
-    /* In klant mode centered (initial) state: hide admin parts, keep Funda URL */
-    body.klant-mode .main-wrapper.centered .dropzone,
-    body.klant-mode .main-wrapper.centered .divider,
-    body.klant-mode .main-wrapper.centered .file-label,
-    .mattori-configurator.klant-mode .main-wrapper.centered .error-msg {
-      display: none !important;
+      inset: 0;
+      background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 10px,
+        rgba(240, 200, 140, 0.08) 10px,
+        rgba(240, 200, 140, 0.08) 20px
+      );
+      pointer-events: none;
+      border-radius: 0;
     }
 
     /* Responsive */
@@ -930,13 +865,11 @@
       .mattori-configurator .main-wrapper {
         padding: 2rem 1.5rem;
       }
-      .mattori-configurator .main-wrapper.split {
-        flex-direction: column;
-        align-items: center;
+      .mattori-configurator .admin-panel {
+        padding: 1.2rem 1.5rem 0;
       }
-      .mattori-configurator .main-wrapper.split .upload-section {
-        max-width: 500px;
-        position: static;
+      .mattori-configurator .admin-panel-label {
+        right: 1.5rem;
       }
       .mattori-configurator .order-flow {
         max-width: 100%;
@@ -946,6 +879,15 @@
     @media (max-width: 640px) {
       .mattori-configurator .main-wrapper {
         padding: 1.5rem 1rem;
+      }
+      .mattori-configurator .admin-panel {
+        padding: 1rem 1rem 0;
+      }
+      .mattori-configurator .admin-panel-label {
+        right: 1rem;
+      }
+      .mattori-configurator .admin-row {
+        flex-direction: column;
       }
       .mattori-configurator .floors-grid {
         grid-template-columns: 1fr;
