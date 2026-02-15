@@ -179,7 +179,6 @@
     const fileLabel = document.getElementById('fileLabel');
     const addressStreet = document.getElementById('addressStreet');
     const addressCity = document.getElementById('addressCity');
-    const addressEditToggle = document.getElementById('addressEditToggle');
     const addressFields = document.getElementById('addressFields');
     const framePreview = document.getElementById('framePreview');
     const frameStreet = document.getElementById('frameStreet');
@@ -188,7 +187,6 @@
     const stepLabelsPreview = document.getElementById('stepLabelsPreview');
     const labelsPreview = document.getElementById('labelsPreview');
     const labelsOverlay = document.getElementById('labelsOverlay');
-    const labelsEditToggle = document.getElementById('labelsEditToggle');
     const labelsFields = document.getElementById('labelsFields');
     const stepRemarks = document.getElementById('stepRemarks');
     const stepOrder = document.getElementById('stepOrder');
@@ -2063,23 +2061,7 @@
       showToast('✓ FML gedownload');
     });
 
-    // Address edit toggle — show/hide address fields
-    addressEditToggle.addEventListener('change', () => {
-      if (addressEditToggle.checked) {
-        addressFields.classList.add('visible');
-      } else {
-        addressFields.classList.remove('visible');
-      }
-    });
-
-    // Labels edit toggle — show/hide label fields
-    labelsEditToggle.addEventListener('change', () => {
-      if (labelsEditToggle.checked) {
-        labelsFields.classList.add('visible');
-      } else {
-        labelsFields.classList.remove('visible');
-      }
-    });
+    // Address and label fields are always visible (no toggle needed)
 
     // Address fields — live update frame preview
     addressStreet.addEventListener('input', () => updateFrameAddress());
