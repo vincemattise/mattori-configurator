@@ -1110,7 +1110,7 @@
 
       // Scene setup
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xffffff);
+      scene.background = null; // transparent — let CSS/frame background show through
 
       // Materials — walls slightly darker than floor for top-down contrast
       const wallMaterial = new THREE.MeshPhongMaterial({
