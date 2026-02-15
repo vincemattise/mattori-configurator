@@ -2067,7 +2067,7 @@
         const data = await resp.json();
 
         if (data.error) {
-          setFundaStatus('error', `<strong>Geen FML gevonden</strong><span>${data.error}</span>`);
+          setFundaStatus('error', `<strong>Geen plattegrond gevonden</strong><span>${data.error}</span>`);
           return;
         }
 
@@ -2094,7 +2094,7 @@
 
         // Show success in status checker
         const addrStr = addr ? `${addr.street}, ${addr.city}` : 'Adres niet gevonden';
-        setFundaStatus('success', `<strong>FML gevonden — ${data.floors.length} verdiepingen</strong><span>${addrStr}</span>`);
+        setFundaStatus('success', `<strong>Interactieve plattegrond gevonden — ${data.floors.length} verdieping${data.floors.length === 1 ? '' : 'en'}</strong><span>${addrStr}</span>`);
 
         processFloors(data);
 
