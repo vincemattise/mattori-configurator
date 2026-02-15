@@ -1011,10 +1011,15 @@
       }
 
       renderUI();
+      // Show loading spinner
+      const floorsLoading = document.getElementById('floorsLoading');
+      if (floorsLoading) floorsLoading.classList.remove('hidden');
       setTimeout(() => {
         renderFramePreview();
         renderAll3DViewers();
         renderLabelsPreview();
+        // Hide loading spinner after viewers are rendered
+        if (floorsLoading) floorsLoading.classList.add('hidden');
       }, 50);
     }
 
