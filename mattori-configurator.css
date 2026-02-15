@@ -937,19 +937,16 @@
       border-radius: 4px;
     }
 
-    /* Spacing tussen elementen in rechterkolom */
-    .mattori-configurator .page-col-right-inner > * + * {
-      margin-top: 1.5rem;
-    }
-
-    .mattori-configurator .page-col-right-inner .product-price-block + .product-description {
-      margin-top: 1rem;
+    /* Spacing rechterkolom via flex gap */
+    .mattori-configurator .page-col-right-inner {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 1.5rem !important;
     }
 
     .mattori-configurator .page-col-right-inner .product-specs {
       border-top: 1px solid rgba(0,0,0,0.07);
       padding-top: 1.5rem;
-      margin-top: 2rem !important;
     }
 
     .mattori-configurator .product-hero-image {
