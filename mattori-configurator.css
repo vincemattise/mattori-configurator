@@ -1,0 +1,953 @@
+.mattori-configurator *,
+    .mattori-configurator *::before,
+    .mattori-configurator *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    .mattori-configurator {
+      width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #fafaf8;
+      color: #1a1a1a;
+      
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .mattori-configurator .main-wrapper {
+      width: 100%;
+      max-width: 1600px;
+      padding: 3rem 3rem;
+      display: flex;
+      gap: 3rem;
+      justify-content: center;
+    }
+
+    .mattori-configurator .main-wrapper.centered {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .mattori-configurator .main-wrapper.split {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+
+    /* ── Left column: upload / tools ── */
+    .mattori-configurator .upload-section {
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+      flex-shrink: 0;
+      transition: max-width 0.4s ease;
+    }
+
+    .mattori-configurator .main-wrapper.split .upload-section {
+      max-width: 260px;
+      position: sticky;
+      top: 20px;
+    }
+
+    .mattori-configurator .dropzone {
+      border: 1.5px dashed #ccc;
+      border-radius: 16px;
+      padding: 1.2rem 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #f0f0ec;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .mattori-configurator .dropzone:hover {
+      border-color: #1a1a1a;
+      background: #e8e8e4;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+
+    .mattori-configurator .dropzone.drag-over {
+      border-color: #1a1a1a;
+      background: #e8e8e4;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    .mattori-configurator .dropzone-icon {
+      font-size: 24px;
+      color: #1a1a1a;
+      opacity: 0.4;
+    }
+
+    .mattori-configurator .dropzone-text {
+      font-weight: 500;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #777;
+    }
+
+    .mattori-configurator .divider {
+      color: #aaa;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin: 1.2rem 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .divider::before,
+    .mattori-configurator .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #ddd;
+    }
+
+    .mattori-configurator .error-msg {
+      color: #ae1c28;
+      font-size: 0.78rem;
+      margin-top: 10px;
+      min-height: 18px;
+    }
+
+    .mattori-configurator .upload-actions {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 1.2rem;
+    }
+
+    .mattori-configurator .upload-actions.active {
+      display: flex;
+    }
+
+    .mattori-configurator .upload-actions .btn-export {
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* Loading spinner */
+    .mattori-configurator .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(250,250,248,0.85);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .mattori-configurator .loading-overlay.active {
+      display: flex;
+    }
+
+    .mattori-configurator .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #ddd;
+      border-top: 3px solid #1a1a1a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ── Right column: order flow ── */
+    .mattori-configurator .order-flow {
+      display: none;
+      flex: 1;
+      min-width: 0;
+      max-width: 1050px;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .mattori-configurator .order-flow.visible {
+      display: flex;
+    }
+
+    .mattori-configurator .order-step {
+      margin-bottom: 1.8rem;
+    }
+
+    .mattori-configurator .order-step:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Smooth step entrance animation */
+    @keyframes stepFadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .mattori-configurator .order-step.animate-in {
+      animation: stepFadeIn 0.4s ease forwards;
+    }
+
+    .mattori-configurator .step-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.8px;
+      color: #bbb;
+      margin-bottom: 0.6rem;
+    }
+
+    /* ── Funda URL input (in order flow) ── */
+    .mattori-configurator .url-input-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .mattori-configurator .url-input-group input {
+      flex: 1;
+      padding: 0.85rem 1rem;
+      font-size: 0.95rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      border: 1.5px solid #ddd;
+      border-radius: 10px;
+      background: #fff;
+      color: #1a1a1a;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .mattori-configurator .url-input-group input:focus {
+      border-color: #1a1a1a;
+    }
+
+    .mattori-configurator .url-input-group input::placeholder {
+      color: #aaa;
+    }
+
+    .mattori-configurator .btn-funda {
+      flex-shrink: 0;
+      padding: 0.85rem 1.2rem !important;
+      font-size: 0.9rem !important;
+    }
+
+    .mattori-configurator .btn-test {
+      width: 100%;
+      margin-top: 0.6rem;
+      padding: 0.55rem 1rem;
+      font-size: 0.78rem;
+      font-weight: 500;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #999;
+      background: none;
+      border: 1px dashed #ccc;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .mattori-configurator .btn-test:hover {
+      color: #1a1a1a;
+      border-color: #1a1a1a;
+    }
+
+    /* ── Funda status checker ── */
+    .mattori-configurator .funda-status {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: 0.7rem;
+      padding: 0.6rem 0.8rem;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      line-height: 1.4;
+    }
+
+    .mattori-configurator .funda-status.visible {
+      display: flex;
+    }
+
+    .mattori-configurator .funda-status.loading {
+      background: #f5f5f2;
+      color: #888;
+    }
+
+    .mattori-configurator .funda-status.success {
+      background: #f0f7f0;
+      color: #2d6a2e;
+    }
+
+    .mattori-configurator .funda-status.error {
+      background: #fdf0f0;
+      color: #ae1c28;
+    }
+
+    .mattori-configurator .funda-status .status-icon {
+      flex-shrink: 0;
+      font-size: 1rem;
+    }
+
+    .mattori-configurator .funda-status .status-text {
+      flex: 1;
+    }
+
+    .mattori-configurator .funda-status .status-text strong {
+      display: block;
+      font-weight: 600;
+    }
+
+    .mattori-configurator .funda-status .status-text span {
+      font-size: 0.78rem;
+      opacity: 0.8;
+    }
+
+    .mattori-configurator .funda-status .mini-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ddd;
+      border-top: 2px solid #888;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    /* ── Preview card (shared style for preview 1 & 3) ── */
+    .mattori-configurator .preview-card {
+      background: #fff;
+      border: 1px solid #e5e5e0;
+      border-radius: 16px;
+      padding: 1.2rem;
+      overflow: hidden;
+    }
+
+    /* ── Frame Preview 1 (address on cropped top frame) ── */
+    .mattori-configurator .frame-preview {
+      display: none;
+      width: 100%;
+    }
+
+    .mattori-configurator .frame-preview.active {
+      display: block;
+    }
+
+    .mattori-configurator .frame-container {
+      position: relative;
+      width: 100%;
+    }
+
+    .mattori-configurator .frame-image {
+      width: 100%;
+      display: block;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .mattori-configurator .frame-overlay {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 20%;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mattori-configurator .frame-address {
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      width: 100%;
+      padding: 0 15.5%;
+    }
+
+    .mattori-configurator .frame-street {
+      font-family: 'Nexa', Georgia, sans-serif;
+      font-size: clamp(13px, 2.3vw, 24px);
+      font-weight: 700;
+      color: #1a1a1a;
+      letter-spacing: 0.4px;
+      line-height: 1;
+      overflow: hidden;
+      text-overflow: clip;
+      white-space: nowrap;
+    }
+
+    .mattori-configurator .frame-city {
+      font-family: 'Nexa', Georgia, sans-serif;
+      font-size: clamp(8px, 1.4vw, 14px);
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-top: 8px;
+      letter-spacing: 0.3px;
+      overflow: hidden;
+      text-overflow: clip;
+      white-space: nowrap;
+    }
+
+    /* ── Frame Preview 3 (floor labels on cropped bottom frame) ── */
+    .mattori-configurator .labels-preview {
+      display: none;
+      width: 100%;
+    }
+
+    .mattori-configurator .labels-preview.active {
+      display: block;
+    }
+
+    .mattori-configurator .labels-container {
+      position: relative;
+      width: 100%;
+    }
+
+    .mattori-configurator .labels-image {
+      width: 100%;
+      display: block;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .mattori-configurator .labels-overlay {
+      position: absolute;
+      left: 15.5%;
+      right: 14%;
+      top: 0;
+      bottom: 30%;
+      display: flex;
+      align-items: center;
+      justify-content: space-evenly;
+    }
+
+    .mattori-configurator .label-item {
+      font-family: 'Nexa', Georgia, sans-serif;
+      font-size: clamp(8px, 1.4vw, 14px);
+      font-weight: 700;
+      color: #1a1a1a;
+      letter-spacing: 0.4px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ── Address edit toggle ── */
+    .mattori-configurator .address-edit-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 0.8rem;
+    }
+
+    .mattori-configurator .address-edit-toggle input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #1a1a1a;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .mattori-configurator .address-edit-toggle label {
+      font-size: 0.82rem;
+      color: #777;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .mattori-configurator .address-fields {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 0.8rem;
+      padding: 1rem;
+      background: #f5f5f2;
+      border-radius: 12px;
+    }
+
+    .mattori-configurator .address-fields.visible {
+      display: flex;
+    }
+
+    .mattori-configurator .address-fields input {
+      padding: 0.7rem 1rem;
+      font-size: 0.95rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      border: 1.5px solid #ddd;
+      border-radius: 10px;
+      background: #fff;
+      color: #1a1a1a;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .mattori-configurator .address-fields input:focus {
+      border-color: #1a1a1a;
+    }
+
+    .mattori-configurator .address-fields input::placeholder {
+      color: #aaa;
+    }
+
+    /* ── Labels edit toggle ── */
+    .mattori-configurator .labels-edit-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 0.8rem;
+    }
+
+    .mattori-configurator .labels-edit-toggle input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #1a1a1a;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .mattori-configurator .labels-edit-toggle label {
+      font-size: 0.82rem;
+      color: #777;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .mattori-configurator .labels-fields {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 0.8rem;
+      padding: 1rem;
+      background: #f5f5f2;
+      border-radius: 12px;
+    }
+
+    .mattori-configurator .labels-fields.visible {
+      display: flex;
+    }
+
+    .mattori-configurator .labels-fields .label-field-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mattori-configurator .labels-fields .label-field-row span {
+      font-size: 0.78rem;
+      color: #999;
+      min-width: 70px;
+      flex-shrink: 0;
+    }
+
+    .mattori-configurator .labels-fields input {
+      flex: 1;
+      padding: 0.55rem 0.8rem;
+      font-size: 0.88rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      color: #1a1a1a;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .mattori-configurator .labels-fields input:focus {
+      border-color: #1a1a1a;
+    }
+
+    /* ── 3D Viewers ── */
+    /* ── Frame middle section (wraps around floor viewers) ── */
+    .mattori-configurator .frame-middle-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    .mattori-configurator .frame-middle-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      pointer-events: none;
+      user-select: none;
+      z-index: 0;
+    }
+
+    .mattori-configurator .frame-middle-content {
+      position: relative;
+      z-index: 1;
+      padding: 2rem 14% 2rem 15.5%;
+    }
+
+    .mattori-configurator .floors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+      gap: 1rem;
+    }
+
+    .mattori-configurator .floor-card {
+      position: relative;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0.4rem;
+      overflow: hidden;
+      transition: opacity 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+    }
+
+    .mattori-configurator .floor-card:not(.excluded):hover {
+      opacity: 0.85;
+    }
+
+    .mattori-configurator .floor-name {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #999;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+
+    .mattori-configurator .floor-canvas-wrap {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      position: relative;
+    }
+
+    .mattori-configurator .floor-canvas-wrap canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .mattori-configurator .floor-canvas-wrap canvas:active {
+      cursor: grabbing;
+    }
+
+    /* ── Floor selection checkboxes ── */
+    .mattori-configurator .floor-checkboxes {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 1rem;
+    }
+
+    .mattori-configurator .floor-check-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0.5rem 0;
+    }
+
+    .mattori-configurator .floor-check-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #1a1a1a;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .mattori-configurator .floor-check-item label {
+      font-size: 0.88rem;
+      color: #555;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .mattori-configurator .floor-check-item.excluded label {
+      text-decoration: line-through;
+      color: #ccc;
+    }
+
+    .mattori-configurator .floor-card.excluded {
+      opacity: 0.3;
+      filter: grayscale(0.5);
+      pointer-events: none;
+    }
+
+    /* ── Floor-label coupling badge + sublabel ── */
+    .mattori-configurator .floor-badge {
+      display: none !important;
+    }
+
+
+    /* ── Remarks textarea ── */
+    .mattori-configurator .remarks-field textarea {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      font-size: 0.95rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      border: 1.5px solid #ddd;
+      border-radius: 12px;
+      background: #fff;
+      color: #1a1a1a;
+      outline: none;
+      resize: vertical;
+      min-height: 80px;
+      transition: border-color 0.2s ease;
+    }
+
+    .mattori-configurator .remarks-field textarea:focus {
+      border-color: #1a1a1a;
+    }
+
+    .mattori-configurator .remarks-field textarea::placeholder {
+      color: #aaa;
+    }
+
+    /* ── Order button ── */
+    .mattori-configurator .btn-order {
+      width: 100%;
+      padding: 1rem 2rem;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .mattori-configurator .btn-order:hover {
+      background: #333;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    .mattori-configurator .btn-order:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .mattori-configurator .btn-order:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .mattori-configurator .btn-order:disabled:hover {
+      background: #1a1a1a;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── Disclaimer ── */
+    .mattori-configurator .disclaimer {
+      font-size: 0.75rem;
+      color: #999;
+      text-align: center;
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    /* ── Shared button style ── */
+    .mattori-configurator .btn-export {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.7rem 1.4rem;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .mattori-configurator .btn-export:hover {
+      background: #333;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    .mattori-configurator .btn-export:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .mattori-configurator .btn-export svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Toast notification */
+    .mattori-configurator .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1a1a1a;
+      color: #fff;
+      padding: 0.7rem 1.5rem;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      z-index: 200;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    .mattori-configurator .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Filename label */
+    .mattori-configurator .file-label {
+      font-size: 0.78rem;
+      color: #aaa;
+      margin-top: 10px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Hidden file input */
+    .mattori-configurator #fileInput {
+      display: none;
+    }
+
+    /* ── Admin/Klant mode toggle ── */
+    .mattori-configurator .mode-toggle-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 300;
+      background: #1a1a1a;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 8px 16px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    .mattori-configurator .mode-toggle-bar label {
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mattori-configurator .mode-switch {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .mattori-configurator .mode-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .mattori-configurator .mode-switch .slider {
+      position: absolute;
+      inset: 0;
+      background: #555;
+      border-radius: 20px;
+      transition: background 0.3s ease;
+      cursor: pointer;
+    }
+
+    .mattori-configurator .mode-switch .slider::before {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.3s ease;
+    }
+
+    .mattori-configurator .mode-switch input:checked + .slider {
+      background: #4CAF50;
+    }
+
+    .mattori-configurator .mode-switch input:checked + .slider::before {
+      transform: translateX(16px);
+    }
+
+    .mattori-configurator.has-mode-bar {
+      padding-top: 36px;
+    }
+
+    /* Admin-only elements: hidden in klant mode */
+    .mattori-configurator.klant-mode .admin-only {
+      display: none !important;
+    }
+
+    /* Klant mode: full-width layout (no left column) */
+    .mattori-configurator.klant-mode .main-wrapper.split {
+      justify-content: center;
+    }
+
+    .mattori-configurator.klant-mode .main-wrapper.split .upload-section {
+      display: none !important;
+    }
+
+    .mattori-configurator.klant-mode .order-flow {
+      max-width: 600px;
+      width: 100%;
+    }
+
+    /* In klant mode centered (initial) state: hide admin parts, keep Funda URL */
+    body.klant-mode .main-wrapper.centered .dropzone,
+    body.klant-mode .main-wrapper.centered .divider,
+    body.klant-mode .main-wrapper.centered .file-label,
+    .mattori-configurator.klant-mode .main-wrapper.centered .error-msg {
+      display: none !important;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .mattori-configurator .main-wrapper {
+        padding: 2rem 1.5rem;
+      }
+      .mattori-configurator .main-wrapper.split {
+        flex-direction: column;
+        align-items: center;
+      }
+      .mattori-configurator .main-wrapper.split .upload-section {
+        max-width: 500px;
+        position: static;
+      }
+      .mattori-configurator .order-flow {
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .mattori-configurator .main-wrapper {
+        padding: 1.5rem 1rem;
+      }
+      .mattori-configurator .floors-grid {
+        grid-template-columns: 1fr;
+      }
+    }
