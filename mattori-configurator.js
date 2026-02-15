@@ -1510,14 +1510,11 @@
         floorsGrid.appendChild(card);
       }
 
-      // Build checkbox list for extra floors (berging, garage, etc.)
+      // Build checkbox list for ALL floors
       floorCheckboxes.innerHTML = '';
-      const hasExtraFloors = floors.some((f, i) => isExtraFloor(f) && !isLikelySituatie(f));
 
       for (let i = 0; i < floors.length; i++) {
         const floor = floors[i];
-        // Only show checkboxes for extra floors or auto-excluded floors
-        if (!isExtraFloor(floor) && !isLikelySituatie(floor)) continue;
 
         const item = document.createElement('div');
         item.className = 'floor-check-item';
