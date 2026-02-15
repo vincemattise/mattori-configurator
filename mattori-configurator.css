@@ -32,7 +32,7 @@
       width: 100%;
       max-width: 1050px;
       margin: 0 auto;
-      padding: 1.2rem 3rem 0;
+      padding: 1rem 3rem;
       border-bottom: 2px dashed #e0ddd8;
       position: relative;
     }
@@ -43,36 +43,45 @@
       right: 3rem;
       background: #f5e6d0;
       color: #a07030;
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1.5px;
-      padding: 3px 10px;
-      border-radius: 0 0 6px 6px;
+      padding: 2px 8px;
+      border-radius: 0 0 5px 5px;
     }
 
     .mattori-configurator .admin-panel-content {
-      padding-bottom: 1.2rem;
-    }
-
-    .mattori-configurator .admin-row {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
-    .mattori-configurator .admin-row .dropzone {
+    .mattori-configurator .admin-panel-content .dropzone {
       flex: 1;
+      min-width: 200px;
+      padding: 0.8rem 1.2rem;
     }
 
     .mattori-configurator .admin-buttons {
       display: none;
       flex-direction: row;
       gap: 8px;
+      flex-shrink: 0;
     }
 
     .mattori-configurator .admin-buttons.active {
       display: flex;
+    }
+
+    .mattori-configurator .admin-panel .file-label {
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .mattori-configurator .admin-panel .error-msg {
+      width: 100%;
     }
 
     .mattori-configurator .dropzone {
