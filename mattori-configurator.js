@@ -196,6 +196,42 @@
     const productHeroImage = document.getElementById('productHeroImage');
 
     // ============================================================
+    // FORCE RIGHT COLUMN LAYOUT (bulletproof against Shopify CSS)
+    // ============================================================
+    (function enforceRightColumnLayout() {
+      const inner = document.querySelector('.mattori-configurator .page-col-right-inner');
+      if (!inner) return;
+
+      // Force flex layout via inline styles (unbeatable by Shopify CSS)
+      inner.style.cssText += ';display:flex!important;flex-direction:column!important;gap:1.5rem!important;';
+
+      // Physically reorder DOM children to desired sequence
+      const orderMap = [
+        '.product-title',
+        '.product-price-block',
+        '.product-description',
+        '#stepFundaUrl',
+        '.product-badges',
+        '#stepOrder',
+        '.product-specs'
+      ];
+      const fragment = document.createDocumentFragment();
+      orderMap.forEach(sel => {
+        const el = inner.querySelector(sel);
+        if (el) {
+          el.style.cssText += ';margin:0!important;order:unset!important;';
+          fragment.appendChild(el);
+        }
+      });
+      // Append any remaining children not in the orderMap
+      while (inner.firstChild) {
+        inner.firstChild.style && (inner.firstChild.style.cssText += ';margin:0!important;');
+        fragment.appendChild(inner.firstChild);
+      }
+      inner.appendChild(fragment);
+    })();
+
+    // ============================================================
     // UTILITY FUNCTIONS
     // ============================================================
     function clearError() { errorMsg.textContent = ''; }
