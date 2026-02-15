@@ -401,8 +401,8 @@
       font-weight: 700;
       color: #1a1a1a;
       letter-spacing: 0.4px;
-      line-height: 1;
-      overflow: hidden;
+      line-height: 1.25;
+      overflow: visible;
       text-overflow: clip;
       white-space: nowrap;
     }
