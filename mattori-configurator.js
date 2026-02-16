@@ -211,6 +211,7 @@
         '.product-title',
         '.product-price-block',
         '.product-description',
+        '#btnStartConfigurator',
         '#wizard',
         '.product-badges',
         '#stepOrder',
