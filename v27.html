@@ -1,0 +1,249 @@
+<!-- MATTORI Frame³ Configurator v24 — Animated wizard transition -->
+<script>
+(function(){
+  var sheets = [
+    'https://fonts.cdnfonts.com/css/nexa-bold',
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v27/mattori-configurator.css'
+  ];
+  sheets.forEach(function(href){
+    var l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = href;
+    document.head.appendChild(l);
+  });
+})();
+</script>
+
+<div class="mattori-configurator">
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- ADMIN PANEL                                 -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="admin-panel" id="adminPanel">
+    <div class="admin-panel-label">Admin · v27</div>
+    <div class="admin-panel-content">
+      <div class="dropzone" id="dropzone">
+        <div class="dropzone-icon">⬆</div>
+        <div class="dropzone-text">Sleep FML hierheen</div>
+      </div>
+      <input type="file" id="fileInput" accept=".fml,.json">
+      <div class="admin-buttons" id="uploadActions">
+        <button class="btn-admin" id="btnDownloadFml">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+          FML
+        </button>
+        <button class="btn-admin" id="btnExport">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          OBJ
+        </button>
+      </div>
+      <button class="btn-admin" id="btnTest" onclick="pasteTestLink()">Plak link</button>
+      <div class="file-label" id="fileLabel"></div>
+      <div class="error-msg" id="errorMsg"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- TWO-COLUMN LAYOUT                           -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="page-columns">
+
+    <!-- LEFT COLUMN: Unified Frame Preview -->
+    <div class="page-col-left">
+
+      <!-- Initieel: productafbeelding (verborgen na Funda laden) -->
+      <div class="product-hero-image" id="productHeroImage">
+        <div class="product-image-wrapper">
+          <span class="product-example-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" /></svg>
+            Afbeelding toont een voorbeeld
+          </span>
+          <img src="https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Lijst_template_one.jpg?v=1771244941" alt="MATTORI Frame³ – voorbeeld van een 3D ingelijste plattegrond">
+        </div>
+      </div>
+
+      <!-- Unified frame preview (verschijnt na Funda laden) -->
+      <div class="unified-frame-preview" id="unifiedFramePreview" style="display:none;">
+        <div class="unified-frame-container">
+          <img src="https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Lijst_template_one.jpg?v=1771244941"
+               class="unified-frame-image" id="unifiedFrameImage"
+               alt="MATTORI Frame³" crossorigin="anonymous" />
+
+          <!-- Address overlay (top zone) -->
+          <div class="unified-address-overlay" id="unifiedAddressOverlay">
+            <div class="unified-address-inner">
+              <div class="frame-street" id="frameStreet"></div>
+              <div class="frame-city" id="frameCity"></div>
+            </div>
+          </div>
+
+          <!-- 3D floors overlay (middle zone) -->
+          <div class="unified-floors-overlay" id="unifiedFloorsOverlay">
+            <div class="floors-loading" id="floorsLoading">
+              <div class="floors-loading-spinner"></div>
+              <div class="floors-loading-text">Plattegronden laden…</div>
+            </div>
+            <div class="floors-grid" id="floorsGrid"></div>
+          </div>
+
+          <!-- Labels overlay (bottom zone) -->
+          <div class="unified-labels-overlay" id="unifiedLabelsOverlay"></div>
+        </div>
+      </div>
+
+      <!-- Floor review viewer (stap 4, in linkerkolom) -->
+      <div class="floor-review-viewer" id="floorReviewViewer" style="display:none;"></div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Product info + Wizard -->
+    <div class="page-col-right">
+      <div class="page-col-right-inner">
+
+        <h1 class="product-title collapsible-info">MATTORI Frame³</h1>
+
+        <div class="product-price-block collapsible-info">
+          <span class="product-price-old">&euro;99,95</span>
+          <span class="product-price-new">&euro;79,95</span>
+          <span class="product-price-tax">incl. BTW</span>
+        </div>
+
+        <p class="product-description collapsible-info">
+          Na ontvangst van je bestelling starten wij direct met het zorgvuldig omzetten van jouw 2D Funda-plattegrond naar een 3D model. Elk model wordt door het team van MATTORI handmatig opgebouwd met focus op een realistische weergave.
+        </p>
+
+        <!-- Start configurator button -->
+        <button class="btn-start-configurator" id="btnStartConfigurator" onclick="startConfigurator()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" /></svg>
+          Maak je eigen Frame³
+        </button>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- STEP WIZARD                                 -->
+        <!-- ═══════════════════════════════════════════ -->
+        <div class="wizard" id="wizard" style="display:none;">
+
+          <h2 class="wizard-title">Maak je eigen Frame³</h2>
+
+          <!-- Progress indicator -->
+          <div class="wizard-progress" id="wizardProgress">
+            <span class="wizard-step-indicator" id="wizardStepIndicator"></span>
+            <div class="wizard-dots" id="wizardDots"></div>
+          </div>
+
+          <!-- Step 1: Funda URL -->
+          <div class="wizard-step" id="wizardStep1" data-step="1">
+            <div class="step-label">Jouw Funda-link</div>
+            <div class="url-input-group">
+              <input type="url" id="fundaUrl" placeholder="https://www.funda.nl/..." />
+              <button class="btn-export btn-funda" id="btnFunda" onclick="loadFromFunda()">Laden</button>
+            </div>
+            <div class="funda-status" id="fundaStatus">
+              <div class="status-icon" id="fundaStatusIcon"></div>
+              <div class="status-text" id="fundaStatusText"></div>
+            </div>
+          </div>
+
+          <!-- Step 2: Address (street + city combined) -->
+          <div class="wizard-step" id="wizardStep2" data-step="2" style="display:none;">
+            <div class="step-label">Adresgegevens</div>
+            <p class="step-description">Vul het adres in dat op de lijst komt te staan.</p>
+            <input type="text" id="addressStreet" class="wizard-input" placeholder="Straat + huisnummer" />
+            <input type="text" id="addressCity" class="wizard-input" placeholder="Stad, Land" />
+          </div>
+
+          <!-- Step 3: Floor review (controls only, viewer is in left column) -->
+          <div class="wizard-step" id="wizardStep3" data-step="3" style="display:none;">
+            <div class="step-label">Plattegronden bekijken</div>
+            <p class="step-description">Bekijk elke verdieping en kies welke je wilt meenemen.</p>
+            <div class="floor-review-controls">
+              <div class="floor-review-thumbstrip" id="floorReviewThumbstrip"></div>
+              <div class="floor-review-checkbox" id="floorReviewCheckbox">
+                <input type="checkbox" id="floorIncludeCb" checked />
+                <label for="floorIncludeCb">Deze verdieping meenemen</label>
+              </div>
+              <div class="floor-review-divider"></div>
+              <div class="floor-review-issue">
+                <input type="checkbox" id="floorIssueCb" onclick="toggleFloorIssue()" />
+                <label for="floorIssueCb">Er klopt iets niet</label>
+              </div>
+              <div class="floor-issue-details" id="floorIssueDetails" style="display:none;">
+                <textarea id="floorIssueText" class="wizard-input" placeholder="Beschrijf kort wat er niet klopt…" rows="3"></textarea>
+                <div class="floor-issue-notice">We nemen na je bestelling contact met je op om dit te bespreken.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: Floor layout (orthographic top-down, all floors) -->
+          <div class="wizard-step" id="wizardStep4" data-step="4" style="display:none;">
+            <div class="step-label">Indeling controleren</div>
+            <p class="step-description">Gebruik de pijltjes om de volgorde aan te passen.</p>
+            <div class="floor-layout-viewer" id="floorLayoutViewer"></div>
+          </div>
+
+          <!-- Step 5: Edit label texts -->
+          <div class="wizard-step" id="wizardStep5" data-step="5" style="display:none;">
+            <div class="step-label">Labels aanpassen</div>
+            <p class="step-description">Pas de verdiepingsnamen aan die onderin de lijst staan.</p>
+            <div class="labels-fields" id="labelsFields"></div>
+          </div>
+
+          <!-- Navigation buttons -->
+          <div class="wizard-nav" id="wizardNav">
+            <button class="btn-wizard-prev" id="btnWizardPrev" style="display:none;">&#8592;</button>
+            <button class="btn-floor-nav btn-floor-nav-next" id="btnFloorNext" style="display:none;" onclick="navigateFloorReview(1)">Volgende plattegrond &#8594;</button>
+            <button class="btn-wizard-next" id="btnWizardNext" style="display:none;">Volgende &#8594;</button>
+            <button class="btn-order" id="btnOrder" onclick="submitOrder()" style="display:none;">Afronden &amp; bestellen &#10022;</button>
+          </div>
+
+          <!-- Disclaimer (shown on last step) -->
+          <div class="order-return-notice" id="orderNotice" style="display:none;">
+            Let op: omdat elk Frame³ speciaal voor jouw woning wordt gemaakt, is retourneren niet mogelijk. De preview dient als richtlijn. Wij doen ons uiterste best, maar kunnen niet garanderen dat het eindresultaat 100% identiek is aan de weergave.
+          </div>
+
+        </div>
+
+        <!-- Info badges -->
+        <div class="product-badges collapsible-info">
+          <div class="product-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>
+            Gratis verzending met PostNL
+          </div>
+          <div class="product-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+            Vandaag besteld, binnen 5 werkdagen in huis
+          </div>
+          <div class="product-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" /></svg>
+            Handgemaakt in Nederland
+          </div>
+        </div>
+
+        <!-- Specificaties -->
+        <div class="product-specs collapsible-info">
+          <div class="product-specs-title">Specificaties</div>
+          <ul class="product-specs-list">
+            <li><span class="spec-label">Materiaal lijst</span><span class="spec-value">Duurzaam kunststof</span></li>
+            <li><span class="spec-label">Materiaal 3D plattegrond</span><span class="spec-value">Duurzaam kunststof</span></li>
+            <li><span class="spec-label">Materiaal glas</span><span class="spec-value">Echt en verhard</span></li>
+            <li><span class="spec-label">Materiaal papier</span><span class="spec-value">Premium textuur</span></li>
+            <li><span class="spec-label">Afmeting</span><span class="spec-value">24 &times; 32,8 &times; 2,9 cm</span></li>
+            <li><span class="spec-label">Gewicht</span><span class="spec-value">&plusmn; 750g</span></li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v27/mattori-configurator.js"></script>
