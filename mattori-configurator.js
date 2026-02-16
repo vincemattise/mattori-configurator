@@ -225,6 +225,22 @@
     }
 
     // ============================================================
+    // BREAK OUT OF SHOPIFY CONTAINER (scrollbar-safe)
+    // ============================================================
+    (function breakoutConfigurator() {
+      var el = document.querySelector('.mattori-configurator');
+      if (!el) return;
+      function applyBreakout() {
+        var cw = document.documentElement.clientWidth;
+        var rect = el.parentElement.getBoundingClientRect();
+        el.style.width = cw + 'px';
+        el.style.marginLeft = (-rect.left) + 'px';
+      }
+      applyBreakout();
+      window.addEventListener('resize', applyBreakout);
+    })();
+
+    // ============================================================
     // FORCE RIGHT COLUMN LAYOUT (bulletproof against Shopify CSS)
     // ============================================================
     (function enforceRightColumnLayout() {
