@@ -2148,29 +2148,25 @@
     }
 
     // Funda status checker
-    var statusEls = [
-      { box: document.getElementById('fundaStatus'), icon: document.getElementById('fundaStatusIcon'), text: document.getElementById('fundaStatusText') }
-    ];
-
     function setFundaStatus(state, html) {
-      for (const el of statusEls) {
-        if (!el.box) continue;
-        el.box.className = 'funda-status visible ' + state;
-        if (state === 'loading') {
-          el.icon.innerHTML = '<div class="mini-spinner"></div>';
-        } else if (state === 'success') {
-          el.icon.textContent = '✓';
-        } else if (state === 'error') {
-          el.icon.textContent = '✕';
-        }
-        el.text.innerHTML = html;
+      var box = document.getElementById('fundaStatus');
+      var icon = document.getElementById('fundaStatusIcon');
+      var text = document.getElementById('fundaStatusText');
+      if (!box) return;
+      box.className = 'funda-status visible ' + state;
+      if (state === 'loading') {
+        icon.innerHTML = '<div class="mini-spinner"></div>';
+      } else if (state === 'success') {
+        icon.textContent = '✓';
+      } else if (state === 'error') {
+        icon.textContent = '✕';
       }
+      text.innerHTML = html;
     }
 
     function hideFundaStatus() {
-      for (const el of statusEls) {
-        if (el.box) el.box.className = 'funda-status';
-      }
+      var box = document.getElementById('fundaStatus');
+      if (box) box.className = 'funda-status';
     }
 
     async function loadFromFunda() {
