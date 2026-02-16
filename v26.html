@@ -3,7 +3,7 @@
 (function(){
   var sheets = [
     'https://fonts.cdnfonts.com/css/nexa-bold',
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v26.4/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v26.5/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -24,7 +24,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel">
-    <div class="admin-panel-label">Admin · v26.4</div>
+    <div class="admin-panel-label">Admin · v26.5</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon">⬆</div>
@@ -195,6 +195,8 @@
           <!-- Navigation buttons -->
           <div class="wizard-nav" id="wizardNav">
             <button class="btn-wizard-prev" id="btnWizardPrev" style="display:none;">&#8592;</button>
+            <button class="btn-floor-nav" id="btnFloorPrev" style="display:none;" onclick="navigateFloorReview(-1)">&#8592;</button>
+            <button class="btn-floor-nav btn-floor-nav-next" id="btnFloorNext" style="display:none;" onclick="navigateFloorReview(1)">&#8594;</button>
             <button class="btn-wizard-next" id="btnWizardNext" style="display:none;">Volgende &#8594;</button>
             <button class="btn-order" id="btnOrder" onclick="submitOrder()" style="display:none;">Afronden &amp; bestellen &#10022;</button>
           </div>
@@ -245,4 +247,4 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v26.4/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v26.5/mattori-configurator.js"></script>

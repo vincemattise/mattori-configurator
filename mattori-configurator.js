@@ -1394,46 +1394,69 @@
         if (step) step.style.display = 'none';
       }
 
-      // Show current step
-      const current = document.getElementById(`wizardStep${n}`);
-      if (current) {
-        current.style.display = '';
-        current.style.animation = 'none';
-        void current.offsetWidth;
-        current.style.animation = '';
+      // Remove any previous loading indicator
+      var oldLoader = document.querySelector('.mattori-configurator .wizard-step-loading');
+      if (oldLoader) oldLoader.remove();
+
+      // Steps that need 3D rendering: show brief loading spinner
+      var needsRender = (n === 3 || n === 4);
+      if (needsRender) {
+        var loader = document.createElement('div');
+        loader.className = 'wizard-step-loading';
+        loader.innerHTML = '<div class="step-spinner"></div>';
+        var wizEl = document.getElementById('wizard');
+        var navEl = document.getElementById('wizardNav');
+        if (wizEl && navEl) wizEl.insertBefore(loader, navEl);
       }
 
-      // Show/hide floors in unified preview (visible from step 4 onward)
-      if (unifiedFloorsOverlay) {
-        unifiedFloorsOverlay.style.display = n >= 4 ? '' : 'none';
-      }
+      // Small delay for rendering steps so spinner is visible
+      var delay = needsRender ? 80 : 0;
+      setTimeout(function() {
+        // Remove loader
+        var ld = document.querySelector('.mattori-configurator .wizard-step-loading');
+        if (ld) ld.remove();
 
-      // Step 3: show floor review viewer in left column, hide unified preview
-      if (n === 3) {
-        if (unifiedFramePreview) unifiedFramePreview.style.display = 'none';
-        if (floorReviewViewerEl) floorReviewViewerEl.style.display = '';
-      } else {
-        if (floorReviewViewerEl) floorReviewViewerEl.style.display = 'none';
-        if (floors.length > 0 && unifiedFramePreview) unifiedFramePreview.style.display = '';
-      }
+        // Show current step
+        const current = document.getElementById(`wizardStep${n}`);
+        if (current) {
+          current.style.display = '';
+          current.style.animation = 'none';
+          void current.offsetWidth;
+          current.style.animation = '';
+        }
 
-      // Show/hide order button + disclaimer (only on last step)
-      var orderBtn = document.getElementById('btnOrder');
-      var orderNotice = document.getElementById('orderNotice');
-      if (orderBtn) orderBtn.style.display = n === TOTAL_WIZARD_STEPS ? '' : 'none';
-      if (orderNotice) orderNotice.style.display = n === TOTAL_WIZARD_STEPS ? '' : 'none';
+        // Show/hide floors in unified preview (visible from step 4 onward)
+        if (unifiedFloorsOverlay) {
+          unifiedFloorsOverlay.style.display = n >= 4 ? '' : 'none';
+        }
 
-      // Special step initialization
-      if (n === 3) {
-        currentFloorReviewIndex = 0;
-        viewedFloors.clear();
-        buildThumbstrip();
-        renderFloorReview();
-      } else if (n === 4) {
-        renderLayoutView();
-      } else if (n === 5) {
-        renderLabelsFields();
-      }
+        // Step 3: show floor review viewer in left column, hide unified preview
+        if (n === 3) {
+          if (unifiedFramePreview) unifiedFramePreview.style.display = 'none';
+          if (floorReviewViewerEl) floorReviewViewerEl.style.display = '';
+        } else {
+          if (floorReviewViewerEl) floorReviewViewerEl.style.display = 'none';
+          if (floors.length > 0 && unifiedFramePreview) unifiedFramePreview.style.display = '';
+        }
+
+        // Show/hide order button + disclaimer (only on last step)
+        var orderBtn = document.getElementById('btnOrder');
+        var orderNotice = document.getElementById('orderNotice');
+        if (orderBtn) orderBtn.style.display = n === TOTAL_WIZARD_STEPS ? '' : 'none';
+        if (orderNotice) orderNotice.style.display = n === TOTAL_WIZARD_STEPS ? '' : 'none';
+
+        // Special step initialization
+        if (n === 3) {
+          currentFloorReviewIndex = 0;
+          viewedFloors.clear();
+          buildThumbstrip();
+          renderFloorReview();
+        } else if (n === 4) {
+          renderLayoutView();
+        } else if (n === 5) {
+          renderLabelsFields();
+        }
+      }, delay);
 
       updateWizardUI();
     }
@@ -1456,6 +1479,12 @@
 
       // Update prev/next/order buttons
       btnWizardPrev.style.display = currentWizardStep > 1 ? '' : 'none';
+
+      // Floor nav buttons (step 3 only)
+      var btnFP = document.getElementById('btnFloorPrev');
+      var btnFN = document.getElementById('btnFloorNext');
+      if (btnFP) btnFP.style.display = currentWizardStep === 3 ? '' : 'none';
+      if (btnFN) btnFN.style.display = currentWizardStep === 3 ? '' : 'none';
 
       if (currentWizardStep === TOTAL_WIZARD_STEPS) {
         // Last step: hide next, show order
@@ -1630,11 +1659,6 @@
         var canvasWrap = document.createElement('div');
         canvasWrap.className = 'floor-layout-canvas-wrap';
 
-        // Name (hidden, just spacer)
-        var nameEl = document.createElement('div');
-        nameEl.className = 'floor-layout-name';
-        nameEl.textContent = '';
-
         // Up/down arrows
         var arrows = document.createElement('div');
         arrows.className = 'floor-layout-arrows';
@@ -1660,7 +1684,6 @@
 
         card.appendChild(numEl);
         card.appendChild(canvasWrap);
-        card.appendChild(nameEl);
         card.appendChild(arrows);
         floorLayoutViewer.appendChild(card);
 
@@ -2170,9 +2193,7 @@
     btnWizardPrev.addEventListener('click', () => prevWizardStep());
     btnWizardNext.addEventListener('click', () => nextWizardStep());
 
-    // Floor review navigation (step 4)
-    document.getElementById('btnFloorPrev').addEventListener('click', () => navigateFloorReview(-1));
-    document.getElementById('btnFloorNext').addEventListener('click', () => navigateFloorReview(1));
+    // Floor review include/exclude checkbox
     floorIncludeCb.addEventListener('change', () => {
       toggleFloorExclusion(currentFloorReviewIndex);
       renderFloorReview(); // refresh overlay
