@@ -371,7 +371,7 @@
 
     /* ── Unified Frame Preview ── */
     .mattori-configurator .unified-frame-preview {
-      width: 86%;
+      width: 80%;
       margin: 0 auto;
       background: transparent;
       border-radius: 0;
@@ -381,7 +381,8 @@
 
     .mattori-configurator .unified-frame-container {
       position: relative;
-      width: 100%;
+      width: 92%;
+      margin: 0 auto;
       border-radius: 4px;
       overflow: visible;
     }
