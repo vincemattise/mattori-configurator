@@ -2193,15 +2193,25 @@
     const btnStartConfigurator = document.getElementById('btnStartConfigurator');
     if (btnStartConfigurator) {
       btnStartConfigurator.addEventListener('click', () => {
-        btnStartConfigurator.style.display = 'none';
-        wizard.style.display = '';
-        // Hide product info to focus on configurator
-        const hideSelectors = ['.product-price-block', '.product-description', '.product-badges', '.product-specs'];
-        const inner = document.querySelector('.mattori-configurator .page-col-right-inner');
-        hideSelectors.forEach(sel => {
-          const el = inner && inner.querySelector(sel);
-          if (el) el.style.display = 'none';
+        // Fade out the button itself
+        btnStartConfigurator.style.transition = 'opacity 0.3s ease';
+        btnStartConfigurator.style.opacity = '0';
+        setTimeout(() => { btnStartConfigurator.style.display = 'none'; }, 300);
+
+        // Animate out all collapsible info blocks with staggered delay
+        const collapsibles = document.querySelectorAll('.mattori-configurator .collapsible-info');
+        collapsibles.forEach((el, i) => {
+          setTimeout(() => {
+            el.classList.add('collapsing');
+          }, i * 80);
         });
-        initWizard();
+
+        // After all animations complete, show wizard
+        const totalDelay = collapsibles.length * 80 + 400;
+        setTimeout(() => {
+          collapsibles.forEach(el => { el.style.display = 'none'; });
+          wizard.style.display = '';
+          initWizard();
+        }, totalDelay);
       });
     }

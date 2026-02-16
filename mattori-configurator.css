@@ -574,6 +574,22 @@
       color: #777;
     }
 
+    /* ── Collapsible Info (fade + slide out) ── */
+    .mattori-configurator .collapsible-info {
+      overflow: hidden;
+      transition: opacity 0.4s ease, max-height 0.5s ease, margin 0.5s ease, padding 0.5s ease;
+      max-height: 500px;
+    }
+
+    .mattori-configurator .collapsible-info.collapsing {
+      opacity: 0;
+      max-height: 0 !important;
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+    }
+
     /* ── Start Configurator Button ── */
     .mattori-configurator .btn-start-configurator {
       width: 100%;
