@@ -2509,10 +2509,13 @@
       }
       var orderBtn = document.getElementById('btnOrder');
       if (orderBtn) { orderBtn.disabled = true; orderBtn.textContent = 'Toevoegen…'; }
+      var fundaLink = fundaUrlInput ? fundaUrlInput.value.trim() : '';
+      var itemProperties = {};
+      if (fundaLink) itemProperties['Funda link'] = fundaLink;
       fetch('/cart/add.js', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: [{ id: parseInt(variantId), quantity: 1 }] })
+        body: JSON.stringify({ items: [{ id: parseInt(variantId), quantity: 1, properties: itemProperties }] })
       })
       .then(function(res) {
         if (!res.ok) throw new Error('Status ' + res.status);
