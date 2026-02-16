@@ -165,44 +165,59 @@
     let layoutViewers = [];       // step 5 viewers
 
     // ============================================================
-    // DOM REFERENCES
+    // DOM REFERENCES (initialized lazily via ensureDomRefs)
     // ============================================================
-    var dropzone = document.getElementById('dropzone');
-    var fileInput = document.getElementById('fileInput');
-    var errorMsg = document.getElementById('errorMsg');
-    var loadingOverlay = document.getElementById('loadingOverlay');
-    var floorsGrid = document.getElementById('floorsGrid');
-    var btnExport = document.getElementById('btnExport');
-    var btnDownloadFml = document.getElementById('btnDownloadFml');
-    var toast = document.getElementById('toast');
-    var fileLabel = document.getElementById('fileLabel');
-    var productHeroImage = document.getElementById('productHeroImage');
-    var unifiedFramePreview = document.getElementById('unifiedFramePreview');
-    var frameStreet = document.getElementById('frameStreet');
-    var frameCity = document.getElementById('frameCity');
-    var floorsLoading = document.getElementById('floorsLoading');
-    var unifiedFloorsOverlay = document.getElementById('unifiedFloorsOverlay');
-    var unifiedLabelsOverlay = document.getElementById('unifiedLabelsOverlay');
+    var dropzone, fileInput, errorMsg, loadingOverlay, floorsGrid,
+        btnExport, btnDownloadFml, toast, fileLabel, productHeroImage,
+        unifiedFramePreview, frameStreet, frameCity, floorsLoading,
+        unifiedFloorsOverlay, unifiedLabelsOverlay,
+        wizard, wizardDots, wizardStepIndicator, btnWizardPrev, btnWizardNext,
+        addressStreet, addressCity, labelsFields, stepOrder,
+        floorReviewViewerEl, floorReviewLabel, floorIncludeCb, floorLayoutViewer,
+        fundaUrlInput, btnFunda;
 
-    // Wizard DOM
-    var wizard = document.getElementById('wizard');
-    var wizardDots = document.getElementById('wizardDots');
-    var wizardStepIndicator = document.getElementById('wizardStepIndicator');
-    var btnWizardPrev = document.getElementById('btnWizardPrev');
-    var btnWizardNext = document.getElementById('btnWizardNext');
-    var addressStreet = document.getElementById('addressStreet');
-    var addressCity = document.getElementById('addressCity');
-    var labelsFields = document.getElementById('labelsFields');
-    var stepOrder = document.getElementById('stepOrder');
-    var floorReviewViewerEl = document.getElementById('floorReviewViewer');
-    var floorReviewLabel = document.getElementById('floorReviewLabel');
-    var floorIncludeCb = document.getElementById('floorIncludeCb');
-    var floorLayoutViewer = document.getElementById('floorLayoutViewer');
+    var _domRefsReady = false;
+    function ensureDomRefs() {
+      if (_domRefsReady) return;
+      _domRefsReady = true;
+      dropzone = document.getElementById('dropzone');
+      fileInput = document.getElementById('fileInput');
+      errorMsg = document.getElementById('errorMsg');
+      loadingOverlay = document.getElementById('loadingOverlay');
+      floorsGrid = document.getElementById('floorsGrid');
+      btnExport = document.getElementById('btnExport');
+      btnDownloadFml = document.getElementById('btnDownloadFml');
+      toast = document.getElementById('toast');
+      fileLabel = document.getElementById('fileLabel');
+      productHeroImage = document.getElementById('productHeroImage');
+      unifiedFramePreview = document.getElementById('unifiedFramePreview');
+      frameStreet = document.getElementById('frameStreet');
+      frameCity = document.getElementById('frameCity');
+      floorsLoading = document.getElementById('floorsLoading');
+      unifiedFloorsOverlay = document.getElementById('unifiedFloorsOverlay');
+      unifiedLabelsOverlay = document.getElementById('unifiedLabelsOverlay');
+      wizard = document.getElementById('wizard');
+      wizardDots = document.getElementById('wizardDots');
+      wizardStepIndicator = document.getElementById('wizardStepIndicator');
+      btnWizardPrev = document.getElementById('btnWizardPrev');
+      btnWizardNext = document.getElementById('btnWizardNext');
+      addressStreet = document.getElementById('addressStreet');
+      addressCity = document.getElementById('addressCity');
+      labelsFields = document.getElementById('labelsFields');
+      stepOrder = document.getElementById('stepOrder');
+      floorReviewViewerEl = document.getElementById('floorReviewViewer');
+      floorReviewLabel = document.getElementById('floorReviewLabel');
+      floorIncludeCb = document.getElementById('floorIncludeCb');
+      floorLayoutViewer = document.getElementById('floorLayoutViewer');
+      fundaUrlInput = document.getElementById('fundaUrl');
+      btnFunda = document.getElementById('btnFunda');
+    }
 
     // ============================================================
     // FORCE RIGHT COLUMN LAYOUT (bulletproof against Shopify CSS)
     // ============================================================
     (function enforceRightColumnLayout() {
+      ensureDomRefs();
       const inner = document.querySelector('.mattori-configurator .page-col-right-inner');
       if (!inner) return;
       inner.style.cssText += ';display:flex!important;flex-direction:column!important;gap:1.5rem!important;';
@@ -2109,9 +2124,7 @@
       renderFloorReview(); // refresh overlay
     });
 
-    // Funda URL loading
-    var fundaUrlInput = document.getElementById('fundaUrl');
-    var btnFunda = document.getElementById('btnFunda');
+    // Funda URL loading (refs in ensureDomRefs)
 
     function getFundaUrl() {
       return fundaUrlInput.value.trim();
@@ -2161,6 +2174,7 @@
     }
 
     async function loadFromFunda() {
+      ensureDomRefs();
       const url = getFundaUrl();
       clearError();
       if (!url) { setError('Voer een Funda URL in.'); return; }
@@ -2243,6 +2257,7 @@
     // Start configurator button — use event delegation for Shopify robustness
     var configuratorStarted = false;
     function startConfigurator() {
+      ensureDomRefs();
       if (configuratorStarted) return;
       configuratorStarted = true;
       const btn = document.getElementById('btnStartConfigurator');
