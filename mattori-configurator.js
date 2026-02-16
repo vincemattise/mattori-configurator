@@ -2235,29 +2235,51 @@
       }
     });
 
-    // Start configurator button
+    // Start configurator button — use event delegation for Shopify robustness
+    let configuratorStarted = false;
+    function startConfigurator() {
+      if (configuratorStarted) return;
+      configuratorStarted = true;
+      const btn = document.getElementById('btnStartConfigurator');
+      if (btn) {
+        btn.style.transition = 'opacity 0.3s ease';
+        btn.style.opacity = '0';
+        setTimeout(() => { btn.style.display = 'none'; }, 300);
+      }
+
+      // Animate out all collapsible info blocks with staggered delay
+      const collapsibles = document.querySelectorAll('.mattori-configurator .collapsible-info');
+      collapsibles.forEach((el, i) => {
+        setTimeout(() => {
+          el.classList.add('collapsing');
+        }, i * 80);
+      });
+
+      // After all animations complete, show wizard
+      const totalDelay = collapsibles.length * 80 + 400;
+      setTimeout(() => {
+        collapsibles.forEach(el => { el.style.display = 'none'; });
+        wizard.style.display = '';
+        initWizard();
+      }, totalDelay);
+    }
+
+    // Attach via event delegation on container (survives DOM reordering)
+    const configuratorRoot = document.querySelector('.mattori-configurator');
+    if (configuratorRoot) {
+      configuratorRoot.addEventListener('click', (e) => {
+        if (e.target.closest('#btnStartConfigurator')) {
+          e.preventDefault();
+          startConfigurator();
+        }
+      });
+    }
+
+    // Also try direct attachment as fallback
     const btnStartConfigurator = document.getElementById('btnStartConfigurator');
     if (btnStartConfigurator) {
-      btnStartConfigurator.addEventListener('click', () => {
-        // Fade out the button itself
-        btnStartConfigurator.style.transition = 'opacity 0.3s ease';
-        btnStartConfigurator.style.opacity = '0';
-        setTimeout(() => { btnStartConfigurator.style.display = 'none'; }, 300);
-
-        // Animate out all collapsible info blocks with staggered delay
-        const collapsibles = document.querySelectorAll('.mattori-configurator .collapsible-info');
-        collapsibles.forEach((el, i) => {
-          setTimeout(() => {
-            el.classList.add('collapsing');
-          }, i * 80);
-        });
-
-        // After all animations complete, show wizard
-        const totalDelay = collapsibles.length * 80 + 400;
-        setTimeout(() => {
-          collapsibles.forEach(el => { el.style.display = 'none'; });
-          wizard.style.display = '';
-          initWizard();
-        }, totalDelay);
+      btnStartConfigurator.addEventListener('click', (e) => {
+        e.preventDefault();
+        startConfigurator();
       });
     }
