@@ -1128,9 +1128,13 @@
       floorsGrid.innerHTML = '';
 
       // Count included floors and determine single-floor mode
-      const includedIndices = [];
+      var includedIndices = [];
       for (let i = 0; i < floors.length; i++) {
         if (!excludedFloors.has(i)) includedIndices.push(i);
+      }
+      // Respect custom floor order from layout step
+      if (floorOrder && floorOrder.length === includedIndices.length) {
+        includedIndices = floorOrder.slice();
       }
       const regularCount = includedIndices.filter(i => {
         const n = (floors[i].name || '').toLowerCase().trim();
