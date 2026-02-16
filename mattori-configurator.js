@@ -2195,6 +2195,13 @@
       btnStartConfigurator.addEventListener('click', () => {
         btnStartConfigurator.style.display = 'none';
         wizard.style.display = '';
+        // Hide product info to focus on configurator
+        const hideSelectors = ['.product-price-block', '.product-description', '.product-badges', '.product-specs'];
+        const inner = document.querySelector('.mattori-configurator .page-col-right-inner');
+        hideSelectors.forEach(sel => {
+          const el = inner && inner.querySelector(sel);
+          if (el) el.style.display = 'none';
+        });
         initWizard();
       });
     }
