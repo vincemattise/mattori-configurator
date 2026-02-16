@@ -171,7 +171,7 @@
     var dropzone, fileInput, errorMsg, loadingOverlay, floorsGrid,
         btnExport, btnDownloadFml, toast, fileLabel, productHeroImage,
         unifiedFramePreview, frameStreet, frameCity, floorsLoading,
-        unifiedFloorsOverlay, unifiedLabelsOverlay,
+        unifiedFloorsOverlay, unifiedLabelsOverlay, unifiedAddressOverlay,
         wizard, wizardDots, wizardStepIndicator, btnWizardPrev, btnWizardNext,
         addressStreet, addressCity, labelsFields,
         floorReviewViewerEl, floorReviewLabel, floorIncludeCb, floorLayoutViewer,
@@ -197,6 +197,7 @@
       floorsLoading = document.getElementById('floorsLoading');
       unifiedFloorsOverlay = document.getElementById('unifiedFloorsOverlay');
       unifiedLabelsOverlay = document.getElementById('unifiedLabelsOverlay');
+      unifiedAddressOverlay = document.getElementById('unifiedAddressOverlay');
       wizard = document.getElementById('wizard');
       wizardDots = document.getElementById('wizardDots');
       wizardStepIndicator = document.getElementById('wizardStepIndicator');
@@ -1478,6 +1479,16 @@
         // Show/hide floors in unified preview (visible from step 4 onward)
         if (unifiedFloorsOverlay) {
           unifiedFloorsOverlay.style.display = n >= 4 ? '' : 'none';
+        }
+
+        // Show/hide address overlay (visible from step 2 onward)
+        if (unifiedAddressOverlay) {
+          unifiedAddressOverlay.style.display = n >= 2 ? '' : 'none';
+        }
+
+        // Show/hide labels overlay (visible from step 5 onward)
+        if (unifiedLabelsOverlay) {
+          unifiedLabelsOverlay.style.display = n >= 5 ? '' : 'none';
         }
 
         // Step 3: show floor review viewer in left column, hide unified preview

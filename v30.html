@@ -3,7 +3,7 @@
 (function(){
   var sheets = [
     'https://fonts.cdnfonts.com/css/nexa-bold',
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v30.11/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v30.13/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -24,7 +24,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel" style="display:none;">
-    <div class="admin-panel-label">Admin · v30.11</div>
+    <div class="admin-panel-label">Admin · v30.13</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon">⬆</div>
@@ -77,8 +77,8 @@
                class="unified-frame-image" id="unifiedFrameImage"
                alt="MATTORI Frame³" crossorigin="anonymous" />
 
-          <!-- Address overlay (top zone) -->
-          <div class="unified-address-overlay" id="unifiedAddressOverlay">
+          <!-- Address overlay (top zone) — hidden until step 2 -->
+          <div class="unified-address-overlay" id="unifiedAddressOverlay" style="display:none;">
             <div class="unified-address-inner">
               <div class="frame-street" id="frameStreet"></div>
               <div class="frame-city" id="frameCity"></div>
@@ -94,8 +94,8 @@
             <div class="floors-grid" id="floorsGrid"></div>
           </div>
 
-          <!-- Labels overlay (bottom zone) -->
-          <div class="unified-labels-overlay" id="unifiedLabelsOverlay"></div>
+          <!-- Labels overlay (bottom zone) — hidden until step 5 -->
+          <div class="unified-labels-overlay" id="unifiedLabelsOverlay" style="display:none;"></div>
         </div>
       </div>
 
@@ -250,4 +250,4 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v30.11/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v30.13/mattori-configurator.js"></script>
