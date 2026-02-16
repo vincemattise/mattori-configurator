@@ -726,12 +726,24 @@
       cursor: grabbing;
     }
 
+    .mattori-configurator .floor-review-controls {
+      background: #f5f5f2;
+      border-radius: 14px;
+      padding: 1rem 1.2rem;
+      margin-top: 0.6rem;
+    }
+
+    .mattori-configurator .floor-review-divider {
+      height: 1px;
+      background: #e0ddd8;
+      margin: 0.7rem 0;
+    }
+
     .mattori-configurator .floor-review-nav {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 1rem;
-      margin-top: 0.8rem;
     }
 
     .mattori-configurator .btn-floor-nav {
@@ -765,9 +777,9 @@
     .mattori-configurator .floor-review-checkbox {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      margin-top: 0.6rem;
-      padding: 0.5rem 0;
+      padding: 0;
     }
 
     .mattori-configurator .floor-review-checkbox input[type="checkbox"] {
