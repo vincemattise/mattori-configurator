@@ -20,15 +20,7 @@
       align-items: center;
     }
 
-    .mattori-configurator .main-wrapper {
-      width: 100%;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* ── Admin panel (boven de order flow) ── */
+    /* ── Admin panel ── */
     .mattori-configurator .admin-panel {
       width: 100%;
       max-width: 1440px;
@@ -127,47 +119,11 @@
       color: #777;
     }
 
-    .mattori-configurator .divider {
-      color: #aaa;
-      font-size: 0.78rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin: 1.2rem 0;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .divider::before,
-    .mattori-configurator .divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: #ddd;
-    }
-
     .mattori-configurator .error-msg {
       color: #ae1c28;
       font-size: 0.78rem;
       margin-top: 10px;
       min-height: 18px;
-    }
-
-    .mattori-configurator .upload-actions {
-      display: none;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 1.2rem;
-    }
-
-    .mattori-configurator .upload-actions.active {
-      display: flex;
-    }
-
-    .mattori-configurator .upload-actions .btn-export {
-      width: 100%;
-      justify-content: center;
     }
 
     /* Loading spinner */
@@ -198,32 +154,7 @@
       to { transform: rotate(360deg); }
     }
 
-    /* ── Right column: order flow ── */
-    .mattori-configurator .order-flow {
-      display: flex;
-      width: 100%;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .mattori-configurator .order-step {
-      margin-bottom: 1.8rem;
-    }
-
-    .mattori-configurator .order-step:last-child {
-      margin-bottom: 0;
-    }
-
-    /* Smooth step entrance animation */
-    @keyframes stepFadeIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .mattori-configurator .order-step.animate-in {
-      animation: stepFadeIn 0.4s ease forwards;
-    }
-
+    /* ── Step label (shared) ── */
     .mattori-configurator .step-label {
       font-size: 0.72rem;
       font-weight: 600;
@@ -233,7 +164,7 @@
       margin-bottom: 0.6rem;
     }
 
-    /* ── Funda URL input (in order flow) ── */
+    /* ── Funda URL input ── */
     .mattori-configurator .url-input-group {
       display: flex;
       gap: 8px;
@@ -264,26 +195,6 @@
       flex-shrink: 0;
       padding: 0.85rem 1.2rem !important;
       font-size: 0.9rem !important;
-    }
-
-    .mattori-configurator .btn-test {
-      width: 100%;
-      margin-top: 0.6rem;
-      padding: 0.55rem 1rem;
-      font-size: 0.78rem;
-      font-weight: 500;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      color: #999;
-      background: none;
-      border: 1px dashed #ccc;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: color 0.2s ease, border-color 0.2s ease;
-    }
-
-    .mattori-configurator .btn-test:hover {
-      color: #1a1a1a;
-      border-color: #1a1a1a;
     }
 
     /* ── Funda status checker ── */
@@ -346,56 +257,140 @@
       flex-shrink: 0;
     }
 
-    /* ── Preview card (shared style for preview 1 & 3) ── */
-    .mattori-configurator .preview-card {
-      background: #fff;
-      border: 1px solid #e5e5e0;
-      border-radius: 16px;
-      padding: 1.2rem;
-      overflow: hidden;
+    /* ═══════════════════════════════════════════ */
+    /* TWO-COLUMN PAGE LAYOUT                      */
+    /* ═══════════════════════════════════════════ */
+    .mattori-configurator .page-columns {
+      display: grid !important;
+      grid-template-columns: 1.15fr 1fr !important;
+      gap: 3rem !important;
+      width: 100%;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 2.5rem 3rem 3rem;
+      align-items: start;
     }
 
-    /* ── Frame Preview 1 (address on cropped top frame) ── */
-    .mattori-configurator .frame-preview {
-      display: none;
+    .mattori-configurator .page-col-left {
+      min-width: 0;
+      container-type: inline-size;
+      container-name: configurator-col;
+    }
+
+    .mattori-configurator .page-col-right {
+      min-width: 0;
+    }
+
+    .mattori-configurator .page-col-right-inner {
+      position: sticky;
+      top: 1rem;
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+      padding-bottom: 2rem;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 1.5rem !important;
+    }
+
+    .mattori-configurator .page-col-right-inner::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .mattori-configurator .page-col-right-inner::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.1);
+      border-radius: 4px;
+    }
+
+    /* Reset ALL child margins — flex gap handles spacing */
+    .mattori-configurator .page-col-right-inner > * {
+      margin: 0 !important;
+    }
+
+    /* ═══════════════════════════════════════════ */
+    /* LEFT COLUMN: Product hero + Unified preview */
+    /* ═══════════════════════════════════════════ */
+
+    .mattori-configurator .product-hero-image {
       width: 100%;
     }
 
-    .mattori-configurator .frame-preview.active {
+    .mattori-configurator .product-image-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #f0f0ec;
+    }
+
+    .mattori-configurator .product-image-wrapper img {
+      width: 100%;
+      height: auto;
       display: block;
     }
 
-    .mattori-configurator .frame-container {
-      position: relative;
-      width: 100%;
-      overflow: hidden;
-      margin-bottom: -10%;
+    .mattori-configurator .product-example-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #555;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.35rem 0.75rem;
+      border-radius: 50px;
+      letter-spacing: 0.2px;
+      line-height: 1;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
 
-    .mattori-configurator .frame-image {
+    .mattori-configurator .product-example-badge svg {
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
+    }
+
+    /* ── Unified Frame Preview ── */
+    .mattori-configurator .unified-frame-preview {
+      width: 100%;
+    }
+
+    .mattori-configurator .unified-frame-container {
+      position: relative;
+      width: 100%;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .mattori-configurator .unified-frame-image {
       width: 100%;
       display: block;
       pointer-events: none;
       user-select: none;
     }
 
-    .mattori-configurator .frame-overlay {
+    /* Address overlay — top zone of the frame */
+    .mattori-configurator .unified-address-overlay {
       position: absolute;
-      left: 0;
-      right: 0;
-      top: 20%;
-      bottom: 0;
+      top: 7.5%;
+      left: 15.5%;
+      right: 14%;
+      height: 10%;
       display: flex;
       align-items: center;
       justify-content: center;
+      pointer-events: none;
     }
 
-    .mattori-configurator .frame-address {
+    .mattori-configurator .unified-address-inner {
       text-align: center;
       white-space: nowrap;
-      overflow: hidden;
       width: 100%;
-      padding: 0 15.5%;
     }
 
     .mattori-configurator .frame-street {
@@ -415,204 +410,24 @@
       font-size: clamp(8px, 2.5cqi, 14px);
       font-weight: 700;
       color: #1a1a1a;
-      margin-top: 8px;
+      margin-top: 4px;
       letter-spacing: 0.3px;
       overflow: hidden;
       text-overflow: clip;
       white-space: nowrap;
     }
 
-    /* ── Frame Preview 3 (floor labels on cropped bottom frame) ── */
-    .mattori-configurator .labels-preview {
-      display: none;
-      width: 100%;
-    }
-
-    .mattori-configurator .labels-preview.active {
-      display: block;
-    }
-
-    .mattori-configurator .labels-container {
-      position: relative;
-      width: 100%;
-      overflow: hidden;
-      margin-top: -10%;
-    }
-
-    .mattori-configurator .labels-image {
-      width: 100%;
-      display: block;
-      pointer-events: none;
-      user-select: none;
-    }
-
-    .mattori-configurator .labels-overlay {
+    /* Floors overlay — middle zone of the frame */
+    .mattori-configurator .unified-floors-overlay {
       position: absolute;
+      top: 19%;
+      bottom: 18%;
       left: 15.5%;
       right: 14%;
-      top: 0;
-      bottom: 30%;
       display: flex;
       align-items: center;
-      justify-content: space-evenly;
-    }
-
-    .mattori-configurator .label-item {
-      font-family: 'Nexa', Georgia, sans-serif;
-      font-size: clamp(8px, 2.5cqi, 14px);
-      font-weight: 700;
-      color: #1a1a1a;
-      letter-spacing: 0.4px;
-      text-align: center;
-      white-space: nowrap;
-    }
-
-    /* ── Address edit toggle ── */
-    .mattori-configurator .address-edit-toggle {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 0.8rem;
-    }
-
-    .mattori-configurator .address-edit-toggle input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: #1a1a1a;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .mattori-configurator .address-edit-toggle label {
-      font-size: 0.82rem;
-      color: #777;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .mattori-configurator .address-fields {
-      display: none;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 0.8rem;
-      padding: 1rem;
-      background: #f5f5f2;
-      border-radius: 12px;
-    }
-
-    .mattori-configurator .address-fields.visible {
-      display: flex;
-    }
-
-    .mattori-configurator .address-fields input {
-      padding: 0.7rem 1rem;
-      font-size: 0.95rem;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      border: 1.5px solid #ddd;
-      border-radius: 10px;
-      background: #fff;
-      color: #1a1a1a;
-      outline: none;
-      transition: border-color 0.2s ease;
-    }
-
-    .mattori-configurator .address-fields input:focus {
-      border-color: #1a1a1a;
-    }
-
-    .mattori-configurator .address-fields input::placeholder {
-      color: #aaa;
-    }
-
-    /* ── Labels edit toggle ── */
-    .mattori-configurator .labels-edit-toggle {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 0.8rem;
-    }
-
-    .mattori-configurator .labels-edit-toggle input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: #1a1a1a;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .mattori-configurator .labels-edit-toggle label {
-      font-size: 0.82rem;
-      color: #777;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .mattori-configurator .labels-fields {
-      display: none;
-      flex-direction: column;
-      gap: 6px;
-      margin-top: 0.8rem;
-      padding: 1rem;
-      background: #f5f5f2;
-      border-radius: 12px;
-    }
-
-    .mattori-configurator .labels-fields.visible {
-      display: flex;
-    }
-
-    .mattori-configurator .labels-fields .label-field-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .mattori-configurator .labels-fields .label-field-row span {
-      font-size: 0.78rem;
-      color: #999;
-      min-width: 70px;
-      flex-shrink: 0;
-    }
-
-    .mattori-configurator .labels-fields input {
-      flex: 1;
-      padding: 0.55rem 0.8rem;
-      font-size: 0.88rem;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      border: 1.5px solid #ddd;
-      border-radius: 8px;
-      background: #fff;
-      color: #1a1a1a;
-      outline: none;
-      transition: border-color 0.2s ease;
-    }
-
-    .mattori-configurator .labels-fields input:focus {
-      border-color: #1a1a1a;
-    }
-
-    /* ── 3D Viewers ── */
-    /* ── Frame middle section (wraps around floor viewers) ── */
-    .mattori-configurator .frame-middle-wrap {
-      position: relative;
-      width: 100%;
-    }
-
-    .mattori-configurator .frame-middle-bg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: fill;
+      justify-content: center;
       pointer-events: none;
-      user-select: none;
-      z-index: 0;
-    }
-
-    .mattori-configurator .frame-middle-content {
-      position: relative;
-      z-index: 1;
-      padding: 2rem 14% 2rem 15.5%;
     }
 
     .mattori-configurator .floors-loading {
@@ -646,8 +461,9 @@
 
     .mattori-configurator .floors-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 0.5rem;
+      width: 100%;
     }
 
     .mattori-configurator .floor-card {
@@ -655,22 +471,23 @@
       background: transparent;
       border: none;
       border-radius: 0;
-      padding: 0.4rem;
+      padding: 0.2rem;
       overflow: hidden;
-      transition: opacity 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+      transition: opacity 0.3s ease;
     }
 
-    .mattori-configurator .floor-card:not(.excluded):hover {
-      opacity: 0.85;
+    .mattori-configurator .floor-card.excluded {
+      opacity: 0.3;
+      filter: grayscale(0.5);
     }
 
     .mattori-configurator .floor-name {
-      font-size: 0.7rem;
+      font-size: 0.55rem;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 1.2px;
+      letter-spacing: 1px;
       color: #999;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.25rem;
       text-align: center;
     }
 
@@ -684,31 +501,276 @@
       width: 100%;
       height: 100%;
       display: block;
+      background: transparent !important;
+      pointer-events: none;
+    }
+
+    /* Labels overlay — bottom zone of the frame */
+    .mattori-configurator .unified-labels-overlay {
+      position: absolute;
+      bottom: 4%;
+      left: 15.5%;
+      right: 14%;
+      height: 10%;
+      display: flex;
+      align-items: center;
+      justify-content: space-evenly;
+      pointer-events: none;
+    }
+
+    .mattori-configurator .label-item {
+      font-family: 'Nexa', Georgia, sans-serif;
+      font-size: clamp(8px, 2.5cqi, 14px);
+      font-weight: 700;
+      color: #1a1a1a;
+      letter-spacing: 0.4px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ═══════════════════════════════════════════ */
+    /* RIGHT COLUMN: Product info + Wizard         */
+    /* ═══════════════════════════════════════════ */
+
+    .mattori-configurator .product-title {
+      font-size: 2.4rem;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -1.2px;
+      color: #1a1a1a;
+    }
+
+    .mattori-configurator .product-price-block {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .mattori-configurator .product-price-old {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #aaa;
+      text-decoration: line-through;
+    }
+
+    .mattori-configurator .product-price-new {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+
+    .mattori-configurator .product-price-tax {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #aaa;
+    }
+
+    .mattori-configurator .product-description {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: #777;
+    }
+
+    /* ── Wizard ── */
+    .mattori-configurator .wizard {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* Wizard progress indicator */
+    .mattori-configurator .wizard-progress {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .mattori-configurator .wizard-step-indicator {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #bbb;
+      white-space: nowrap;
+    }
+
+    .mattori-configurator .wizard-dots {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .mattori-configurator .wizard-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #e0ddd8;
+      transition: background 0.3s ease, transform 0.3s ease;
+    }
+
+    .mattori-configurator .wizard-dot.active {
+      background: #1a1a1a;
+      transform: scale(1.2);
+    }
+
+    .mattori-configurator .wizard-dot.completed {
+      background: #999;
+    }
+
+    /* Wizard step container */
+    .mattori-configurator .wizard-step {
+      animation: wizardStepIn 0.35s ease forwards;
+    }
+
+    @keyframes wizardStepIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .mattori-configurator .step-description {
+      font-size: 0.88rem;
+      color: #999;
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+
+    /* Wizard input (shared for steps 2, 3) */
+    .mattori-configurator .wizard-input {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      font-size: 0.95rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      border: 1.5px solid #ddd;
+      border-radius: 10px;
+      background: #fff;
+      color: #1a1a1a;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .mattori-configurator .wizard-input:focus {
+      border-color: #1a1a1a;
+    }
+
+    .mattori-configurator .wizard-input::placeholder {
+      color: #aaa;
+    }
+
+    /* Wizard navigation buttons */
+    .mattori-configurator .wizard-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.2rem;
+      gap: 0.8rem;
+    }
+
+    .mattori-configurator .btn-wizard-prev,
+    .mattori-configurator .btn-wizard-next {
+      padding: 0.7rem 1.4rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .mattori-configurator .btn-wizard-prev {
+      background: #f0f0ec;
+      color: #555;
+    }
+
+    .mattori-configurator .btn-wizard-prev:hover {
+      background: #e8e8e4;
+      transform: translateY(-1px);
+    }
+
+    .mattori-configurator .btn-wizard-next {
+      background: #1a1a1a;
+      color: #fff;
+      margin-left: auto;
+    }
+
+    .mattori-configurator .btn-wizard-next:hover {
+      background: #333;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    }
+
+    /* ── Step 4: Floor Review Viewer ── */
+    .mattori-configurator .floor-review-viewer {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f5f5f2;
+      position: relative;
+    }
+
+    .mattori-configurator .floor-review-viewer canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
       cursor: grab;
       touch-action: none;
       background: transparent !important;
     }
 
-    .mattori-configurator .floor-canvas-wrap canvas:active {
+    .mattori-configurator .floor-review-viewer canvas:active {
       cursor: grabbing;
     }
 
-    /* ── Floor selection checkboxes ── */
-    .mattori-configurator .floor-checkboxes {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-top: 1rem;
-    }
-
-    .mattori-configurator .floor-check-item {
+    .mattori-configurator .floor-review-nav {
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 0.8rem;
+    }
+
+    .mattori-configurator .btn-floor-nav {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0ec;
+      border: none;
+      border-radius: 50%;
+      font-size: 1rem;
+      color: #555;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .mattori-configurator .btn-floor-nav:hover {
+      background: #e0ddd8;
+      transform: scale(1.08);
+    }
+
+    .mattori-configurator .floor-review-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #555;
+      min-width: 120px;
+      text-align: center;
+    }
+
+    .mattori-configurator .floor-review-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 0.6rem;
       padding: 0.5rem 0;
     }
 
-    .mattori-configurator .floor-check-item input[type="checkbox"] {
+    .mattori-configurator .floor-review-checkbox input[type="checkbox"] {
       width: 18px;
       height: 18px;
       accent-color: #1a1a1a;
@@ -716,55 +778,109 @@
       flex-shrink: 0;
     }
 
-    .mattori-configurator .floor-check-item label {
+    .mattori-configurator .floor-review-checkbox label {
       font-size: 0.88rem;
       color: #555;
       cursor: pointer;
       user-select: none;
     }
 
-    .mattori-configurator .floor-check-item.excluded label {
-      text-decoration: line-through;
-      color: #ccc;
-    }
-
-    .mattori-configurator .floor-card.excluded {
-      opacity: 0.3;
-      filter: grayscale(0.5);
+    .mattori-configurator .floor-review-excluded {
+      position: absolute;
+      inset: 0;
+      background: rgba(250,250,248,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       pointer-events: none;
     }
 
-    /* ── Floor-label coupling badge + sublabel ── */
-    .mattori-configurator .floor-badge {
-      display: none !important;
+    .mattori-configurator .floor-review-excluded span {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
     }
 
+    /* ── Step 5: Floor Layout Viewer ── */
+    .mattori-configurator .floor-layout-viewer {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 1rem;
+    }
 
-    /* ── Remarks textarea ── */
-    .mattori-configurator .remarks-field textarea {
+    .mattori-configurator .floor-layout-card {
+      background: #f5f5f2;
+      border-radius: 10px;
+      padding: 0.8rem;
+      text-align: center;
+    }
+
+    .mattori-configurator .floor-layout-card .floor-layout-canvas-wrap {
       width: 100%;
-      padding: 0.85rem 1rem;
-      font-size: 0.95rem;
+      aspect-ratio: 3 / 4;
+      position: relative;
+      margin-bottom: 0.5rem;
+    }
+
+    .mattori-configurator .floor-layout-card .floor-layout-canvas-wrap canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: transparent !important;
+    }
+
+    .mattori-configurator .floor-layout-card .floor-layout-name {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #999;
+    }
+
+    /* ── Step 6: Labels fields ── */
+    .mattori-configurator .labels-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .mattori-configurator .labels-fields .label-field-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mattori-configurator .labels-fields .label-field-row span {
+      font-size: 0.78rem;
+      color: #999;
+      min-width: 70px;
+      flex-shrink: 0;
+    }
+
+    .mattori-configurator .labels-fields input {
+      flex: 1;
+      padding: 0.55rem 0.8rem;
+      font-size: 0.88rem;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       border: 1.5px solid #ddd;
-      border-radius: 12px;
+      border-radius: 8px;
       background: #fff;
       color: #1a1a1a;
       outline: none;
-      resize: vertical;
-      min-height: 80px;
       transition: border-color 0.2s ease;
     }
 
-    .mattori-configurator .remarks-field textarea:focus {
+    .mattori-configurator .labels-fields input:focus {
       border-color: #1a1a1a;
     }
 
-    .mattori-configurator .remarks-field textarea::placeholder {
-      color: #aaa;
+    /* ── Order button ── */
+    .mattori-configurator .order-step {
+      margin-top: 0.5rem;
     }
 
-    /* ── Order button ── */
     .mattori-configurator .btn-order {
       width: 100%;
       padding: 1rem 2rem;
@@ -804,12 +920,13 @@
       box-shadow: none;
     }
 
-    /* ── Disclaimer ── */
-    .mattori-configurator .disclaimer {
-      font-size: 0.75rem;
+    .mattori-configurator .order-return-notice {
+      margin-top: 0.8rem;
+      padding: 0.8rem 1rem;
+      background: rgba(0,0,0,0.03);
+      border-radius: 10px;
+      font-size: 0.8rem;
       color: #999;
-      text-align: center;
-      font-style: italic;
       line-height: 1.5;
     }
 
@@ -929,169 +1046,38 @@
       height: 14px;
     }
 
-    /* ═══════════════════════════════════════════ */
-    /* TWO-COLUMN PAGE LAYOUT                      */
-    /* ═══════════════════════════════════════════ */
-    .mattori-configurator .page-columns {
-      display: grid !important;
-      grid-template-columns: 1.15fr 1fr !important;
-      gap: 3rem !important;
-      width: 100%;
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: 2.5rem 3rem 3rem;
-      align-items: start;
-    }
-
-    .mattori-configurator .page-col-left {
-      min-width: 0;
-      container-type: inline-size;
-      container-name: configurator-col;
-    }
-
-    .mattori-configurator .page-col-right {
-      min-width: 0;
-    }
-
-    .mattori-configurator .page-col-right-inner {
-      position: sticky;
-      top: 1rem;
-      max-height: calc(100vh - 2rem);
-      overflow-y: auto;
-      padding-bottom: 2rem;
-    }
-
-    .mattori-configurator .page-col-right-inner::-webkit-scrollbar {
-      width: 4px;
-    }
-
-    .mattori-configurator .page-col-right-inner::-webkit-scrollbar-thumb {
-      background: rgba(0,0,0,0.1);
-      border-radius: 4px;
-    }
-
-    /* Spacing rechterkolom via flex gap + expliciete volgorde */
-    .mattori-configurator .page-col-right .page-col-right-inner {
+    /* ── Product info ── */
+    .mattori-configurator .product-badges {
       display: flex !important;
       flex-direction: column !important;
-      gap: 1.5rem !important;
+      gap: 0.7rem !important;
+      padding-top: 0.5rem;
+      position: static !important;
+      z-index: auto !important;
+      inset: auto !important;
+      width: auto !important;
     }
 
-    /* Reset ALL child margins — flex gap handles spacing */
-    .mattori-configurator .page-col-right .page-col-right-inner > * {
-      margin: 0 !important;
-    }
-
-    .mattori-configurator .page-col-right .page-col-right-inner > .product-title { order: 1 !important; }
-    .mattori-configurator .page-col-right .page-col-right-inner > .product-price-block { order: 2 !important; }
-    .mattori-configurator .page-col-right .page-col-right-inner > .product-description { order: 3 !important; }
-    .mattori-configurator .page-col-right .page-col-right-inner > #stepFundaUrl { order: 4 !important; }
-    .mattori-configurator .page-col-right .page-col-right-inner > .product-badges { order: 5 !important; }
-    .mattori-configurator .page-col-right .page-col-right-inner > #stepOrder { order: 6 !important; }
-    .mattori-configurator .page-col-right .page-col-right-inner > .product-specs {
-      order: 7 !important;
-      border-top: 1px solid rgba(0,0,0,0.07);
-      padding-top: 1.5rem;
-    }
-
-    .mattori-configurator .product-hero-image {
-      width: 100%;
-    }
-
-    .mattori-configurator .product-image-wrapper {
-      position: relative;
-      width: 100%;
-      border-radius: 16px;
-      overflow: hidden;
-      background: #f0f0ec;
-    }
-
-    .mattori-configurator .product-image-wrapper img {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    .mattori-configurator .product-example-badge {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      color: #555;
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 0.35rem 0.75rem;
-      border-radius: 50px;
-      letter-spacing: 0.2px;
-      line-height: 1;
-      z-index: 2;
+    .mattori-configurator .product-badge {
       display: inline-flex;
       align-items: center;
-      gap: 0.3rem;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      gap: 0.55rem;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: #555;
+      line-height: 1.3;
     }
 
-    .mattori-configurator .product-example-badge svg {
-      width: 12px;
-      height: 12px;
+    .mattori-configurator .product-badge svg {
+      width: 18px;
+      height: 18px;
       flex-shrink: 0;
-    }
-
-    .mattori-configurator .product-title {
-      font-size: 2.4rem;
-      font-weight: 800;
-      line-height: 1.1;
-      letter-spacing: -1.2px;
       color: #1a1a1a;
     }
 
-    .mattori-configurator .product-price-block {
-      display: flex;
-      align-items: baseline;
-      gap: 0.6rem;
-      flex-wrap: wrap;
-    }
-
-    .mattori-configurator .product-price-old {
-      font-size: 1rem;
-      font-weight: 500;
-      color: #aaa;
-      text-decoration: line-through;
-    }
-
-    .mattori-configurator .product-price-new {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #1a1a1a;
-      letter-spacing: -0.5px;
-      line-height: 1;
-    }
-
-    .mattori-configurator .product-price-tax {
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: #aaa;
-    }
-
-    .mattori-configurator .product-description {
-      font-size: 0.95rem;
-      line-height: 1.7;
-      color: #777;
-    }
-
-    /* ═══════════════════════════════════════════ */
-    /* ORDER RETURN NOTICE                         */
-    /* ═══════════════════════════════════════════ */
-    .mattori-configurator .order-return-notice {
-      margin-top: 0.8rem;
-      padding: 0.8rem 1rem;
-      background: rgba(0,0,0,0.03);
-      border-radius: 10px;
-      font-size: 0.8rem;
-      color: #999;
-      line-height: 1.5;
+    .mattori-configurator .product-specs {
+      border-top: 1px solid rgba(0,0,0,0.07);
+      padding-top: 1.5rem;
     }
 
     .mattori-configurator .product-specs-title {
@@ -1134,34 +1120,6 @@
       text-align: right;
     }
 
-    .mattori-configurator .product-badges {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 0.7rem !important;
-      padding-top: 0.5rem;
-      position: static !important;
-      z-index: auto !important;
-      inset: auto !important;
-      width: auto !important;
-    }
-
-    .mattori-configurator .product-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.55rem;
-      font-size: 0.88rem;
-      font-weight: 500;
-      color: #555;
-      line-height: 1.3;
-    }
-
-    .mattori-configurator .product-badge svg {
-      width: 18px;
-      height: 18px;
-      flex-shrink: 0;
-      color: #1a1a1a;
-    }
-
     /* ═══════════════════════════════════════════ */
     /* RESPONSIVE                                  */
     /* ═══════════════════════════════════════════ */
@@ -1199,6 +1157,9 @@
       .mattori-configurator .product-title {
         font-size: 2rem;
       }
+      .mattori-configurator .floor-layout-viewer {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      }
     }
 
     @media (max-width: 640px) {
@@ -1229,5 +1190,9 @@
       }
       .mattori-configurator .product-specs-list li {
         font-size: 0.82rem;
+      }
+      .mattori-configurator .floor-layout-viewer {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
       }
     }
