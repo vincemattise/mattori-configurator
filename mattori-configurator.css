@@ -347,7 +347,7 @@
       height: auto;
       display: block;
       border-radius: 4px;
-      filter: drop-shadow(0 8px 32px rgba(0,0,0,0.10)) drop-shadow(0 2px 8px rgba(0,0,0,0.06));
+      filter: drop-shadow(0 12px 40px rgba(0,0,0,0.25)) drop-shadow(0 4px 12px rgba(0,0,0,0.15));
     }
 
     .mattori-configurator .product-example-badge {
@@ -401,7 +401,7 @@
       pointer-events: none;
       user-select: none;
       border-radius: 4px;
-      filter: drop-shadow(0 8px 32px rgba(0,0,0,0.10)) drop-shadow(0 2px 8px rgba(0,0,0,0.06));
+      filter: drop-shadow(0 12px 40px rgba(0,0,0,0.25)) drop-shadow(0 4px 12px rgba(0,0,0,0.15));
     }
 
     /* Address overlay — top zone of the frame */
