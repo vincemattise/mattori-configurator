@@ -286,6 +286,9 @@
       min-width: 0;
       container-type: inline-size;
       container-name: configurator-col;
+      overflow: visible;
+      padding: 1.5rem;
+      margin: -1.5rem;
     }
 
     .mattori-configurator .page-col-right {
