@@ -2236,7 +2236,7 @@
     });
 
     // Start configurator button — use event delegation for Shopify robustness
-    let configuratorStarted = false;
+    var configuratorStarted = false;
     function startConfigurator() {
       if (configuratorStarted) return;
       configuratorStarted = true;
@@ -2259,7 +2259,9 @@
       const totalDelay = collapsibles.length * 80 + 400;
       setTimeout(() => {
         collapsibles.forEach(el => { el.style.display = 'none'; });
-        wizard.style.display = '';
+        // Use fresh DOM lookup — closure ref may be stale after enforceRightColumnLayout
+        const wiz = document.getElementById('wizard');
+        if (wiz) wiz.style.display = '';
         initWizard();
       }, totalDelay);
     }
