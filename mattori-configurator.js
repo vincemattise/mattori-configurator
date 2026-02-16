@@ -1264,6 +1264,8 @@
     // LABELS (unified preview + step 6)
     // ============================================================
     let floorLabels = [];
+    var labelMode = 'single'; // 'single' = 1 label total, 'per-floor' = label per floor
+    var singleLabelText = 'floor plan';
 
     function translateFloorName(name, singleFloor) {
       const lower = name.toLowerCase().trim();
@@ -1324,21 +1326,36 @@
 
       // Update unified preview labels overlay
       unifiedLabelsOverlay.innerHTML = '';
-      for (const item of floorLabels) {
-        const el = document.createElement('div');
+      if (labelMode === 'single') {
+        var el = document.createElement('div');
         el.className = 'label-item';
-        el.textContent = item.label;
+        el.textContent = singleLabelText;
         unifiedLabelsOverlay.appendChild(el);
+      } else {
+        for (const item of floorLabels) {
+          var el = document.createElement('div');
+          el.className = 'label-item';
+          el.textContent = item.label;
+          unifiedLabelsOverlay.appendChild(el);
+        }
       }
     }
 
     function updateLabelsOverlayOnly() {
-      const items = unifiedLabelsOverlay.querySelectorAll('.label-item');
-      items.forEach((el, i) => {
-        if (floorLabels[i]) {
+      unifiedLabelsOverlay.innerHTML = '';
+      if (labelMode === 'single') {
+        var el = document.createElement('div');
+        el.className = 'label-item';
+        el.textContent = singleLabelText;
+        unifiedLabelsOverlay.appendChild(el);
+      } else {
+        for (var i = 0; i < floorLabels.length; i++) {
+          var el = document.createElement('div');
+          el.className = 'label-item';
           el.textContent = floorLabels[i].label;
+          unifiedLabelsOverlay.appendChild(el);
         }
-      });
+      }
     }
 
     // ============================================================
@@ -1483,9 +1500,12 @@
       // Update prev/next/order buttons
       btnWizardPrev.style.display = currentWizardStep > 1 ? '' : 'none';
 
-      // Floor nav button (step 3 only — cycles through floors)
+      // Floor nav button (step 3 only — cycles through floors, hidden on last)
       var btnFN = document.getElementById('btnFloorNext');
-      if (btnFN) btnFN.style.display = currentWizardStep === 3 ? '' : 'none';
+      if (btnFN) {
+        var showFloorNav = currentWizardStep === 3 && currentFloorReviewIndex < floors.length - 1;
+        btnFN.style.display = showFloorNav ? '' : 'none';
+      }
 
       if (currentWizardStep === TOTAL_WIZARD_STEPS) {
         // Last step: hide next, show order
@@ -1717,30 +1737,126 @@
     // ============================================================
     // STEP 5: Labels editing
     // ============================================================
+    function setLabelMode(mode) {
+      labelMode = mode;
+      renderLabelsFieldsContent();
+      updateFloorLabels();
+    }
+
     function renderLabelsFields() {
       floorLabels = getIncludedFloorLabels();
-      labelsFields.innerHTML = '';
 
-      for (let li = 0; li < floorLabels.length; li++) {
-        const item = floorLabels[li];
-        const row = document.createElement('div');
+      var step5 = document.getElementById('wizardStep5');
+      if (!step5) return;
+
+      // Find or create container after step-description
+      var container = step5.querySelector('.labels-step-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.className = 'labels-step-container';
+        step5.appendChild(container);
+      }
+      container.innerHTML = '';
+
+      // Toggle switch
+      var toggle = document.createElement('div');
+      toggle.className = 'label-mode-toggle';
+
+      var labelSingle = document.createElement('span');
+      labelSingle.className = 'label-mode-label' + (labelMode === 'single' ? ' active' : '');
+      labelSingle.textContent = '1 label';
+
+      var switchWrap = document.createElement('label');
+      switchWrap.className = 'label-mode-switch';
+      var switchInput = document.createElement('input');
+      switchInput.type = 'checkbox';
+      switchInput.checked = labelMode === 'per-floor';
+      var slider = document.createElement('span');
+      slider.className = 'switch-slider';
+      switchWrap.appendChild(switchInput);
+      switchWrap.appendChild(slider);
+
+      var labelMulti = document.createElement('span');
+      labelMulti.className = 'label-mode-label' + (labelMode === 'per-floor' ? ' active' : '');
+      labelMulti.textContent = 'Per plattegrond';
+
+      switchInput.addEventListener('change', function() {
+        setLabelMode(this.checked ? 'per-floor' : 'single');
+      });
+      labelSingle.addEventListener('click', function() {
+        switchInput.checked = false;
+        setLabelMode('single');
+      });
+      labelMulti.addEventListener('click', function() {
+        switchInput.checked = true;
+        setLabelMode('per-floor');
+      });
+
+      toggle.appendChild(labelSingle);
+      toggle.appendChild(switchWrap);
+      toggle.appendChild(labelMulti);
+      container.appendChild(toggle);
+
+      // Fields container
+      var fieldsDiv = document.createElement('div');
+      fieldsDiv.className = 'labels-fields';
+      fieldsDiv.id = 'labelsFieldsInner';
+      container.appendChild(fieldsDiv);
+
+      renderLabelsFieldsContent();
+      updateFloorLabels();
+    }
+
+    function renderLabelsFieldsContent() {
+      var fieldsDiv = document.getElementById('labelsFieldsInner');
+      if (!fieldsDiv) return;
+      fieldsDiv.innerHTML = '';
+
+      if (labelMode === 'single') {
+        // Single label mode — one text field
+        var row = document.createElement('div');
         row.className = 'label-field-row';
 
-        const span = document.createElement('span');
-        span.textContent = floors[item.index].name;
+        var span = document.createElement('span');
+        span.textContent = 'Label';
 
-        const inp = document.createElement('input');
+        var inp = document.createElement('input');
         inp.type = 'text';
-        inp.value = item.label;
-        inp.placeholder = item.label;
-        inp.addEventListener('input', () => {
-          floorLabels[li].label = inp.value;
+        inp.value = singleLabelText;
+        inp.placeholder = 'floor plan';
+        inp.addEventListener('input', function() {
+          singleLabelText = inp.value;
           updateLabelsOverlayOnly();
         });
 
         row.appendChild(span);
         row.appendChild(inp);
-        labelsFields.appendChild(row);
+        fieldsDiv.appendChild(row);
+      } else {
+        // Per-floor mode — one field per floor
+        for (var li = 0; li < floorLabels.length; li++) {
+          (function(idx) {
+            var item = floorLabels[idx];
+            var row = document.createElement('div');
+            row.className = 'label-field-row';
+
+            var span = document.createElement('span');
+            span.textContent = floors[item.index].name;
+
+            var inp = document.createElement('input');
+            inp.type = 'text';
+            inp.value = item.label;
+            inp.placeholder = item.label;
+            inp.addEventListener('input', function() {
+              floorLabels[idx].label = inp.value;
+              updateLabelsOverlayOnly();
+            });
+
+            row.appendChild(span);
+            row.appendChild(inp);
+            fieldsDiv.appendChild(row);
+          })(li);
+        }
       }
     }
 

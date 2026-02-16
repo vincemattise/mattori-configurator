@@ -179,7 +179,8 @@
 
     .mattori-configurator .url-input-group input {
       flex: 1;
-      padding: 0.7rem 1rem;
+      height: 40px;
+      padding: 0 1rem;
       font-size: 0.88rem;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       border: 1.5px solid #ddd;
@@ -200,16 +201,16 @@
 
     .mattori-configurator .btn-funda {
       flex-shrink: 0;
-      padding: 0.7rem 1.2rem !important;
+      height: 40px !important;
+      padding: 0 1.2rem !important;
       font-size: 0.88rem !important;
     }
 
     /* ── Funda status checker ── */
     .mattori-configurator .funda-status {
       display: none;
-      align-items: center;
-      justify-content: center;
-      gap: 13px;
+      align-items: flex-start;
+      gap: 10px;
       margin-top: 0.7rem;
       padding: 0.6rem 0.8rem;
       border-radius: 10px;
@@ -239,10 +240,11 @@
     .mattori-configurator .funda-status .status-icon {
       flex-shrink: 0;
       font-size: 1rem;
+      margin-top: 1px;
     }
 
     .mattori-configurator .funda-status .status-text {
-      text-align: center;
+      text-align: left;
     }
 
     .mattori-configurator .funda-status .status-text strong {
@@ -743,7 +745,8 @@
     /* Wizard input (shared for steps 2, 3) */
     .mattori-configurator .wizard-input {
       width: 100%;
-      padding: 0.7rem 1rem;
+      height: 40px;
+      padding: 0 1rem;
       font-size: 0.88rem;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       border: 1.5px solid #ddd;
@@ -777,7 +780,8 @@
 
     .mattori-configurator .btn-wizard-prev,
     .mattori-configurator .btn-wizard-next {
-      padding: 0.7rem 1.4rem;
+      height: 40px;
+      padding: 0 1.4rem;
       font-size: 0.88rem;
       font-weight: 600;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -790,7 +794,7 @@
     .mattori-configurator .btn-wizard-prev {
       background: #1a1a1a;
       color: #fff;
-      padding: 0.7rem 1rem;
+      padding: 0 1rem;
     }
 
     .mattori-configurator .btn-wizard-prev:hover {
@@ -941,7 +945,8 @@
     }
 
     .mattori-configurator .btn-floor-nav {
-      padding: 0.7rem 1.2rem;
+      height: 40px;
+      padding: 0 1.2rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1051,6 +1056,8 @@
     .mattori-configurator .floor-issue-details textarea.wizard-input {
       resize: vertical;
       min-height: 60px;
+      height: auto;
+      padding: 0.6rem 1rem;
     }
 
     .mattori-configurator .floor-issue-notice {
@@ -1079,10 +1086,17 @@
     }
 
     .mattori-configurator .floor-layout-card.just-moved {
-      background: #f0f7f0;
-      border-color: #c5e0c5;
-      transform: scale(1.02);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      background: #e8f4e8;
+      border-color: #8cc98c;
+      transform: scale(1.03);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      animation: cardMoved 0.6s ease;
+    }
+
+    @keyframes cardMoved {
+      0% { transform: scale(1); background: #fff; border-color: #eee; }
+      20% { transform: scale(1.05); background: #e0f0e0; border-color: #6bb86b; }
+      100% { transform: scale(1.03); background: #e8f4e8; border-color: #8cc98c; }
     }
 
     .mattori-configurator .floor-layout-card .floor-layout-number {
@@ -1148,7 +1162,72 @@
       cursor: not-allowed;
     }
 
-    /* ── Step 6: Labels fields ── */
+    /* ── Step 5: Label mode toggle ── */
+    .mattori-configurator .label-mode-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin-bottom: 0.8rem;
+      padding: 0.6rem 0;
+    }
+
+    .mattori-configurator .label-mode-toggle .label-mode-label {
+      font-size: 0.82rem;
+      color: #888;
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.2s ease;
+    }
+
+    .mattori-configurator .label-mode-toggle .label-mode-label.active {
+      color: #1a1a1a;
+      font-weight: 600;
+    }
+
+    .mattori-configurator .label-mode-switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+
+    .mattori-configurator .label-mode-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .mattori-configurator .label-mode-switch .switch-slider {
+      position: absolute;
+      inset: 0;
+      background: #e0ddd8;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .mattori-configurator .label-mode-switch .switch-slider::before {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: 3px;
+      bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+
+    .mattori-configurator .label-mode-switch input:checked + .switch-slider {
+      background: #1a1a1a;
+    }
+
+    .mattori-configurator .label-mode-switch input:checked + .switch-slider::before {
+      transform: translateX(18px);
+    }
+
+    /* ── Step 5: Labels fields ── */
     .mattori-configurator .labels-fields {
       display: flex;
       flex-direction: column;
@@ -1174,7 +1253,8 @@
 
     .mattori-configurator .labels-fields input {
       flex: 1;
-      padding: 0.55rem 0.8rem;
+      height: 40px;
+      padding: 0 0.8rem;
       font-size: 0.88rem;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       border: 1.5px solid #ddd;
