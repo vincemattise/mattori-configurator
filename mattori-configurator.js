@@ -2237,10 +2237,15 @@
     // Order button — triggers Shopify add-to-cart form
     function submitOrder() {
       ensureDomRefs();
-      var shopifyForm = document.querySelector('.mattori-configurator form[action*="/cart/add"]');
+      var shopifyForm = document.querySelector('form[action*="/cart/add"]');
       var shopifyBtn = shopifyForm ? shopifyForm.querySelector('button[name="add"]') : null;
-      if (shopifyBtn && !shopifyBtn.disabled) {
+      if (shopifyBtn) {
+        // Enable the button if Shopify has it disabled (e.g. "Sold out")
+        var wasDisabled = shopifyBtn.disabled;
+        if (wasDisabled) shopifyBtn.disabled = false;
         shopifyBtn.click();
+        // Restore state if click didn't navigate away
+        if (wasDisabled) setTimeout(function(){ shopifyBtn.disabled = true; }, 500);
       } else if (shopifyForm) {
         shopifyForm.submit();
       } else {
