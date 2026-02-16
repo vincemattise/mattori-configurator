@@ -284,11 +284,7 @@
 
     .mattori-configurator .page-col-left {
       min-width: 0;
-      container-type: inline-size;
-      container-name: configurator-col;
       overflow: visible;
-      padding: 1.5rem;
-      margin: -1.5rem;
     }
 
     .mattori-configurator .page-col-right {
@@ -300,9 +296,9 @@
       top: 1rem;
       max-height: calc(100vh - 2rem);
       overflow-y: auto;
-      overflow-x: visible;
-      padding: 0 2.5rem 2.5rem 0;
-      margin: 0 -2.5rem -2.5rem 0;
+      overflow-x: hidden;
+      padding: 1.5rem;
+      margin: -1.5rem;
       display: flex !important;
       flex-direction: column !important;
       gap: 1.5rem !important;
@@ -423,7 +419,7 @@
 
     .mattori-configurator .frame-street {
       font-family: 'Nexa', 'Nexa Bold', Georgia, sans-serif !important;
-      font-size: clamp(13px, 4.2cqi, 24px);
+      font-size: clamp(13px, 1.7vw, 24px);
       font-weight: 700;
       color: #1a1a1a;
       letter-spacing: 0.4px;
@@ -435,7 +431,7 @@
 
     .mattori-configurator .frame-city {
       font-family: 'Nexa', 'Nexa Bold', Georgia, sans-serif !important;
-      font-size: clamp(8px, 2.5cqi, 14px);
+      font-size: clamp(8px, 1vw, 14px);
       font-weight: 700;
       color: #1a1a1a;
       margin-top: 4px;
@@ -548,7 +544,7 @@
 
     .mattori-configurator .label-item {
       font-family: 'Nexa', 'Nexa Bold', Georgia, sans-serif !important;
-      font-size: clamp(8px, 2.5cqi, 14px);
+      font-size: clamp(8px, 1vw, 14px);
       font-weight: 700;
       color: #1a1a1a;
       letter-spacing: 0.4px;
