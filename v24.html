@@ -151,14 +151,14 @@
           <!-- Step 2: Street + house number -->
           <div class="wizard-step" id="wizardStep2" data-step="2" style="display:none;">
             <div class="step-label">Straat en huisnummer</div>
-            <p class="step-description">Dit wordt bovenaan de lijst getoond.</p>
+            <p class="step-description">Adres regel 1</p>
             <input type="text" id="addressStreet" class="wizard-input" placeholder="Straat + huisnummer" />
           </div>
 
           <!-- Step 3: City + country -->
           <div class="wizard-step" id="wizardStep3" data-step="3" style="display:none;">
             <div class="step-label">Stad en land</div>
-            <p class="step-description">Dit wordt onder het adres getoond.</p>
+            <p class="step-description">Adres regel 2</p>
             <input type="text" id="addressCity" class="wizard-input" placeholder="Stad, Land" />
           </div>
 
@@ -167,11 +167,7 @@
             <div class="step-label">Plattegronden bekijken</div>
             <p class="step-description">Bekijk elke verdieping en kies welke je wilt meenemen.</p>
             <div class="floor-review-controls">
-              <div class="floor-review-nav">
-                <button class="btn-floor-nav" id="btnFloorPrev">&#8592;</button>
-                <span class="floor-review-label" id="floorReviewLabel"></span>
-                <button class="btn-floor-nav" id="btnFloorNext">&#8594;</button>
-              </div>
+              <div class="floor-review-thumbstrip" id="floorReviewThumbstrip"></div>
               <div class="floor-review-divider"></div>
               <div class="floor-review-checkbox" id="floorReviewCheckbox">
                 <input type="checkbox" id="floorIncludeCb" checked />

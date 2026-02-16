@@ -785,7 +785,7 @@
     }
 
     .mattori-configurator .floor-review-controls {
-      background: #f5f5f2;
+      background: #fff;
       border-radius: 14px;
       padding: 1rem 1.2rem;
       margin-top: 0.6rem;
@@ -793,15 +793,68 @@
 
     .mattori-configurator .floor-review-divider {
       height: 1px;
-      background: #e0ddd8;
+      background: #eee;
       margin: 0.7rem 0;
     }
 
-    .mattori-configurator .floor-review-nav {
+    /* Thumbstrip: mini thumbnails for floor navigation */
+    .mattori-configurator .floor-review-thumbstrip {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 1rem;
+      gap: 0.5rem;
+    }
+
+    .mattori-configurator .floor-thumb {
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f5f5f2;
+      cursor: pointer;
+      position: relative;
+      transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      opacity: 0.35;
+      flex-shrink: 0;
+    }
+
+    .mattori-configurator .floor-thumb.active {
+      opacity: 1;
+      box-shadow: 0 0 0 2px #1a1a1a;
+      transform: scale(1.08);
+    }
+
+    .mattori-configurator .floor-thumb.excluded {
+      opacity: 0.15;
+    }
+
+    .mattori-configurator .floor-thumb canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .mattori-configurator .floor-thumb-dots {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 0.5rem;
+    }
+
+    .mattori-configurator .floor-thumb-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ccc;
+      transition: background 0.2s ease;
+    }
+
+    .mattori-configurator .floor-thumb-dot.active {
+      background: #1a1a1a;
+    }
+
+    .mattori-configurator .floor-review-nav {
+      display: none;
     }
 
     .mattori-configurator .btn-floor-nav {

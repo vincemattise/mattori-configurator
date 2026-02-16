@@ -1415,6 +1415,7 @@
       // Special step initialization
       if (n === 4) {
         currentFloorReviewIndex = 0;
+        buildThumbstrip();
         renderFloorReview();
       } else if (n === 5) {
         renderLayoutView();
@@ -1466,6 +1467,60 @@
     // ============================================================
     // STEP 4: Floor Review
     // ============================================================
+    let thumbstripRenderers = [];
+
+    function buildThumbstrip() {
+      const strip = document.getElementById('floorReviewThumbstrip');
+      if (!strip) return;
+
+      // Dispose old renderers
+      thumbstripRenderers.forEach(r => { if (r.renderer) r.renderer.dispose(); });
+      thumbstripRenderers = [];
+      strip.innerHTML = '';
+
+      // Build thumbnails
+      for (let i = 0; i < floors.length; i++) {
+        const thumb = document.createElement('div');
+        thumb.className = 'floor-thumb';
+        if (i === currentFloorReviewIndex) thumb.classList.add('active');
+        if (excludedFloors.has(i)) thumb.classList.add('excluded');
+        thumb.addEventListener('click', () => {
+          currentFloorReviewIndex = i;
+          renderFloorReview();
+        });
+        strip.appendChild(thumb);
+
+        // Render mini static thumbnail
+        const viewer = renderStaticThumbnail(i, thumb);
+        if (viewer) thumbstripRenderers.push(viewer);
+      }
+
+      // Dots underneath
+      const dotsRow = document.createElement('div');
+      dotsRow.className = 'floor-thumb-dots';
+      for (let i = 0; i < floors.length; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'floor-thumb-dot';
+        if (i === currentFloorReviewIndex) dot.classList.add('active');
+        dotsRow.appendChild(dot);
+      }
+      strip.appendChild(dotsRow);
+    }
+
+    function updateThumbstripState() {
+      const strip = document.getElementById('floorReviewThumbstrip');
+      if (!strip) return;
+      const thumbs = strip.querySelectorAll('.floor-thumb');
+      thumbs.forEach((t, i) => {
+        t.classList.toggle('active', i === currentFloorReviewIndex);
+        t.classList.toggle('excluded', excludedFloors.has(i));
+      });
+      const dots = strip.querySelectorAll('.floor-thumb-dot');
+      dots.forEach((d, i) => {
+        d.classList.toggle('active', i === currentFloorReviewIndex);
+      });
+    }
+
     function renderFloorReview() {
       // Cleanup previous viewer
       if (floorReviewViewer) {
@@ -1485,9 +1540,8 @@
       // Render interactive viewer
       floorReviewViewer = renderInteractiveViewer(currentFloorReviewIndex, floorReviewViewerEl);
 
-      // Update label
-      const floor = floors[currentFloorReviewIndex];
-      floorReviewLabel.textContent = `${floor.name} (${currentFloorReviewIndex + 1}/${floors.length})`;
+      // Update thumbstrip state (highlight active, don't rebuild)
+      updateThumbstripState();
 
       // Update checkbox
       floorIncludeCb.checked = !excludedFloors.has(currentFloorReviewIndex);
