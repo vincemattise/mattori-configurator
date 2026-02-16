@@ -181,6 +181,7 @@
     const frameStreet = document.getElementById('frameStreet');
     const frameCity = document.getElementById('frameCity');
     const floorsLoading = document.getElementById('floorsLoading');
+    const unifiedFloorsOverlay = document.getElementById('unifiedFloorsOverlay');
     const unifiedLabelsOverlay = document.getElementById('unifiedLabelsOverlay');
 
     // Wizard DOM
@@ -953,7 +954,8 @@
       // Update address in preview
       updateFrameAddress();
 
-      // Show loading spinner, then render
+      // Render thumbnails (hidden until step 5)
+      if (unifiedFloorsOverlay) unifiedFloorsOverlay.style.display = 'none';
       if (floorsLoading) floorsLoading.classList.remove('hidden');
       setTimeout(() => {
         renderPreviewThumbnails();
@@ -1392,6 +1394,11 @@
         current.style.animation = 'none';
         void current.offsetWidth;
         current.style.animation = '';
+      }
+
+      // Show/hide floors in unified preview (visible from step 5 onward)
+      if (unifiedFloorsOverlay) {
+        unifiedFloorsOverlay.style.display = n >= 5 ? '' : 'none';
       }
 
       // Special step initialization
