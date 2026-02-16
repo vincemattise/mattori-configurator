@@ -167,37 +167,37 @@
     // ============================================================
     // DOM REFERENCES
     // ============================================================
-    const dropzone = document.getElementById('dropzone');
-    const fileInput = document.getElementById('fileInput');
-    const errorMsg = document.getElementById('errorMsg');
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const floorsGrid = document.getElementById('floorsGrid');
-    const btnExport = document.getElementById('btnExport');
-    const btnDownloadFml = document.getElementById('btnDownloadFml');
-    const toast = document.getElementById('toast');
-    const fileLabel = document.getElementById('fileLabel');
-    const productHeroImage = document.getElementById('productHeroImage');
-    const unifiedFramePreview = document.getElementById('unifiedFramePreview');
-    const frameStreet = document.getElementById('frameStreet');
-    const frameCity = document.getElementById('frameCity');
-    const floorsLoading = document.getElementById('floorsLoading');
-    const unifiedFloorsOverlay = document.getElementById('unifiedFloorsOverlay');
-    const unifiedLabelsOverlay = document.getElementById('unifiedLabelsOverlay');
+    var dropzone = document.getElementById('dropzone');
+    var fileInput = document.getElementById('fileInput');
+    var errorMsg = document.getElementById('errorMsg');
+    var loadingOverlay = document.getElementById('loadingOverlay');
+    var floorsGrid = document.getElementById('floorsGrid');
+    var btnExport = document.getElementById('btnExport');
+    var btnDownloadFml = document.getElementById('btnDownloadFml');
+    var toast = document.getElementById('toast');
+    var fileLabel = document.getElementById('fileLabel');
+    var productHeroImage = document.getElementById('productHeroImage');
+    var unifiedFramePreview = document.getElementById('unifiedFramePreview');
+    var frameStreet = document.getElementById('frameStreet');
+    var frameCity = document.getElementById('frameCity');
+    var floorsLoading = document.getElementById('floorsLoading');
+    var unifiedFloorsOverlay = document.getElementById('unifiedFloorsOverlay');
+    var unifiedLabelsOverlay = document.getElementById('unifiedLabelsOverlay');
 
     // Wizard DOM
-    const wizard = document.getElementById('wizard');
-    const wizardDots = document.getElementById('wizardDots');
-    const wizardStepIndicator = document.getElementById('wizardStepIndicator');
-    const btnWizardPrev = document.getElementById('btnWizardPrev');
-    const btnWizardNext = document.getElementById('btnWizardNext');
-    const addressStreet = document.getElementById('addressStreet');
-    const addressCity = document.getElementById('addressCity');
-    const labelsFields = document.getElementById('labelsFields');
-    const stepOrder = document.getElementById('stepOrder');
-    const floorReviewViewerEl = document.getElementById('floorReviewViewer');
-    const floorReviewLabel = document.getElementById('floorReviewLabel');
-    const floorIncludeCb = document.getElementById('floorIncludeCb');
-    const floorLayoutViewer = document.getElementById('floorLayoutViewer');
+    var wizard = document.getElementById('wizard');
+    var wizardDots = document.getElementById('wizardDots');
+    var wizardStepIndicator = document.getElementById('wizardStepIndicator');
+    var btnWizardPrev = document.getElementById('btnWizardPrev');
+    var btnWizardNext = document.getElementById('btnWizardNext');
+    var addressStreet = document.getElementById('addressStreet');
+    var addressCity = document.getElementById('addressCity');
+    var labelsFields = document.getElementById('labelsFields');
+    var stepOrder = document.getElementById('stepOrder');
+    var floorReviewViewerEl = document.getElementById('floorReviewViewer');
+    var floorReviewLabel = document.getElementById('floorReviewLabel');
+    var floorIncludeCb = document.getElementById('floorIncludeCb');
+    var floorLayoutViewer = document.getElementById('floorLayoutViewer');
 
     // ============================================================
     // FORCE RIGHT COLUMN LAYOUT (bulletproof against Shopify CSS)
@@ -240,7 +240,7 @@
     function showLoading() { loadingOverlay.classList.add('active'); }
     function hideLoading() { loadingOverlay.classList.remove('active'); }
 
-    let toastTimer = null;
+    var toastTimer = null;
     function showToast(msg) {
       toast.textContent = msg;
       toast.classList.add('show');
@@ -2110,12 +2110,11 @@
     });
 
     // Funda URL loading
-    const fundaUrlInput = document.getElementById('fundaUrl');
-    const btnFunda = document.getElementById('btnFunda');
+    var fundaUrlInput = document.getElementById('fundaUrl');
+    var btnFunda = document.getElementById('btnFunda');
 
     function getFundaUrl() {
-      var input = document.getElementById('fundaUrl');
-      return input ? input.value.trim() : '';
+      return fundaUrlInput.value.trim();
     }
 
     fundaUrlInput.addEventListener('keydown', (e) => {
@@ -2136,7 +2135,7 @@
     }
 
     // Funda status checker
-    const statusEls = [
+    var statusEls = [
       { box: document.getElementById('fundaStatus'), icon: document.getElementById('fundaStatusIcon'), text: document.getElementById('fundaStatusText') }
     ];
 
@@ -2169,8 +2168,7 @@
 
       setFundaStatus('loading', 'Plattegrond ophalen...');
       showLoading();
-      var _btnFunda = document.getElementById('btnFunda');
-      if (_btnFunda) _btnFunda.disabled = true;
+      btnFunda.disabled = true;
 
       try {
         const resp = await fetch('https://web-production-89353.up.railway.app/funda-fml', {
@@ -2193,19 +2191,16 @@
         originalFmlData = data;
         originalFileName = 'funda-plattegrond.fml';
         lastFundaUrl = url;
-        var _fileLabel = document.getElementById('fileLabel');
-        if (_fileLabel) _fileLabel.textContent = `🔗 ${url.split('/').filter(Boolean).pop() || 'funda'}`;
+        fileLabel.textContent = `🔗 ${url.split('/').filter(Boolean).pop() || 'funda'}`;
 
         const addr = parseFundaAddress(url) || parseAddressFromFML(data);
-        var _addrStreet = document.getElementById('addressStreet');
-        var _addrCity = document.getElementById('addressCity');
         if (addr) {
-          if (_addrStreet) _addrStreet.value = addr.street;
-          if (_addrCity) _addrCity.value = addr.city;
+          addressStreet.value = addr.street;
+          addressCity.value = addr.city;
           currentAddress = addr;
         } else {
-          if (_addrStreet) _addrStreet.value = '';
-          if (_addrCity) _addrCity.value = '';
+          addressStreet.value = '';
+          addressCity.value = '';
         }
 
         const addrStr = addr ? `${addr.street}, ${addr.city}` : 'Adres niet gevonden';
@@ -2220,8 +2215,7 @@
         }
       } finally {
         hideLoading();
-        var _btnFunda2 = document.getElementById('btnFunda');
-        if (_btnFunda2) _btnFunda2.disabled = false;
+        btnFunda.disabled = false;
       }
     }
 
@@ -2270,9 +2264,7 @@
       const totalDelay = collapsibles.length * 80 + 400;
       setTimeout(() => {
         collapsibles.forEach(el => { el.style.display = 'none'; });
-        // Use fresh DOM lookup — closure ref may be stale after enforceRightColumnLayout
-        const wiz = document.getElementById('wizard');
-        if (wiz) wiz.style.display = '';
+        wizard.style.display = '';
         initWizard();
       }, totalDelay);
     }
