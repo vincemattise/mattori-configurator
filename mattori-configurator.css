@@ -318,7 +318,8 @@
     /* ═══════════════════════════════════════════ */
 
     .mattori-configurator .product-hero-image {
-      width: 100%;
+      width: 70%;
+      margin: 0 auto;
     }
 
     .mattori-configurator .product-image-wrapper {
@@ -327,6 +328,7 @@
       border-radius: 16px;
       overflow: hidden;
       background: #f0f0ec;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
     }
 
     .mattori-configurator .product-image-wrapper img {
@@ -364,7 +366,8 @@
 
     /* ── Unified Frame Preview ── */
     .mattori-configurator .unified-frame-preview {
-      width: 100%;
+      width: 70%;
+      margin: 0 auto;
     }
 
     .mattori-configurator .unified-frame-container {
@@ -372,6 +375,7 @@
       width: 100%;
       border-radius: 16px;
       overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
     }
 
     .mattori-configurator .unified-frame-image {
@@ -979,41 +983,39 @@
       line-height: 1.4;
     }
 
-    /* ── Step 4: Floor Layout Viewer ── */
+    /* ── Step 4: Floor Layout Viewer (list) ── */
     .mattori-configurator .floor-layout-viewer {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
 
     .mattori-configurator .floor-layout-card {
-      background: #f5f5f2;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: #fff;
       border-radius: 10px;
-      padding: 0.8rem;
+      padding: 0.6rem 0.8rem;
+      transition: background 0.2s ease;
+    }
+
+    .mattori-configurator .floor-layout-card .floor-layout-number {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #bbb;
+      min-width: 1.4rem;
       text-align: center;
-      cursor: grab;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .mattori-configurator .floor-layout-card:active {
-      cursor: grabbing;
-    }
-
-    .mattori-configurator .floor-layout-card.dragging {
-      opacity: 0.4;
-      transform: scale(0.95);
-    }
-
-    .mattori-configurator .floor-layout-card.drag-over {
-      box-shadow: 0 0 0 2px #1a1a1a;
-      transform: scale(1.02);
     }
 
     .mattori-configurator .floor-layout-card .floor-layout-canvas-wrap {
-      width: 100%;
-      aspect-ratio: 3 / 4;
+      width: 56px;
+      height: 72px;
       position: relative;
-      margin-bottom: 0.5rem;
+      flex-shrink: 0;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #f5f5f2;
     }
 
     .mattori-configurator .floor-layout-card .floor-layout-canvas-wrap canvas {
@@ -1024,11 +1026,41 @@
     }
 
     .mattori-configurator .floor-layout-card .floor-layout-name {
-      font-size: 0.72rem;
+      flex: 1;
+      font-size: 0.82rem;
       font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
       color: #999;
+    }
+
+    .mattori-configurator .floor-layout-arrows {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .mattori-configurator .floor-layout-arrows button {
+      background: #f0f0ec;
+      border: none;
+      border-radius: 5px;
+      width: 28px;
+      height: 24px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      color: #666;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease;
+    }
+
+    .mattori-configurator .floor-layout-arrows button:hover {
+      background: #e0ddd8;
+    }
+
+    .mattori-configurator .floor-layout-arrows button:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
     }
 
     /* ── Step 6: Labels fields ── */
@@ -1331,9 +1363,6 @@
       .mattori-configurator .product-title {
         font-size: 2rem;
       }
-      .mattori-configurator .floor-layout-viewer {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-      }
     }
 
     @media (max-width: 640px) {
@@ -1364,9 +1393,5 @@
       }
       .mattori-configurator .product-specs-list li {
         font-size: 0.82rem;
-      }
-      .mattori-configurator .floor-layout-viewer {
-        grid-template-columns: 1fr 1fr;
-        gap: 0.6rem;
       }
     }

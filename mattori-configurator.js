@@ -1589,6 +1589,13 @@
     // Track custom floor order (set by drag & drop in layout step)
     var floorOrder = null; // null = default order
 
+    function moveFloorInOrder(fromIdx, toIdx) {
+      if (!floorOrder || toIdx < 0 || toIdx >= floorOrder.length) return;
+      var item = floorOrder.splice(fromIdx, 1)[0];
+      floorOrder.splice(toIdx, 0, item);
+      renderLayoutView();
+    }
+
     function renderLayoutView() {
       // Cleanup old layout viewers
       for (const v of layoutViewers) {
@@ -1609,62 +1616,56 @@
         floorOrder = includedIndices.slice();
       }
 
-      var dragSrcIndex = null;
-
       for (var idx = 0; idx < includedIndices.length; idx++) {
         var floorIdx = includedIndices[idx];
-        var floor = floors[floorIdx];
         var card = document.createElement('div');
         card.className = 'floor-layout-card';
-        card.draggable = true;
-        card.dataset.orderIndex = idx;
 
+        // Number
+        var numEl = document.createElement('div');
+        numEl.className = 'floor-layout-number';
+        numEl.textContent = (idx + 1);
+
+        // Canvas
         var canvasWrap = document.createElement('div');
         canvasWrap.className = 'floor-layout-canvas-wrap';
 
+        // Name (hidden, just spacer)
         var nameEl = document.createElement('div');
         nameEl.className = 'floor-layout-name';
-        nameEl.textContent = (idx + 1);
+        nameEl.textContent = '';
 
+        // Up/down arrows
+        var arrows = document.createElement('div');
+        arrows.className = 'floor-layout-arrows';
+
+        var btnUp = document.createElement('button');
+        btnUp.type = 'button';
+        btnUp.innerHTML = '&#9650;';
+        btnUp.disabled = idx === 0;
+
+        var btnDown = document.createElement('button');
+        btnDown.type = 'button';
+        btnDown.innerHTML = '&#9660;';
+        btnDown.disabled = idx === includedIndices.length - 1;
+
+        // Attach click handlers via closure
+        (function(currentIdx) {
+          btnUp.addEventListener('click', function() { moveFloorInOrder(currentIdx, currentIdx - 1); });
+          btnDown.addEventListener('click', function() { moveFloorInOrder(currentIdx, currentIdx + 1); });
+        })(idx);
+
+        arrows.appendChild(btnUp);
+        arrows.appendChild(btnDown);
+
+        card.appendChild(numEl);
         card.appendChild(canvasWrap);
         card.appendChild(nameEl);
+        card.appendChild(arrows);
         floorLayoutViewer.appendChild(card);
 
         var viewer = renderOrthographicViewer(floorIdx, canvasWrap);
         if (viewer) layoutViewers.push(viewer);
-
-        // Drag & drop handlers
-        (function(c, orderIdx) {
-          c.addEventListener('dragstart', function(e) {
-            dragSrcIndex = orderIdx;
-            c.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-          });
-          c.addEventListener('dragend', function() {
-            c.classList.remove('dragging');
-            var allCards = floorLayoutViewer.querySelectorAll('.floor-layout-card');
-            allCards.forEach(function(cc) { cc.classList.remove('drag-over'); });
-          });
-          c.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            c.classList.add('drag-over');
-          });
-          c.addEventListener('dragleave', function() {
-            c.classList.remove('drag-over');
-          });
-          c.addEventListener('drop', function(e) {
-            e.preventDefault();
-            c.classList.remove('drag-over');
-            if (dragSrcIndex !== null && dragSrcIndex !== orderIdx) {
-              // Swap in floorOrder
-              var temp = floorOrder[dragSrcIndex];
-              floorOrder[dragSrcIndex] = floorOrder[orderIdx];
-              floorOrder[orderIdx] = temp;
-              renderLayoutView();
-            }
-          });
-        })(card, idx);
       }
     }
 
