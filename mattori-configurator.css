@@ -717,10 +717,9 @@
     /* Wizard navigation buttons */
     .mattori-configurator .wizard-nav {
       display: flex;
-      justify-content: space-between;
       align-items: center;
       margin-top: 1.2rem;
-      gap: 0.8rem;
+      gap: 0.5rem;
     }
 
     .mattori-configurator .btn-wizard-prev,
@@ -738,6 +737,7 @@
     .mattori-configurator .btn-wizard-prev {
       background: #1a1a1a;
       color: #fff;
+      padding: 0.7rem 1rem;
     }
 
     .mattori-configurator .btn-wizard-prev:hover {

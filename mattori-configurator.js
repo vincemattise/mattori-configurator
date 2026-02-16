@@ -1443,11 +1443,11 @@
 
       // Update prev/next buttons
       btnWizardPrev.style.display = currentWizardStep > 1 ? '' : 'none';
-      btnWizardNext.style.display = currentWizardStep < TOTAL_WIZARD_STEPS ? '' : 'none';
-
-      // Step 1 only shows if no data is loaded
-      if (currentWizardStep === 1 && floors.length > 0) {
-        btnWizardNext.style.display = '';
+      if (currentWizardStep === 1) {
+        // Step 1: only show next if data is loaded
+        btnWizardNext.style.display = floors.length > 0 ? '' : 'none';
+      } else {
+        btnWizardNext.style.display = currentWizardStep < TOTAL_WIZARD_STEPS ? '' : 'none';
       }
     }
 
