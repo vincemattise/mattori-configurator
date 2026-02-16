@@ -95,6 +95,9 @@
         </div>
       </div>
 
+      <!-- Floor review viewer (stap 4, in linkerkolom) -->
+      <div class="floor-review-viewer" id="floorReviewViewer" style="display:none;"></div>
+
     </div>
 
     <!-- RIGHT COLUMN: Product info + Wizard -->
@@ -151,11 +154,10 @@
             <input type="text" id="addressCity" class="wizard-input" placeholder="Stad, Land" />
           </div>
 
-          <!-- Step 4: Floor review (one at a time, large 3D) -->
+          <!-- Step 4: Floor review (controls only, viewer is in left column) -->
           <div class="wizard-step" id="wizardStep4" data-step="4" style="display:none;">
             <div class="step-label">Plattegronden bekijken</div>
             <p class="step-description">Bekijk elke verdieping en kies welke je wilt meenemen.</p>
-            <div class="floor-review-viewer" id="floorReviewViewer"></div>
             <div class="floor-review-nav">
               <button class="btn-floor-nav" id="btnFloorPrev">&#8592;</button>
               <span class="floor-review-label" id="floorReviewLabel"></span>

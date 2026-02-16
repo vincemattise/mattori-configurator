@@ -1401,6 +1401,16 @@
         unifiedFloorsOverlay.style.display = n >= 5 ? '' : 'none';
       }
 
+      // Step 4: show floor review viewer in left column, hide unified preview
+      if (n === 4) {
+        if (unifiedFramePreview) unifiedFramePreview.style.display = 'none';
+        if (floorReviewViewerEl) floorReviewViewerEl.style.display = '';
+      } else {
+        if (floorReviewViewerEl) floorReviewViewerEl.style.display = 'none';
+        // Show unified preview (if data is loaded)
+        if (floors.length > 0 && unifiedFramePreview) unifiedFramePreview.style.display = '';
+      }
+
       // Special step initialization
       if (n === 4) {
         currentFloorReviewIndex = 0;
