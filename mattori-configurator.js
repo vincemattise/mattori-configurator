@@ -231,6 +231,12 @@
     (function breakoutConfigurator() {
       var el = document.querySelector('.mattori-configurator');
       if (!el) return;
+      // Force overflow visible on all ancestors up to body
+      var ancestor = el.parentElement;
+      while (ancestor && ancestor !== document.body && ancestor !== document.documentElement) {
+        ancestor.style.overflow = 'visible';
+        ancestor = ancestor.parentElement;
+      }
       function applyBreakout() {
         var cw = document.documentElement.clientWidth;
         var rect = el.parentElement.getBoundingClientRect();
