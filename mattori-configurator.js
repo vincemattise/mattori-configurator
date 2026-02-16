@@ -1698,8 +1698,14 @@
         arrows.appendChild(btnUp);
         arrows.appendChild(btnDown);
 
+        // Floor name label
+        var nameEl = document.createElement('div');
+        nameEl.className = 'floor-layout-name';
+        nameEl.textContent = floors[floorIdx].name || 'Verdieping ' + (idx + 1);
+
         card.appendChild(numEl);
         card.appendChild(canvasWrap);
+        card.appendChild(nameEl);
         card.appendChild(arrows);
         floorLayoutViewer.appendChild(card);
 

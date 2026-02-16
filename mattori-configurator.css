@@ -179,8 +179,8 @@
 
     .mattori-configurator .url-input-group input {
       flex: 1;
-      padding: 0.85rem 1rem;
-      font-size: 0.95rem;
+      padding: 0.7rem 1rem;
+      font-size: 0.88rem;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       border: 1.5px solid #ddd;
       border-radius: 10px;
@@ -200,15 +200,16 @@
 
     .mattori-configurator .btn-funda {
       flex-shrink: 0;
-      padding: 0.85rem 1.2rem !important;
-      font-size: 0.9rem !important;
+      padding: 0.7rem 1.2rem !important;
+      font-size: 0.88rem !important;
     }
 
     /* ── Funda status checker ── */
     .mattori-configurator .funda-status {
       display: none;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
+      gap: 13px;
       margin-top: 0.7rem;
       padding: 0.6rem 0.8rem;
       border-radius: 10px;
@@ -241,7 +242,7 @@
     }
 
     .mattori-configurator .funda-status .status-text {
-      flex: 1;
+      text-align: center;
     }
 
     .mattori-configurator .funda-status .status-text strong {
@@ -419,7 +420,7 @@
     }
 
     .mattori-configurator .frame-street {
-      font-family: 'Nexa', Georgia, sans-serif;
+      font-family: 'Nexa', 'Nexa Bold', Georgia, sans-serif !important;
       font-size: clamp(13px, 4.2cqi, 24px);
       font-weight: 700;
       color: #1a1a1a;
@@ -431,7 +432,7 @@
     }
 
     .mattori-configurator .frame-city {
-      font-family: 'Nexa', Georgia, sans-serif;
+      font-family: 'Nexa', 'Nexa Bold', Georgia, sans-serif !important;
       font-size: clamp(8px, 2.5cqi, 14px);
       font-weight: 700;
       color: #1a1a1a;
@@ -544,7 +545,7 @@
     }
 
     .mattori-configurator .label-item {
-      font-family: 'Nexa', Georgia, sans-serif;
+      font-family: 'Nexa', 'Nexa Bold', Georgia, sans-serif !important;
       font-size: clamp(8px, 2.5cqi, 14px);
       font-weight: 700;
       color: #1a1a1a;
@@ -940,15 +941,16 @@
     }
 
     .mattori-configurator .btn-floor-nav {
-      padding: 0.5rem 0.9rem;
+      padding: 0.7rem 1.2rem;
       display: flex;
       align-items: center;
       justify-content: center;
       background: #e0ddd8;
       border: none;
-      border-radius: 8px;
-      font-size: 0.82rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
       font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       color: #1a1a1a;
       cursor: pointer;
       transition: background 0.2s ease, transform 0.2s ease;
@@ -1071,21 +1073,23 @@
       gap: 0.5rem;
       background: #fff;
       border-radius: 10px;
-      padding: 0.4rem 0.6rem;
-      transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+      padding: 0.5rem 0.7rem;
+      border: 1px solid #eee;
+      transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
     }
 
     .mattori-configurator .floor-layout-card.just-moved {
-      background: #eef5ee;
+      background: #f0f7f0;
+      border-color: #c5e0c5;
       transform: scale(1.02);
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     .mattori-configurator .floor-layout-card .floor-layout-number {
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 700;
       color: #bbb;
-      min-width: 1.4rem;
+      min-width: 1.2rem;
       text-align: center;
     }
 
@@ -1160,8 +1164,12 @@
     .mattori-configurator .labels-fields .label-field-row span {
       font-size: 0.78rem;
       color: #999;
-      min-width: 70px;
+      width: 120px;
+      min-width: 120px;
       flex-shrink: 0;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
     }
 
     .mattori-configurator .labels-fields input {
