@@ -1453,6 +1453,9 @@
           renderFloorReview();
         } else if (n === 4) {
           renderLayoutView();
+          // Re-render unified preview thumbnails so they show during layout step
+          renderPreviewThumbnails();
+          updateFloorLabels();
         } else if (n === 5) {
           renderLabelsFields();
         }
@@ -1480,10 +1483,8 @@
       // Update prev/next/order buttons
       btnWizardPrev.style.display = currentWizardStep > 1 ? '' : 'none';
 
-      // Floor nav buttons (step 3 only)
-      var btnFP = document.getElementById('btnFloorPrev');
+      // Floor nav button (step 3 only — cycles through floors)
       var btnFN = document.getElementById('btnFloorNext');
-      if (btnFP) btnFP.style.display = currentWizardStep === 3 ? '' : 'none';
       if (btnFN) btnFN.style.display = currentWizardStep === 3 ? '' : 'none';
 
       if (currentWizardStep === TOTAL_WIZARD_STEPS) {
@@ -1577,6 +1578,12 @@
       // Render interactive viewer
       floorReviewViewer = renderInteractiveViewer(currentFloorReviewIndex, floorReviewViewerEl);
 
+      // Add zoom/rotate hint label
+      var hint = document.createElement('div');
+      hint.className = 'floor-review-hint';
+      hint.textContent = 'Klik en sleep om te draaien \u00B7 scroll om te zoomen';
+      floorReviewViewerEl.appendChild(hint);
+
       // Track viewed floors and update wizard UI
       viewedFloors.add(currentFloorReviewIndex);
       updateWizardUI();
@@ -1623,6 +1630,15 @@
       var item = floorOrder.splice(fromIdx, 1)[0];
       floorOrder.splice(toIdx, 0, item);
       renderLayoutView();
+      // Highlight moved card briefly
+      var cards = floorLayoutViewer.querySelectorAll('.floor-layout-card');
+      if (cards[toIdx]) {
+        cards[toIdx].classList.add('just-moved');
+        setTimeout(function() { cards[toIdx].classList.remove('just-moved'); }, 500);
+      }
+      // Also update unified preview labels + thumbnails
+      renderPreviewThumbnails();
+      updateFloorLabels();
     }
 
     function renderLayoutView() {
