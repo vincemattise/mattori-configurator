@@ -964,9 +964,9 @@
         if (floorsLoading) floorsLoading.classList.add('hidden');
       }, 50);
 
-      // Show order button + enable
-      stepOrder.style.display = '';
-      document.getElementById('btnOrder').disabled = false;
+      // Keep order step hidden for now (shown under real buy button later)
+      // stepOrder.style.display = '';
+      // document.getElementById('btnOrder').disabled = false;
 
       // Auto-advance wizard to step 2
       showWizardStep(2);
