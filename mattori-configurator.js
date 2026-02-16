@@ -2184,13 +2184,29 @@
             const y1 = (wy + CELL - centerY) * SCALE;
 
             const base = vertexIndex;
-            vertices.push(`v ${x0.toFixed(4)} ${(0).toFixed(4)} ${y0.toFixed(4)}`);
-            vertices.push(`v ${x1.toFixed(4)} ${(0).toFixed(4)} ${y0.toFixed(4)}`);
-            vertices.push(`v ${x1.toFixed(4)} ${(0).toFixed(4)} ${y1.toFixed(4)}`);
-            vertices.push(`v ${x0.toFixed(4)} ${(0).toFixed(4)} ${y1.toFixed(4)}`);
-            vertexIndex += 4;
+            var botY = (-FLOOR_THICKNESS).toFixed(4);
+            var topY = (0).toFixed(4);
+            // Bottom face vertices
+            vertices.push(`v ${x0.toFixed(4)} ${botY} ${y0.toFixed(4)}`);
+            vertices.push(`v ${x1.toFixed(4)} ${botY} ${y0.toFixed(4)}`);
+            vertices.push(`v ${x1.toFixed(4)} ${botY} ${y1.toFixed(4)}`);
+            vertices.push(`v ${x0.toFixed(4)} ${botY} ${y1.toFixed(4)}`);
+            // Top face vertices
+            vertices.push(`v ${x0.toFixed(4)} ${topY} ${y0.toFixed(4)}`);
+            vertices.push(`v ${x1.toFixed(4)} ${topY} ${y0.toFixed(4)}`);
+            vertices.push(`v ${x1.toFixed(4)} ${topY} ${y1.toFixed(4)}`);
+            vertices.push(`v ${x0.toFixed(4)} ${topY} ${y1.toFixed(4)}`);
+            vertexIndex += 8;
 
-            addFace(base + 0, base + 1, base + 2, base + 3);
+            // Bottom face
+            addFace(base + 3, base + 2, base + 1, base + 0);
+            // Top face
+            addFace(base + 4, base + 5, base + 6, base + 7);
+            // Side faces
+            addFace(base + 0, base + 1, base + 5, base + 4);
+            addFace(base + 2, base + 3, base + 7, base + 6);
+            addFace(base + 3, base + 0, base + 4, base + 7);
+            addFace(base + 1, base + 2, base + 6, base + 5);
           }
         }
       }
