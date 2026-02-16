@@ -1420,6 +1420,11 @@
         if (floors.length > 0 && unifiedFramePreview) unifiedFramePreview.style.display = '';
       }
 
+      // Show/hide order button (only on last step)
+      if (stepOrder) stepOrder.style.display = n === TOTAL_WIZARD_STEPS ? '' : 'none';
+      var orderBtn = document.getElementById('btnOrder');
+      if (orderBtn) orderBtn.disabled = n !== TOTAL_WIZARD_STEPS;
+
       // Special step initialization
       if (n === 4) {
         currentFloorReviewIndex = 0;
@@ -2229,10 +2234,20 @@
       }
     }
 
-    // Order button
-    document.getElementById('btnOrder').addEventListener('click', () => {
-      showToast('Bestelfunctie komt binnenkort!');
-    });
+    // Order button — triggers Shopify add-to-cart form
+    function submitOrder() {
+      ensureDomRefs();
+      var shopifyForm = document.querySelector('.mattori-configurator form[action*="/cart/add"]');
+      var shopifyBtn = shopifyForm ? shopifyForm.querySelector('button[name="add"]') : null;
+      if (shopifyBtn && !shopifyBtn.disabled) {
+        shopifyBtn.click();
+      } else if (shopifyForm) {
+        shopifyForm.submit();
+      } else {
+        showToast('Bestelformulier niet gevonden.');
+      }
+    }
+    // submitOrder is triggered via onclick="submitOrder()" in HTML
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
@@ -2270,6 +2285,12 @@
           el.classList.add('collapsing');
         }, i * 80);
       });
+
+      // Hide Shopify buy button and sticky bar
+      var buyBlock = document.querySelector('.mattori-configurator .buy-buttons-block');
+      if (buyBlock) { buyBlock.style.transition = 'opacity 0.3s ease'; buyBlock.style.opacity = '0'; setTimeout(() => { buyBlock.style.display = 'none'; }, 300); }
+      var stickyBar = document.querySelector('sticky-add-to-cart');
+      if (stickyBar) stickyBar.style.display = 'none';
 
       // After all animations complete, show wizard
       const totalDelay = collapsibles.length * 80 + 400;

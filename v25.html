@@ -3,7 +3,7 @@
 (function(){
   var sheets = [
     'https://fonts.cdnfonts.com/css/nexa-bold',
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v25.2/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v25.3/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -24,7 +24,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel">
-    <div class="admin-panel-label">Admin · v25.2</div>
+    <div class="admin-panel-label">Admin · v25.3</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon">⬆</div>
@@ -196,6 +196,14 @@
             <button class="btn-wizard-next" id="btnWizardNext" style="display:none;">Volgende &#8594;</button>
           </div>
 
+          <!-- Bestelknop (shown on last step) -->
+          <div class="order-step" id="stepOrder" style="display:none;">
+            <button class="btn-order" id="btnOrder" onclick="submitOrder()" disabled>Bestellen</button>
+            <div class="order-return-notice">
+              Let op: omdat elk Frame³ speciaal voor jouw woning wordt gemaakt, is retourneren niet mogelijk.
+            </div>
+          </div>
+
         </div>
 
         <!-- Info badges -->
@@ -211,14 +219,6 @@
           <div class="product-badge">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" /></svg>
             Handgemaakt in Nederland
-          </div>
-        </div>
-
-        <!-- Bestelknop -->
-        <div class="order-step" id="stepOrder" style="display:none;">
-          <button class="btn-order" id="btnOrder" disabled>Bestellen</button>
-          <div class="order-return-notice">
-            Let op: omdat elk Frame³ speciaal voor jouw woning wordt gemaakt, is retourneren niet mogelijk.
           </div>
         </div>
 
@@ -245,4 +245,4 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v25.2/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v25.3/mattori-configurator.js"></script>
