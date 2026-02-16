@@ -574,6 +574,36 @@
       color: #777;
     }
 
+    /* ── Start Configurator Button ── */
+    .mattori-configurator .btn-start-configurator {
+      width: 100%;
+      padding: 1rem 1.4rem;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      margin-bottom: 1.2rem;
+    }
+
+    .mattori-configurator .btn-start-configurator:hover {
+      background: #333;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+
+    .mattori-configurator .btn-start-configurator svg {
+      flex-shrink: 0;
+    }
+
     /* ── Wizard ── */
     .mattori-configurator .wizard {
       display: flex;

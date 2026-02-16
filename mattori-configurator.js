@@ -2188,5 +2188,12 @@
       }
     });
 
-    // Initialize wizard
-    initWizard();
+    // Start configurator button
+    const btnStartConfigurator = document.getElementById('btnStartConfigurator');
+    if (btnStartConfigurator) {
+      btnStartConfigurator.addEventListener('click', () => {
+        btnStartConfigurator.style.display = 'none';
+        wizard.style.display = '';
+        initWizard();
+      });
+    }
