@@ -682,12 +682,12 @@
     }
 
     .mattori-configurator .btn-wizard-prev {
-      background: #f0f0ec;
-      color: #555;
+      background: #1a1a1a;
+      color: #fff;
     }
 
     .mattori-configurator .btn-wizard-prev:hover {
-      background: #e8e8e4;
+      background: #333;
       transform: translateY(-1px);
     }
 
@@ -740,24 +740,24 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #f0f0ec;
+      background: #1a1a1a;
       border: none;
       border-radius: 50%;
       font-size: 1rem;
-      color: #555;
+      color: #fff;
       cursor: pointer;
       transition: background 0.2s ease, transform 0.2s ease;
     }
 
     .mattori-configurator .btn-floor-nav:hover {
-      background: #e0ddd8;
+      background: #333;
       transform: scale(1.08);
     }
 
     .mattori-configurator .floor-review-label {
       font-size: 0.82rem;
       font-weight: 600;
-      color: #555;
+      color: #1a1a1a;
       min-width: 120px;
       text-align: center;
     }
