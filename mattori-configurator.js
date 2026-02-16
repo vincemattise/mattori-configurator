@@ -211,6 +211,17 @@
       floorLayoutViewer = document.getElementById('floorLayoutViewer');
       fundaUrlInput = document.getElementById('fundaUrl');
       btnFunda = document.getElementById('btnFunda');
+
+      // Show admin panel only when ?admin=true is in the URL
+      var adminPanel = document.getElementById('adminPanel');
+      if (adminPanel) {
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('admin') === 'true') {
+          adminPanel.style.display = '';
+        } else {
+          adminPanel.style.display = 'none';
+        }
+      }
     }
 
     // ============================================================
