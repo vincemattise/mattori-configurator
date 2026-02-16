@@ -2268,7 +2268,7 @@
         }
 
         const addrStr = addr ? `${addr.street}, ${addr.city}` : 'Adres niet gevonden';
-        setFundaStatus('success', `<strong>Interactieve plattegrond gevonden — ${data.floors.length} verdieping${data.floors.length === 1 ? '' : 'en'}</strong><span>${addrStr}</span>`);
+        setFundaStatus('success', `<strong>${data.floors.length} interactieve plattegrond${data.floors.length === 1 ? '' : 'en'} gevonden</strong><span>${addrStr}</span>`);
 
         processFloors(data);
       } catch (err) {
