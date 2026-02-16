@@ -1413,6 +1413,20 @@
       height: 14px;
     }
 
+    .mattori-configurator .admin-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: #666;
+      cursor: pointer;
+      margin-top: 0.3rem;
+    }
+
+    .mattori-configurator .admin-checkbox input {
+      cursor: pointer;
+    }
+
     /* ── Product info ── */
     .mattori-configurator .product-badges {
       display: flex !important;

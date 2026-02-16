@@ -957,10 +957,12 @@
         }
       }
 
-      // Show admin export buttons
+      // Show admin export buttons + frame toggle
       document.getElementById('uploadActions').classList.add('active');
       const btnTest = document.getElementById('btnTest');
       if (btnTest) btnTest.style.display = 'none';
+      var adminFrameToggle = document.getElementById('adminFrameToggle');
+      if (adminFrameToggle) adminFrameToggle.style.display = '';
 
       // Switch to unified preview
       if (productHeroImage) productHeroImage.style.display = 'none';
@@ -1641,6 +1643,20 @@
       var details = document.getElementById('floorIssueDetails');
       var cb = document.getElementById('floorIssueCb');
       if (details) details.style.display = cb && cb.checked ? '' : 'none';
+    }
+
+    // ============================================================
+    // ADMIN: Toggle frame image (One.png ↔ Two.png)
+    // ============================================================
+    var FRAME_IMG_ONE = 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/One.png?v=1771252893';
+    var FRAME_IMG_TWO = 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Two.png?v=1771252896';
+
+    function toggleAdminFrame() {
+      ensureDomRefs();
+      var cb = document.getElementById('adminUseAltFrame');
+      var img = document.getElementById('unifiedFrameImage');
+      if (!cb || !img) return;
+      img.src = cb.checked ? FRAME_IMG_TWO : FRAME_IMG_ONE;
     }
 
     // ============================================================
