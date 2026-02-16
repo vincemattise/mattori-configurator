@@ -2079,7 +2079,6 @@
     if (btnTest) {
       btnTest.addEventListener('click', () => {
         fundaUrlInput.value = 'https://www.funda.nl/detail/koop/arnhem/huis-madelievenstraat-61/43269652/';
-        loadFromFunda();
       });
     }
 
