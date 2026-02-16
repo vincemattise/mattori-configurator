@@ -1062,7 +1062,7 @@
         shininess: 10
       });
       const floorMaterial = new THREE.MeshPhongMaterial({
-        color: 0xC2AD91,
+        color: 0xA89478,
         flatShading: true,
         side: THREE.DoubleSide,
         shininess: 5
