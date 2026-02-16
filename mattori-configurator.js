@@ -1172,7 +1172,7 @@
       const FOV = 12;
       const aspect = width / height;
       const camera = new THREE.PerspectiveCamera(FOV, aspect, 0.01, halfExtent * 100);
-      const camDist = halfExtent / Math.tan((FOV / 2) * Math.PI / 180);
+      const camDist = halfExtent / Math.tan((FOV / 2) * Math.PI / 180) * 1.3;
       camera.position.set(0, camDist, camDist * 0.14);
       camera.lookAt(center);
 
