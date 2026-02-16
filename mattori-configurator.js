@@ -2234,23 +2234,35 @@
       }
     }
 
-    // Order button — triggers Shopify add-to-cart form
+    // Order button — adds product to Shopify cart via Cart API
     function submitOrder() {
       ensureDomRefs();
-      var shopifyForm = document.querySelector('form[action*="/cart/add"]');
-      var shopifyBtn = shopifyForm ? shopifyForm.querySelector('button[name="add"]') : null;
-      if (shopifyBtn) {
-        // Enable the button if Shopify has it disabled (e.g. "Sold out")
-        var wasDisabled = shopifyBtn.disabled;
-        if (wasDisabled) shopifyBtn.disabled = false;
-        shopifyBtn.click();
-        // Restore state if click didn't navigate away
-        if (wasDisabled) setTimeout(function(){ shopifyBtn.disabled = true; }, 500);
-      } else if (shopifyForm) {
-        shopifyForm.submit();
-      } else {
-        showToast('Bestelformulier niet gevonden.');
+      // Find variant ID from Shopify's hidden input
+      var variantInput = document.querySelector('form[action*="/cart/add"] input[name="id"]');
+      var variantId = variantInput ? variantInput.value : null;
+      if (!variantId) {
+        showToast('Product niet gevonden.');
+        return;
       }
+      var orderBtn = document.getElementById('btnOrder');
+      if (orderBtn) { orderBtn.disabled = true; orderBtn.textContent = 'Toevoegen…'; }
+      fetch('/cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: [{ id: parseInt(variantId), quantity: 1 }] })
+      })
+      .then(function(res) {
+        if (!res.ok) throw new Error('Status ' + res.status);
+        return res.json();
+      })
+      .then(function() {
+        // Redirect to cart page
+        window.location.href = '/cart';
+      })
+      .catch(function(err) {
+        showToast('Kon niet toevoegen aan winkelwagen.');
+        if (orderBtn) { orderBtn.disabled = false; orderBtn.textContent = 'Bestellen'; }
+      });
     }
     // submitOrder is triggered via onclick="submitOrder()" in HTML
 
