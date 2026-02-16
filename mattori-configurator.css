@@ -1,4 +1,11 @@
-.mattori-configurator *,
+/* Hide Shopify's native buy button & sticky bar */
+    product-form-component,
+    .buy-buttons-block,
+    sticky-add-to-cart {
+      display: none !important;
+    }
+
+    .mattori-configurator *,
     .mattori-configurator *::before,
     .mattori-configurator *::after {
       box-sizing: border-box;
@@ -628,6 +635,7 @@
       background: #f5f5f2;
       border-radius: 16px;
       padding: 1.5rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
     }
 
     .mattori-configurator .wizard-title {
@@ -716,6 +724,10 @@
 
     .mattori-configurator .wizard-input::placeholder {
       color: #aaa;
+    }
+
+    .mattori-configurator .wizard-input + .wizard-input {
+      margin-top: 0.6rem;
     }
 
     /* Wizard navigation buttons */
@@ -927,7 +939,47 @@
       letter-spacing: 1.5px;
     }
 
-    /* ── Step 5: Floor Layout Viewer ── */
+    /* "Er klopt iets niet" issue section */
+    .mattori-configurator .floor-review-issue {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0;
+    }
+
+    .mattori-configurator .floor-review-issue input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #c0392b;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .mattori-configurator .floor-review-issue label {
+      font-size: 0.88rem;
+      color: #555;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .mattori-configurator .floor-issue-details {
+      margin-top: 0.6rem;
+    }
+
+    .mattori-configurator .floor-issue-details textarea.wizard-input {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .mattori-configurator .floor-issue-notice {
+      margin-top: 0.5rem;
+      font-size: 0.78rem;
+      color: #999;
+      line-height: 1.4;
+    }
+
+    /* ── Step 4: Floor Layout Viewer ── */
     .mattori-configurator .floor-layout-viewer {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -939,6 +991,22 @@
       border-radius: 10px;
       padding: 0.8rem;
       text-align: center;
+      cursor: grab;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .mattori-configurator .floor-layout-card:active {
+      cursor: grabbing;
+    }
+
+    .mattori-configurator .floor-layout-card.dragging {
+      opacity: 0.4;
+      transform: scale(0.95);
+    }
+
+    .mattori-configurator .floor-layout-card.drag-over {
+      box-shadow: 0 0 0 2px #1a1a1a;
+      transform: scale(1.02);
     }
 
     .mattori-configurator .floor-layout-card .floor-layout-canvas-wrap {
@@ -1000,47 +1068,29 @@
       border-color: #1a1a1a;
     }
 
-    /* ── Order button ── */
-    .mattori-configurator .order-step {
-      margin-top: 0.5rem;
-    }
-
+    /* ── Order button (in wizard-nav) ── */
     .mattori-configurator .btn-order {
-      width: 100%;
-      padding: 1rem 2rem;
       background: #1a1a1a;
       color: #fff;
+      padding: 0.7rem 1.6rem;
       border: none;
-      border-radius: 14px;
-      font-size: 1.05rem;
-      font-weight: 700;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       cursor: pointer;
       letter-spacing: 0.3px;
-      transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+      transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .mattori-configurator .btn-order:hover {
       background: #333;
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
     }
 
     .mattori-configurator .btn-order:active {
       transform: translateY(0);
-      box-shadow: none;
-    }
-
-    .mattori-configurator .btn-order:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    .mattori-configurator .btn-order:disabled:hover {
-      background: #1a1a1a;
-      transform: none;
       box-shadow: none;
     }
 

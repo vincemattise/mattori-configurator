@@ -155,8 +155,9 @@
 
     // Wizard state
     let currentWizardStep = 1;
-    const TOTAL_WIZARD_STEPS = 6;
+    const TOTAL_WIZARD_STEPS = 5;
     let currentFloorReviewIndex = 0;
+    var viewedFloors = new Set();
 
     // Active viewers for cleanup
     let activeViewers = [];       // { renderer, controls, animId }
@@ -172,7 +173,7 @@
         unifiedFramePreview, frameStreet, frameCity, floorsLoading,
         unifiedFloorsOverlay, unifiedLabelsOverlay,
         wizard, wizardDots, wizardStepIndicator, btnWizardPrev, btnWizardNext,
-        addressStreet, addressCity, labelsFields, stepOrder,
+        addressStreet, addressCity, labelsFields,
         floorReviewViewerEl, floorReviewLabel, floorIncludeCb, floorLayoutViewer,
         fundaUrlInput, btnFunda;
 
@@ -204,7 +205,6 @@
       addressStreet = document.getElementById('addressStreet');
       addressCity = document.getElementById('addressCity');
       labelsFields = document.getElementById('labelsFields');
-      stepOrder = document.getElementById('stepOrder');
       floorReviewViewerEl = document.getElementById('floorReviewViewer');
       floorReviewLabel = document.getElementById('floorReviewLabel');
       floorIncludeCb = document.getElementById('floorIncludeCb');
@@ -229,7 +229,6 @@
         '#btnStartConfigurator',
         '#wizard',
         '.product-badges',
-        '#stepOrder',
         '.product-specs'
       ];
       const fragment = document.createDocumentFragment();
@@ -979,12 +978,8 @@
         if (floorsLoading) floorsLoading.classList.add('hidden');
       }, 50);
 
-      // Keep order step hidden for now (shown under real buy button later)
-      // stepOrder.style.display = '';
-      // document.getElementById('btnOrder').disabled = false;
-
-      // Auto-advance wizard to step 2
-      showWizardStep(2);
+      // Stay on step 1, update UI to show "Volgende" button
+      updateWizardUI();
     }
 
     // ============================================================
@@ -1300,10 +1295,14 @@
 
     function getIncludedFloorLabels() {
       const labels = [];
-      const includedIndices = [];
+      var includedIndices = [];
       for (let i = 0; i < floors.length; i++) {
         if (excludedFloors.has(i)) continue;
         includedIndices.push(i);
+      }
+      // Respect custom floor order from layout step
+      if (floorOrder && floorOrder.length === includedIndices.length) {
+        includedIndices = floorOrder.slice();
       }
       const regularCount = includedIndices.filter(i => {
         const n = (floors[i].name || '').toLowerCase().trim();
@@ -1399,40 +1398,40 @@
       const current = document.getElementById(`wizardStep${n}`);
       if (current) {
         current.style.display = '';
-        // Re-trigger animation
         current.style.animation = 'none';
         void current.offsetWidth;
         current.style.animation = '';
       }
 
-      // Show/hide floors in unified preview (visible from step 5 onward)
+      // Show/hide floors in unified preview (visible from step 4 onward)
       if (unifiedFloorsOverlay) {
-        unifiedFloorsOverlay.style.display = n >= 5 ? '' : 'none';
+        unifiedFloorsOverlay.style.display = n >= 4 ? '' : 'none';
       }
 
-      // Step 4: show floor review viewer in left column, hide unified preview
-      if (n === 4) {
+      // Step 3: show floor review viewer in left column, hide unified preview
+      if (n === 3) {
         if (unifiedFramePreview) unifiedFramePreview.style.display = 'none';
         if (floorReviewViewerEl) floorReviewViewerEl.style.display = '';
       } else {
         if (floorReviewViewerEl) floorReviewViewerEl.style.display = 'none';
-        // Show unified preview (if data is loaded)
         if (floors.length > 0 && unifiedFramePreview) unifiedFramePreview.style.display = '';
       }
 
-      // Show/hide order button (only on last step)
-      if (stepOrder) stepOrder.style.display = n === TOTAL_WIZARD_STEPS ? '' : 'none';
+      // Show/hide order button + disclaimer (only on last step)
       var orderBtn = document.getElementById('btnOrder');
-      if (orderBtn) orderBtn.disabled = n !== TOTAL_WIZARD_STEPS;
+      var orderNotice = document.getElementById('orderNotice');
+      if (orderBtn) orderBtn.style.display = n === TOTAL_WIZARD_STEPS ? '' : 'none';
+      if (orderNotice) orderNotice.style.display = n === TOTAL_WIZARD_STEPS ? '' : 'none';
 
       // Special step initialization
-      if (n === 4) {
+      if (n === 3) {
         currentFloorReviewIndex = 0;
+        viewedFloors.clear();
         buildThumbstrip();
         renderFloorReview();
-      } else if (n === 5) {
+      } else if (n === 4) {
         renderLayoutView();
-      } else if (n === 6) {
+      } else if (n === 5) {
         renderLabelsFields();
       }
 
@@ -1455,13 +1454,23 @@
         }
       });
 
-      // Update prev/next buttons
+      // Update prev/next/order buttons
       btnWizardPrev.style.display = currentWizardStep > 1 ? '' : 'none';
-      if (currentWizardStep === 1) {
+
+      if (currentWizardStep === TOTAL_WIZARD_STEPS) {
+        // Last step: hide next, show order
+        btnWizardNext.style.display = 'none';
+      } else if (currentWizardStep === 1) {
         // Step 1: only show next if data is loaded
         btnWizardNext.style.display = floors.length > 0 ? '' : 'none';
+        btnWizardNext.disabled = false;
+      } else if (currentWizardStep === 3) {
+        // Step 3 (floor review): disable next until all floors viewed
+        btnWizardNext.style.display = '';
+        btnWizardNext.disabled = viewedFloors.size < floors.length;
       } else {
-        btnWizardNext.style.display = currentWizardStep < TOTAL_WIZARD_STEPS ? '' : 'none';
+        btnWizardNext.style.display = '';
+        btnWizardNext.disabled = false;
       }
     }
 
@@ -1508,16 +1517,6 @@
         if (viewer) thumbstripRenderers.push(viewer);
       }
 
-      // Dots underneath
-      const dotsRow = document.createElement('div');
-      dotsRow.className = 'floor-thumb-dots';
-      for (let i = 0; i < floors.length; i++) {
-        const dot = document.createElement('div');
-        dot.className = 'floor-thumb-dot';
-        if (i === currentFloorReviewIndex) dot.classList.add('active');
-        dotsRow.appendChild(dot);
-      }
-      strip.appendChild(dotsRow);
     }
 
     function updateThumbstripState() {
@@ -1527,10 +1526,6 @@
       thumbs.forEach((t, i) => {
         t.classList.toggle('active', i === currentFloorReviewIndex);
         t.classList.toggle('excluded', excludedFloors.has(i));
-      });
-      const dots = strip.querySelectorAll('.floor-thumb-dot');
-      dots.forEach((d, i) => {
-        d.classList.toggle('active', i === currentFloorReviewIndex);
       });
     }
 
@@ -1552,6 +1547,10 @@
 
       // Render interactive viewer
       floorReviewViewer = renderInteractiveViewer(currentFloorReviewIndex, floorReviewViewerEl);
+
+      // Track viewed floors and update wizard UI
+      viewedFloors.add(currentFloorReviewIndex);
+      updateWizardUI();
 
       // Update thumbstrip state (highlight active, don't rebuild)
       updateThumbstripState();
@@ -1577,9 +1576,19 @@
       renderFloorReview();
     }
 
+    // "Er klopt iets niet" toggle
+    function toggleFloorIssue() {
+      var details = document.getElementById('floorIssueDetails');
+      var cb = document.getElementById('floorIssueCb');
+      if (details) details.style.display = cb && cb.checked ? '' : 'none';
+    }
+
     // ============================================================
-    // STEP 5: Layout View (orthographic top-down)
+    // STEP 4: Layout View (orthographic top-down)
     // ============================================================
+    // Track custom floor order (set by drag & drop in layout step)
+    var floorOrder = null; // null = default order
+
     function renderLayoutView() {
       // Cleanup old layout viewers
       for (const v of layoutViewers) {
@@ -1588,40 +1597,79 @@
       layoutViewers = [];
       floorLayoutViewer.innerHTML = '';
 
-      const includedIndices = [];
-      for (let i = 0; i < floors.length; i++) {
+      var includedIndices = [];
+      for (var i = 0; i < floors.length; i++) {
         if (!excludedFloors.has(i)) includedIndices.push(i);
       }
 
-      const regularCount = includedIndices.filter(i => {
-        const n = (floors[i].name || '').toLowerCase().trim();
-        return !(/^(kelder|zolder|berging|garage|dak|tuin)/.test(n));
-      }).length;
-      const isSingleFloor = regularCount <= 1;
+      // Use custom order if set, otherwise default
+      if (floorOrder && floorOrder.length === includedIndices.length) {
+        includedIndices = floorOrder.slice();
+      } else {
+        floorOrder = includedIndices.slice();
+      }
 
-      for (const i of includedIndices) {
-        const floor = floors[i];
-        const card = document.createElement('div');
+      var dragSrcIndex = null;
+
+      for (var idx = 0; idx < includedIndices.length; idx++) {
+        var floorIdx = includedIndices[idx];
+        var floor = floors[floorIdx];
+        var card = document.createElement('div');
         card.className = 'floor-layout-card';
+        card.draggable = true;
+        card.dataset.orderIndex = idx;
 
-        const canvasWrap = document.createElement('div');
+        var canvasWrap = document.createElement('div');
         canvasWrap.className = 'floor-layout-canvas-wrap';
 
-        const nameEl = document.createElement('div');
+        var nameEl = document.createElement('div');
         nameEl.className = 'floor-layout-name';
-        nameEl.textContent = translateFloorName(floor.name, isSingleFloor);
+        nameEl.textContent = (idx + 1);
 
         card.appendChild(canvasWrap);
         card.appendChild(nameEl);
         floorLayoutViewer.appendChild(card);
 
-        const viewer = renderOrthographicViewer(i, canvasWrap);
+        var viewer = renderOrthographicViewer(floorIdx, canvasWrap);
         if (viewer) layoutViewers.push(viewer);
+
+        // Drag & drop handlers
+        (function(c, orderIdx) {
+          c.addEventListener('dragstart', function(e) {
+            dragSrcIndex = orderIdx;
+            c.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+          });
+          c.addEventListener('dragend', function() {
+            c.classList.remove('dragging');
+            var allCards = floorLayoutViewer.querySelectorAll('.floor-layout-card');
+            allCards.forEach(function(cc) { cc.classList.remove('drag-over'); });
+          });
+          c.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            c.classList.add('drag-over');
+          });
+          c.addEventListener('dragleave', function() {
+            c.classList.remove('drag-over');
+          });
+          c.addEventListener('drop', function(e) {
+            e.preventDefault();
+            c.classList.remove('drag-over');
+            if (dragSrcIndex !== null && dragSrcIndex !== orderIdx) {
+              // Swap in floorOrder
+              var temp = floorOrder[dragSrcIndex];
+              floorOrder[dragSrcIndex] = floorOrder[orderIdx];
+              floorOrder[orderIdx] = temp;
+              renderLayoutView();
+            }
+          });
+        })(card, idx);
       }
     }
 
     // ============================================================
-    // STEP 6: Labels editing
+    // STEP 5: Labels editing
     // ============================================================
     function renderLabelsFields() {
       floorLabels = getIncludedFloorLabels();
@@ -2261,7 +2309,7 @@
       })
       .catch(function(err) {
         showToast('Kon niet toevoegen aan winkelwagen.');
-        if (orderBtn) { orderBtn.disabled = false; orderBtn.textContent = 'Bestellen'; }
+        if (orderBtn) { orderBtn.disabled = false; orderBtn.textContent = 'Afronden & bestellen \u2726'; }
       });
     }
     // submitOrder is triggered via onclick="submitOrder()" in HTML
