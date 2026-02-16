@@ -2122,10 +2122,15 @@
     });
     btnFunda.addEventListener('click', () => loadFromFunda());
 
+    // Global function for onclick fallback (Shopify addEventListener issue)
+    window.pasteTestLink = function() {
+      var input = document.getElementById('fundaUrl');
+      if (input) input.value = 'https://www.funda.nl/detail/koop/arnhem/huis-madelievenstraat-61/43269652/';
+    };
     const btnTest = document.getElementById('btnTest');
     if (btnTest) {
       btnTest.addEventListener('click', () => {
-        fundaUrlInput.value = 'https://www.funda.nl/detail/koop/arnhem/huis-madelievenstraat-61/43269652/';
+        window.pasteTestLink();
       });
     }
 
