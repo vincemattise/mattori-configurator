@@ -7,11 +7,14 @@
     }
 
     .mattori-configurator {
-      width: 100%;
+      /* Break out of narrow Shopify Details container to full viewport width */
+      width: 100vw !important;
+      max-width: 100vw !important;
+      margin-left: calc(-50vw + 50%) !important;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background-color: #fafaf8;
       color: #1a1a1a;
-      
+
       display: flex;
       flex-direction: column;
       align-items: center;
