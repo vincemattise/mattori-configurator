@@ -2114,7 +2114,8 @@
     const btnFunda = document.getElementById('btnFunda');
 
     function getFundaUrl() {
-      return fundaUrlInput.value.trim();
+      var input = document.getElementById('fundaUrl');
+      return input ? input.value.trim() : '';
     }
 
     fundaUrlInput.addEventListener('keydown', (e) => {
@@ -2168,7 +2169,8 @@
 
       setFundaStatus('loading', 'Plattegrond ophalen...');
       showLoading();
-      btnFunda.disabled = true;
+      var _btnFunda = document.getElementById('btnFunda');
+      if (_btnFunda) _btnFunda.disabled = true;
 
       try {
         const resp = await fetch('https://web-production-89353.up.railway.app/funda-fml', {
@@ -2191,16 +2193,19 @@
         originalFmlData = data;
         originalFileName = 'funda-plattegrond.fml';
         lastFundaUrl = url;
-        fileLabel.textContent = `🔗 ${url.split('/').filter(Boolean).pop() || 'funda'}`;
+        var _fileLabel = document.getElementById('fileLabel');
+        if (_fileLabel) _fileLabel.textContent = `🔗 ${url.split('/').filter(Boolean).pop() || 'funda'}`;
 
         const addr = parseFundaAddress(url) || parseAddressFromFML(data);
+        var _addrStreet = document.getElementById('addressStreet');
+        var _addrCity = document.getElementById('addressCity');
         if (addr) {
-          addressStreet.value = addr.street;
-          addressCity.value = addr.city;
+          if (_addrStreet) _addrStreet.value = addr.street;
+          if (_addrCity) _addrCity.value = addr.city;
           currentAddress = addr;
         } else {
-          addressStreet.value = '';
-          addressCity.value = '';
+          if (_addrStreet) _addrStreet.value = '';
+          if (_addrCity) _addrCity.value = '';
         }
 
         const addrStr = addr ? `${addr.street}, ${addr.city}` : 'Adres niet gevonden';
@@ -2215,7 +2220,8 @@
         }
       } finally {
         hideLoading();
-        btnFunda.disabled = false;
+        var _btnFunda2 = document.getElementById('btnFunda');
+        if (_btnFunda2) _btnFunda2.disabled = false;
       }
     }
 
