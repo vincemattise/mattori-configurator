@@ -1129,19 +1129,12 @@
       const isSingleFloor = regularCount <= 1;
 
       for (const i of includedIndices) {
-        const floor = floors[i];
         const card = document.createElement('div');
         card.className = 'floor-card';
-
-        const nameEl = document.createElement('div');
-        nameEl.className = 'floor-name';
-        nameEl.dataset.floorIndex = i;
-        nameEl.textContent = translateFloorName(floor.name, isSingleFloor);
 
         const viewerWrap = document.createElement('div');
         viewerWrap.className = 'floor-canvas-wrap';
 
-        card.appendChild(nameEl);
         card.appendChild(viewerWrap);
         floorsGrid.appendChild(card);
 

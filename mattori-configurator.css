@@ -789,6 +789,7 @@
       border-radius: 14px;
       padding: 1rem 1.2rem;
       margin-top: 0.6rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
 
     .mattori-configurator .floor-review-divider {
