@@ -1649,16 +1649,24 @@
       if (!floorOrder || toIdx < 0 || toIdx >= floorOrder.length) return;
       var item = floorOrder.splice(fromIdx, 1)[0];
       floorOrder.splice(toIdx, 0, item);
-      renderLayoutView();
-      // Highlight moved card briefly
-      var cards = floorLayoutViewer.querySelectorAll('.floor-layout-card');
-      if (cards[toIdx]) {
-        cards[toIdx].classList.add('just-moved');
-        setTimeout(function() { cards[toIdx].classList.remove('just-moved'); }, 500);
-      }
-      // Also update unified preview labels + thumbnails
-      renderPreviewThumbnails();
-      updateFloorLabels();
+      // Show loading spinner while re-rendering
+      floorLayoutViewer.innerHTML = '';
+      var loader = document.createElement('div');
+      loader.className = 'wizard-step-loading';
+      loader.innerHTML = '<div class="step-spinner"></div>';
+      floorLayoutViewer.appendChild(loader);
+      setTimeout(function() {
+        renderLayoutView();
+        // Highlight moved card briefly
+        var cards = floorLayoutViewer.querySelectorAll('.floor-layout-card');
+        if (cards[toIdx]) {
+          cards[toIdx].classList.add('just-moved');
+          setTimeout(function() { cards[toIdx].classList.remove('just-moved'); }, 600);
+        }
+        // Also update unified preview labels + thumbnails
+        renderPreviewThumbnails();
+        updateFloorLabels();
+      }, 120);
     }
 
     function renderLayoutView() {
