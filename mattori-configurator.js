@@ -1103,11 +1103,11 @@
       if (groups.walls) scene.add(new THREE.Mesh(groups.walls, wallMaterial));
       if (groups.floor) scene.add(new THREE.Mesh(groups.floor, floorMaterial));
 
-      scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-      const dirLight = new THREE.DirectionalLight(0xffffff, 0.35);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
       dirLight.position.set(0, 8, 5);
       scene.add(dirLight);
-      const fillLight = new THREE.DirectionalLight(0xffffff, 0.15);
+      const fillLight = new THREE.DirectionalLight(0xffffff, 0.25);
       fillLight.position.set(-4, 6, -1);
       scene.add(fillLight);
 
