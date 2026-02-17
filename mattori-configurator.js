@@ -390,7 +390,6 @@
 
     let currentAddress = { street: '', city: '' };
     let lastFundaUrl = '';
-    var noFloorsMode = false; // true when Funda link valid but no interactive floorplans
 
     // ============================================================
     // BOUNDING BOX
@@ -556,7 +555,7 @@
           const sinAngle = Math.abs(ux * (otherDy / otherLen) - uy * (otherDx / otherLen));
           if (sinAngle < 0.1) continue;
 
-          const ext = Math.min(otherHalfThick / sinAngle, otherHalfThick * 1.5);
+          const ext = Math.min(otherHalfThick / sinAngle, otherHalfThick * 3);
 
           const aShares = pointsNear(origAx, origAy, other.a.x, other.a.y) ||
                           pointsNear(origAx, origAy, other.b.x, other.b.y);
@@ -1018,8 +1017,9 @@
         dimsEl.style.display = '';
       }
 
-      // Don't switch to unified preview yet — that happens at step 2
-      // Just prepare the data; productHeroImage stays visible during step 1
+      // Switch to unified preview
+      if (productHeroImage) productHeroImage.style.display = 'none';
+      unifiedFramePreview.style.display = '';
 
       // Update address in preview
       updateFrameAddress();
@@ -1796,7 +1796,7 @@
       1: 'Voer je Funda-link in',
       2: 'Controleer het adres',
       3: 'Bekijk de plattegronden',
-      4: 'Pas de indeling aan',
+      4: 'Pas de volgorde aan',
       5: 'Pas de labels aan'
     };
 
@@ -1885,24 +1885,13 @@
           }
         }
 
-        // Switch between product hero image (step 1) and frame preview (step 2+)
-        if (n >= 2 && floors.length > 0) {
-          if (productHeroImage) productHeroImage.style.display = 'none';
-        } else {
-          if (productHeroImage) productHeroImage.style.display = '';
-        }
-
         // Step 3: show floor review viewer in left column, hide unified preview
         if (n === 3) {
           if (unifiedFramePreview) unifiedFramePreview.style.display = 'none';
           if (floorReviewViewerEl) floorReviewViewerEl.style.display = '';
         } else {
           if (floorReviewViewerEl) floorReviewViewerEl.style.display = 'none';
-          if (n >= 2 && floors.length > 0 && unifiedFramePreview) {
-            unifiedFramePreview.style.display = '';
-          } else {
-            if (unifiedFramePreview) unifiedFramePreview.style.display = 'none';
-          }
+          if (floors.length > 0 && unifiedFramePreview) unifiedFramePreview.style.display = '';
         }
 
         // Show/hide order button + disclaimer (only on last step)
@@ -1955,25 +1944,15 @@
       btnWizardPrev.style.display = currentWizardStep > 1 ? '' : 'none';
 
       // Always reset button text (guards against leftover "Laden..." state)
+      btnWizardNext.textContent = 'Volgende \u2192';
       btnWizardNext.disabled = false;
-      if (currentWizardStep === 1) {
-        btnWizardNext.textContent = 'Start met ontwerpen \u2192';
-      } else {
-        btnWizardNext.textContent = 'Volgende \u2192';
-      }
 
       if (currentWizardStep === TOTAL_WIZARD_STEPS) {
         // Last step: hide next, show order
         btnWizardNext.style.display = 'none';
       } else if (currentWizardStep === 1) {
-        // Step 1: show next if data is loaded, or show order if noFloorsMode
-        if (noFloorsMode) {
-          btnWizardNext.style.display = 'none';
-          var orderBtn = document.getElementById('btnOrder');
-          if (orderBtn) orderBtn.style.display = '';
-        } else {
-          btnWizardNext.style.display = floors.length > 0 ? '' : 'none';
-        }
+        // Step 1: only show next if data is loaded
+        btnWizardNext.style.display = floors.length > 0 ? '' : 'none';
       } else if (currentWizardStep === 3) {
         // Step 3: hide wizard next — "Klopt, volgende" button handles navigation
         btnWizardNext.style.display = 'none';
@@ -2091,17 +2070,14 @@
       var issueBtn = document.getElementById('btnFloorIssue');
       if (issueBtn) issueBtn.classList.remove('active');
 
-      // Update button states based on current floor's exclude status
+      // Update confirm button text
       var confirmBtn = document.getElementById('btnFloorConfirm');
-      var excludeBtn = document.getElementById('btnFloorExclude');
-      var isExcluded = excludedFloors.has(currentFloorReviewIndex);
       if (confirmBtn) {
-        confirmBtn.textContent = 'Wel meenemen ✓';
-        confirmBtn.classList.toggle('active', !isExcluded);
-      }
-      if (excludeBtn) {
-        excludeBtn.textContent = 'Niet meenemen';
-        excludeBtn.classList.toggle('active', isExcluded);
+        if (currentFloorReviewIndex >= floors.length - 1) {
+          confirmBtn.textContent = 'Plattegrond klopt ✓';
+        } else {
+          confirmBtn.textContent = 'Klopt, volgende ✓';
+        }
       }
     }
 
@@ -2128,8 +2104,6 @@
     function confirmFloor() {
       ensureDomRefs();
       viewedFloors.add(currentFloorReviewIndex);
-      // Make sure this floor is included
-      excludedFloors.delete(currentFloorReviewIndex);
       // Close any open issue panel
       var details = document.getElementById('floorIssueDetails');
       if (details) details.style.display = 'none';
@@ -2141,25 +2115,6 @@
         renderFloorReview();
       } else {
         // Last floor confirmed — go to step 4 automatically
-        showWizardStep(4);
-      }
-    }
-
-    // "Niet meenemen" — exclude floor and advance
-    function toggleFloorExcludeReview() {
-      ensureDomRefs();
-      viewedFloors.add(currentFloorReviewIndex);
-      excludedFloors.add(currentFloorReviewIndex);
-      // Close any open issue panel
-      var details = document.getElementById('floorIssueDetails');
-      if (details) details.style.display = 'none';
-      var issueBtn = document.getElementById('btnFloorIssue');
-      if (issueBtn) issueBtn.classList.remove('active');
-      // Navigate to next floor, or auto-advance to step 4
-      if (currentFloorReviewIndex < floors.length - 1) {
-        currentFloorReviewIndex++;
-        renderFloorReview();
-      } else {
         showWizardStep(4);
       }
     }
@@ -3134,8 +3089,6 @@
         icon.innerHTML = '<div class="mini-spinner"></div>';
       } else if (state === 'success') {
         icon.textContent = '';
-      } else if (state === 'nofloors') {
-        icon.textContent = '⚠';
       } else if (state === 'error') {
         icon.textContent = '✕';
       }
@@ -3166,23 +3119,13 @@
         });
         const data = await resp.json();
 
-        if (data.error || !data?.floors?.length) {
-          // Funda link is valid but no interactive floorplans available
-          // Store the URL so we can include it in the order
-          lastFundaUrl = url;
-          var addr = parseFundaAddress(url);
-          if (addr) {
-            addressStreet.value = addr.street;
-            addressCity.value = addr.city;
-            currentAddress = addr;
-          }
-          setFundaStatus('nofloors',
-            '<strong>Funda-link herkend, maar geen interactieve plattegrond beschikbaar</strong>' +
-            '<span>Geen probleem — wij bouwen je Frame³ handmatig op basis van de woning. ' +
-            'Je kunt gewoon bestellen en wij regelen de rest.</span>');
-          // Show a direct order button
-          noFloorsMode = true;
-          updateWizardUI();
+        if (data.error) {
+          setFundaStatus('error', `<strong>Geen plattegrond gevonden</strong><span>${data.error}</span>`);
+          return;
+        }
+
+        if (!data?.floors?.length) {
+          setFundaStatus('error', '<strong>Geen verdiepingen gevonden</strong><span>Deze woning heeft geen plattegrond.</span>');
           return;
         }
 
@@ -3206,12 +3149,11 @@
 
         processFloors(data);
       } catch (err) {
-        setFundaStatus('error',
-          '<strong>Er ging iets mis bij het ophalen</strong>' +
-          '<span>We konden de plattegrond niet laden. Controleer de link en probeer het opnieuw, ' +
-          'of neem contact met ons op zodat we je kunnen helpen.</span>' +
-          '<a href="mailto:info@mattori.nl?subject=Hulp%20bij%20Frame%C2%B3%20bestelling&body=Funda%20link%3A%20' +
-          encodeURIComponent(url) + '" class="funda-contact-link">✉ Mail ons</a>');
+        if (err.message && (err.message.includes('Load failed') || err.message.includes('Failed to fetch'))) {
+          setFundaStatus('error', '<strong>Verbinding mislukt</strong><span>Draait de Flask server?</span>');
+        } else {
+          setFundaStatus('error', `<strong>Fout</strong><span>${err.message}</span>`);
+        }
       } finally {
         hideLoading();
         btnFunda.disabled = false;
