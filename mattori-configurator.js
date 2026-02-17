@@ -1194,6 +1194,18 @@
         camera.up.set(0, 0, -1); // Z- = up on screen (north in floorplan)
         camera.position.set(0, 50, 0);
         camera.lookAt(0, 0, 0);
+
+        // Fine-tune alignment: push OBJ to edge of frustum so model
+        // visually touches the canvas edge (compensates for OBJ bounding
+        // box being slightly larger than worldW/worldH due to wall thickness)
+        var align = getFloorAlign(floorIndex);
+        if (align === 'top' || align === 'bottom') {
+          var shiftZ = halfFrustumH - size.z / 2;
+          // Camera up=(0,0,-1) means screen-up = world -Z
+          // 'top' on screen → shift scene -Z, 'bottom' → shift scene +Z
+          scene.position.z += (align === 'bottom') ? shiftZ : -shiftZ;
+        }
+
         camera.updateProjectionMatrix();
       } else {
         // Perspective camera with slight tilt (for final result with depth)
@@ -2140,12 +2152,22 @@
       updateFloorLabels();
     }
 
-    // Show loading spinner on preview, do work, then hide
+    // Show loading overlay on control panel + preview, do work, then hide
     function updatePreviewWithLoading(fn) {
       if (floorsLoading) floorsLoading.classList.remove('hidden');
+      // Add loading overlay on the control panel to block interactions
+      var overlay = null;
+      if (floorLayoutViewer) {
+        floorLayoutViewer.style.position = 'relative';
+        overlay = document.createElement('div');
+        overlay.className = 'floor-controls-loading-overlay';
+        overlay.innerHTML = '<div class="step-spinner"></div>';
+        floorLayoutViewer.appendChild(overlay);
+      }
       setTimeout(function() {
         fn();
         if (floorsLoading) floorsLoading.classList.add('hidden');
+        if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
       }, 60);
     }
 
@@ -2341,11 +2363,12 @@
           alignGroup.className = 'floor-align-group';
 
           var alignValues = ['top', 'center', 'bottom'];
-          // SVG icons: 3 horizontal lines with a dot indicating position
+          // SVG icons: two rectangles (tall + short) aligned relative to each other
+          // Shows inter-floor alignment, not frame-edge alignment
           var alignIcons = {
-            top: '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="2" rx="0.5" fill="currentColor" opacity="1"/><rect x="3" y="6" width="8" height="1.5" rx="0.5" fill="currentColor" opacity="0.3"/><rect x="3" y="10.5" width="8" height="1.5" rx="0.5" fill="currentColor" opacity="0.3"/></svg>',
-            center: '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="3" y="1" width="8" height="1.5" rx="0.5" fill="currentColor" opacity="0.3"/><rect x="1" y="6" width="12" height="2" rx="0.5" fill="currentColor" opacity="1"/><rect x="3" y="10.5" width="8" height="1.5" rx="0.5" fill="currentColor" opacity="0.3"/></svg>',
-            bottom: '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="3" y="1" width="8" height="1.5" rx="0.5" fill="currentColor" opacity="0.3"/><rect x="3" y="5.5" width="8" height="1.5" rx="0.5" fill="currentColor" opacity="0.3"/><rect x="1" y="11" width="12" height="2" rx="0.5" fill="currentColor" opacity="1"/></svg>'
+            top: '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="4" height="10" rx="1" fill="currentColor" opacity="0.9"/><rect x="8" y="2" width="4" height="6" rx="1" fill="currentColor" opacity="0.5"/></svg>',
+            center: '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="4" height="10" rx="1" fill="currentColor" opacity="0.9"/><rect x="8" y="4" width="4" height="6" rx="1" fill="currentColor" opacity="0.5"/></svg>',
+            bottom: '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="4" height="10" rx="1" fill="currentColor" opacity="0.9"/><rect x="8" y="6" width="4" height="6" rx="1" fill="currentColor" opacity="0.5"/></svg>'
           };
 
           for (var ai = 0; ai < alignValues.length; ai++) {
@@ -2353,7 +2376,7 @@
             alignBtn.type = 'button';
             alignBtn.className = 'floor-align-btn' + (alignValues[ai] === currentAlign ? ' active' : '');
             alignBtn.innerHTML = alignIcons[alignValues[ai]];
-            alignBtn.title = alignValues[ai] === 'top' ? 'Boven' : alignValues[ai] === 'center' ? 'Midden' : 'Onder';
+            alignBtn.title = alignValues[ai] === 'top' ? 'Bovenkant uitlijnen' : alignValues[ai] === 'center' ? 'Midden uitlijnen' : 'Onderkant uitlijnen';
 
             (function(fi, val) {
               alignBtn.addEventListener('click', function() {
