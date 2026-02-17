@@ -2821,7 +2821,7 @@
     // Function declaration so it hoists (Shopify addEventListener issue)
     function pasteTestLink() {
       var input = document.getElementById('fundaUrl');
-      if (input) input.value = 'https://www.funda.nl/detail/koop/arnhem/huis-madelievenstraat-61/43269652/';
+      if (input) input.value = 'https://www.funda.nl/detail/koop/haarlem/appartement-prinsen-bolwerk-72/43226270/';
     }
     const btnTest = document.getElementById('btnTest');
     if (btnTest) {
