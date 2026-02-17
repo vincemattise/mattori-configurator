@@ -1090,13 +1090,13 @@
       scene.background = null;
 
       const wallMaterial = new THREE.MeshPhongMaterial({
-        color: 0xA89478,
+        color: 0x948B7C,
         flatShading: true,
         side: THREE.DoubleSide,
         shininess: 10
       });
       const floorMaterial = new THREE.MeshPhongMaterial({
-        color: 0xA89478,
+        color: 0x948B7C,
         flatShading: true,
         side: THREE.DoubleSide,
         shininess: 5
@@ -1441,9 +1441,23 @@
       updateWizardUI();
     }
 
+    var WIZARD_STEP_TITLES = {
+      1: 'Voer je Funda-link in',
+      2: 'Controleer het adres',
+      3: 'Bekijk de plattegronden',
+      4: 'Pas de volgorde aan',
+      5: 'Pas de labels aan'
+    };
+
     function showWizardStep(n) {
       if (n < 1 || n > TOTAL_WIZARD_STEPS) return;
       currentWizardStep = n;
+
+      // Update dynamic wizard title
+      var wizTitle = document.querySelector('.mattori-configurator .wizard-title');
+      if (wizTitle && WIZARD_STEP_TITLES[n]) {
+        wizTitle.textContent = WIZARD_STEP_TITLES[n];
+      }
 
       // Hide all steps
       for (let i = 1; i <= TOTAL_WIZARD_STEPS; i++) {
@@ -1514,8 +1528,10 @@
 
         // Special step initialization
         if (n === 3) {
-          currentFloorReviewIndex = 0;
-          viewedFloors.clear();
+          // Only reset viewed floors on first visit (not when returning)
+          if (viewedFloors.size === 0) {
+            currentFloorReviewIndex = 0;
+          }
           buildThumbstrip();
           renderFloorReview();
         } else if (n === 4) {
@@ -1645,14 +1661,30 @@
       if (currentFloorReviewIndex >= floors.length) currentFloorReviewIndex = floors.length - 1;
       if (currentFloorReviewIndex < 0) currentFloorReviewIndex = 0;
 
-      // Render interactive viewer
-      floorReviewViewer = renderInteractiveViewer(currentFloorReviewIndex, floorReviewViewerEl);
+      // Show loading spinner overlay
+      var loadingOverlayEl = document.createElement('div');
+      loadingOverlayEl.className = 'floor-review-loading-overlay';
+      loadingOverlayEl.innerHTML = '<div class="review-spinner"></div>';
+      floorReviewViewerEl.appendChild(loadingOverlayEl);
 
-      // Add zoom/rotate hint label
-      var hint = document.createElement('div');
-      hint.className = 'floor-review-hint';
-      hint.textContent = 'Klik en sleep om te draaien \u00B7 scroll om te zoomen';
-      floorReviewViewerEl.appendChild(hint);
+      // Delay render slightly so spinner is visible
+      setTimeout(function() {
+        // Remove spinner
+        var spinner = floorReviewViewerEl.querySelector('.floor-review-loading-overlay');
+        if (spinner) spinner.remove();
+
+        // Render interactive viewer
+        floorReviewViewer = renderInteractiveViewer(currentFloorReviewIndex, floorReviewViewerEl);
+
+        // Add zoom/rotate hint label
+        var hint = document.createElement('div');
+        hint.className = 'floor-review-hint';
+        hint.textContent = 'Klik en sleep om te draaien \u00B7 scroll om te zoomen';
+        floorReviewViewerEl.appendChild(hint);
+
+        // Show/hide excluded overlay
+        updateFloorReviewExcludedOverlay();
+      }, 60);
 
       // Track viewed floors and update wizard UI
       viewedFloors.add(currentFloorReviewIndex);
@@ -1663,16 +1695,20 @@
 
       // Update checkbox
       floorIncludeCb.checked = !excludedFloors.has(currentFloorReviewIndex);
+    }
 
-      // Show/hide excluded overlay
-      const existingOverlay = floorReviewViewerEl.querySelector('.floor-review-excluded');
-      if (existingOverlay) existingOverlay.remove();
+    function updateFloorReviewExcludedOverlay() {
+      if (!floorReviewViewerEl) return;
+      var existing = floorReviewViewerEl.querySelector('.floor-review-excluded');
+      if (existing) existing.remove();
       if (excludedFloors.has(currentFloorReviewIndex)) {
-        const overlay = document.createElement('div');
+        var overlay = document.createElement('div');
         overlay.className = 'floor-review-excluded';
         overlay.innerHTML = '<span>Uitgezet</span>';
         floorReviewViewerEl.appendChild(overlay);
       }
+      // Sync checkbox
+      if (floorIncludeCb) floorIncludeCb.checked = !excludedFloors.has(currentFloorReviewIndex);
     }
 
     function navigateFloorReview(direction) {
@@ -1741,63 +1777,104 @@
       layoutViewers = [];
       floorLayoutViewer.innerHTML = '';
 
+      // Build ordered list: included first (in custom order), then excluded
       var includedIndices = [];
+      var excludedIndices = [];
       for (var i = 0; i < floors.length; i++) {
-        if (!excludedFloors.has(i)) includedIndices.push(i);
+        if (excludedFloors.has(i)) {
+          excludedIndices.push(i);
+        } else {
+          includedIndices.push(i);
+        }
       }
 
-      // Use custom order if set, otherwise default
+      // Use custom order if set for included floors
       if (floorOrder && floorOrder.length === includedIndices.length) {
         includedIndices = floorOrder.slice();
       } else {
         floorOrder = includedIndices.slice();
       }
 
-      for (var idx = 0; idx < includedIndices.length; idx++) {
-        var floorIdx = includedIndices[idx];
-        var card = document.createElement('div');
-        card.className = 'floor-layout-card';
+      // Render all floors: included first, then excluded
+      var allIndices = includedIndices.concat(excludedIndices);
+      var includedCount = 0;
 
-        // Number
+      for (var idx = 0; idx < allIndices.length; idx++) {
+        var floorIdx = allIndices[idx];
+        var isExcluded = excludedFloors.has(floorIdx);
+        var card = document.createElement('div');
+        card.className = 'floor-layout-card' + (isExcluded ? ' excluded' : '');
+
+        // Number (only for included)
         var numEl = document.createElement('div');
         numEl.className = 'floor-layout-number';
-        numEl.textContent = (idx + 1);
+        if (!isExcluded) {
+          includedCount++;
+          numEl.textContent = includedCount;
+        } else {
+          numEl.textContent = '–';
+        }
 
         // Canvas
         var canvasWrap = document.createElement('div');
         canvasWrap.className = 'floor-layout-canvas-wrap';
-
-        // Up/down arrows
-        var arrows = document.createElement('div');
-        arrows.className = 'floor-layout-arrows';
-
-        var btnUp = document.createElement('button');
-        btnUp.type = 'button';
-        btnUp.innerHTML = '&#9650;';
-        btnUp.disabled = idx === 0;
-
-        var btnDown = document.createElement('button');
-        btnDown.type = 'button';
-        btnDown.innerHTML = '&#9660;';
-        btnDown.disabled = idx === includedIndices.length - 1;
-
-        // Attach click handlers via closure
-        (function(currentIdx) {
-          btnUp.addEventListener('click', function() { moveFloorInOrder(currentIdx, currentIdx - 1); });
-          btnDown.addEventListener('click', function() { moveFloorInOrder(currentIdx, currentIdx + 1); });
-        })(idx);
-
-        arrows.appendChild(btnUp);
-        arrows.appendChild(btnDown);
 
         // Floor name label
         var nameEl = document.createElement('div');
         nameEl.className = 'floor-layout-name';
         nameEl.textContent = floors[floorIdx].name || 'Verdieping ' + (idx + 1);
 
+        // Include/exclude checkbox
+        var includeWrap = document.createElement('div');
+        includeWrap.className = 'floor-layout-include';
+        var includeCb = document.createElement('input');
+        includeCb.type = 'checkbox';
+        includeCb.checked = !isExcluded;
+        var includeLabel = document.createElement('label');
+        includeLabel.textContent = 'Meenemen';
+
+        // Closure for checkbox handler
+        (function(fi) {
+          includeCb.addEventListener('change', function() {
+            toggleFloorExclusion(fi);
+            renderLayoutView();
+            // Also update step 3 thumbstrip
+            buildThumbstrip();
+          });
+        })(floorIdx);
+
+        includeWrap.appendChild(includeCb);
+        includeWrap.appendChild(includeLabel);
+
+        // Up/down arrows (only for included)
+        var arrows = document.createElement('div');
+        arrows.className = 'floor-layout-arrows';
+
+        if (!isExcluded) {
+          var orderIdx = includedIndices.indexOf(floorIdx);
+          var btnUp = document.createElement('button');
+          btnUp.type = 'button';
+          btnUp.innerHTML = '&#9650;';
+          btnUp.disabled = orderIdx === 0;
+
+          var btnDown = document.createElement('button');
+          btnDown.type = 'button';
+          btnDown.innerHTML = '&#9660;';
+          btnDown.disabled = orderIdx === includedIndices.length - 1;
+
+          (function(currentIdx) {
+            btnUp.addEventListener('click', function() { moveFloorInOrder(currentIdx, currentIdx - 1); });
+            btnDown.addEventListener('click', function() { moveFloorInOrder(currentIdx, currentIdx + 1); });
+          })(orderIdx);
+
+          arrows.appendChild(btnUp);
+          arrows.appendChild(btnDown);
+        }
+
         card.appendChild(numEl);
         card.appendChild(canvasWrap);
         card.appendChild(nameEl);
+        card.appendChild(includeWrap);
         card.appendChild(arrows);
         floorLayoutViewer.appendChild(card);
 
@@ -2419,10 +2496,12 @@
     btnWizardPrev.addEventListener('click', () => prevWizardStep());
     btnWizardNext.addEventListener('click', () => nextWizardStep());
 
-    // Floor review include/exclude checkbox
+    // Floor review include/exclude checkbox — NO full re-render
     floorIncludeCb.addEventListener('change', () => {
       toggleFloorExclusion(currentFloorReviewIndex);
-      renderFloorReview(); // refresh overlay
+      // Update excluded overlay without re-rendering 3D
+      updateFloorReviewExcludedOverlay();
+      updateThumbstripState();
     });
 
     // Funda URL loading (refs in ensureDomRefs)
@@ -2514,8 +2593,7 @@
           addressCity.value = '';
         }
 
-        const addrStr = addr ? `${addr.street}, ${addr.city}` : 'Adres niet gevonden';
-        setFundaStatus('success', `<strong>${data.floors.length} interactieve plattegrond${data.floors.length === 1 ? '' : 'en'} gevonden</strong><span>${addrStr}</span>`);
+        setFundaStatus('success', '<strong>✓ Funda link correct</strong><strong>✓ ' + data.floors.length + ' interactieve plattegrond' + (data.floors.length === 1 ? '' : 'en') + ' gevonden</strong>');
 
         processFloors(data);
       } catch (err) {
