@@ -568,9 +568,19 @@
           if (sinAngle < 0.1) continue;
 
           const isDiagonal = Math.min(Math.abs(ux), Math.abs(uy)) > 0.15;
-          // For diagonal walls: no extension, just store clip plane
-          // For axis-aligned walls: extend as before
-          const ext = isDiagonal ? 0 : Math.min(otherHalfThick / sinAngle, otherHalfThick * 3);
+          const otherIsDiagonal = Math.min(Math.abs(otherDx / otherLen), Math.abs(otherDy / otherLen)) > 0.15;
+
+          let ext;
+          if (isDiagonal) {
+            // Diagonal wall: no extension, clip handles it
+            ext = 0;
+          } else if (otherIsDiagonal) {
+            // Straight wall meeting diagonal: minimal extension (just own half-thickness)
+            ext = (wall.thickness ?? 20) / 2;
+          } else {
+            // Both axis-aligned: normal T-junction extension
+            ext = Math.min(otherHalfThick / sinAngle, otherHalfThick * 3);
+          }
 
           const aShares = pointsNear(origAx, origAy, other.a.x, other.a.y) ||
                           pointsNear(origAx, origAy, other.b.x, other.b.y);
