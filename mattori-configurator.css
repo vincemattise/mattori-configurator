@@ -407,7 +407,7 @@
     /* Address overlay — top zone of the frame */
     .mattori-configurator .unified-address-overlay {
       position: absolute;
-      top: calc(16% + 10px);
+      top: 16%;
       left: 15.5%;
       right: 14%;
       height: 10%;
