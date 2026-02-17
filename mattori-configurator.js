@@ -1005,17 +1005,19 @@
       // Update address in preview
       updateFrameAddress();
 
-      // Render thumbnails (hidden until step 5)
+      // Stay on step 1, update UI to show "Volgende" button immediately
+      updateWizardUI();
+
+      // Render thumbnails (hidden until step 5) — delayed so UI stays responsive
       if (unifiedFloorsOverlay) unifiedFloorsOverlay.style.display = 'none';
       if (floorsLoading) floorsLoading.classList.remove('hidden');
-      setTimeout(() => {
-        renderPreviewThumbnails();
-        updateFloorLabels();
-        if (floorsLoading) floorsLoading.classList.add('hidden');
-      }, 50);
-
-      // Stay on step 1, update UI to show "Volgende" button
-      updateWizardUI();
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          renderPreviewThumbnails();
+          updateFloorLabels();
+          if (floorsLoading) floorsLoading.classList.add('hidden');
+        }, 100);
+      });
     }
 
     // ============================================================
@@ -1090,12 +1092,12 @@
       scene.background = null;
 
       const wallMaterial = new THREE.MeshLambertMaterial({
-        color: 0x948B7C,
+        color: 0xB8AFA2,
         flatShading: true,
         side: THREE.DoubleSide
       });
       const floorMaterial = new THREE.MeshLambertMaterial({
-        color: 0x948B7C,
+        color: 0xB8AFA2,
         flatShading: true,
         side: THREE.DoubleSide
       });
@@ -1103,11 +1105,11 @@
       if (groups.walls) scene.add(new THREE.Mesh(groups.walls, wallMaterial));
       if (groups.floor) scene.add(new THREE.Mesh(groups.floor, floorMaterial));
 
-      scene.add(new THREE.AmbientLight(0xffffff, 1.0));
-      const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+      scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
       dirLight.position.set(0, 8, 5);
       scene.add(dirLight);
-      const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+      const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
       fillLight.position.set(-4, 6, -1);
       scene.add(fillLight);
 
