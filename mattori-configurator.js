@@ -1094,8 +1094,8 @@
     }
 
     // Build a Three.js scene for a floor (reused by preview thumbnails, floor review, layout)
-    // Subtle floor colors per index — warm muted tones
-    var FLOOR_COLORS = [0xC4B8A8, 0xB8C4B0, 0xBDB4C4, 0xC4BCB0, 0xA8B8C4, 0xC4A8A8];
+    // Editing floor color — subtle muted sage so walls stand out
+    var EDIT_FLOOR_COLOR = 0xB8C4B0;
 
     function buildFloorScene(floorIndex, floorColor) {
       const floor = floors[floorIndex];
@@ -1514,7 +1514,7 @@
 
         var renderOpts = { ortho: useOrtho };
         if (useOrtho) {
-          renderOpts.floorColor = FLOOR_COLORS[pi % FLOOR_COLORS.length];
+          renderOpts.floorColor = EDIT_FLOOR_COLOR;
         }
         renderStaticThumbnailSized(pos.index, wrap, pos.w, pos.h, renderOpts);
       }
