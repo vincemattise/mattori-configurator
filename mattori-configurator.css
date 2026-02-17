@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.16/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.17/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -1153,10 +1153,10 @@
       justify-content: center;
       width: 26px;
       height: 26px;
-      border: 1px solid #ddd;
+      border: none;
       border-radius: 6px;
-      background: #f8f8f8;
-      color: #333;
+      background: #1a1a1a;
+      color: #fff;
       font-size: 0.9rem;
       cursor: pointer;
       transition: background 0.15s ease;
@@ -1164,7 +1164,7 @@
     }
 
     .mattori-configurator .floor-gap-btn:hover {
-      background: #eee;
+      background: #333;
     }
 
     .mattori-configurator .floor-gap-btn:active {

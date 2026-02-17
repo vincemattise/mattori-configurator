@@ -2137,17 +2137,30 @@
       updateFloorLabels();
     }
 
+    // Show loading spinner on preview, do work, then hide
+    function updatePreviewWithLoading(fn) {
+      if (floorsLoading) floorsLoading.classList.remove('hidden');
+      setTimeout(function() {
+        fn();
+        if (floorsLoading) floorsLoading.classList.add('hidden');
+      }, 60);
+    }
+
     function setLayoutGap(value) {
       layoutGapFactor = parseFloat(value);
-      renderPreviewThumbnails();
-      updateFloorLabels();
+      updatePreviewWithLoading(function() {
+        renderPreviewThumbnails();
+        updateFloorLabels();
+      });
     }
 
     function setFloorAlign(floorIndex, align) {
       if (!floorSettings[floorIndex]) floorSettings[floorIndex] = {};
       floorSettings[floorIndex].align = align;
-      renderPreviewThumbnails();
-      updateFloorLabels();
+      updatePreviewWithLoading(function() {
+        renderPreviewThumbnails();
+        updateFloorLabels();
+      });
     }
 
     function rotateFloor(floorIndex) {
@@ -2155,10 +2168,11 @@
       var current = getFloorRotate(floorIndex);
       var next = (current + 45) % 360;
       floorSettings[floorIndex].rotate = next;
-      // Re-render both step 4 viewer and preview
-      renderLayoutView();
-      renderPreviewThumbnails();
-      updateFloorLabels();
+      updatePreviewWithLoading(function() {
+        renderLayoutView();
+        renderPreviewThumbnails();
+        updateFloorLabels();
+      });
     }
 
     // ============================================================
@@ -2171,12 +2185,13 @@
       if (!floorOrder || toIdx < 0 || toIdx >= floorOrder.length) return;
       var item = floorOrder.splice(fromIdx, 1)[0];
       floorOrder.splice(toIdx, 0, item);
-      // Show loading spinner while re-rendering
+      // Show loading spinners on both layout viewer and preview
       floorLayoutViewer.innerHTML = '';
       var loader = document.createElement('div');
       loader.className = 'wizard-step-loading';
       loader.innerHTML = '<div class="step-spinner"></div>';
       floorLayoutViewer.appendChild(loader);
+      if (floorsLoading) floorsLoading.classList.remove('hidden');
       setTimeout(function() {
         renderLayoutView();
         // Highlight moved card briefly
@@ -2185,9 +2200,9 @@
           cards[toIdx].classList.add('just-moved');
           setTimeout(function() { cards[toIdx].classList.remove('just-moved'); }, 600);
         }
-        // Also update unified preview labels + thumbnails
         renderPreviewThumbnails();
         updateFloorLabels();
+        if (floorsLoading) floorsLoading.classList.add('hidden');
       }, 120);
     }
 
