@@ -286,7 +286,7 @@
       max-width: 1440px;
       margin: 0 auto;
       padding: 2.5rem 3rem 3rem;
-      align-items: center;
+      align-items: start;
     }
 
     .mattori-configurator .page-col-left {
@@ -1116,7 +1116,7 @@
       flex-shrink: 0;
       border-radius: 6px;
       overflow: hidden;
-      background: #f5f5f2;
+      background: transparent;
     }
 
     .mattori-configurator .floor-layout-card .floor-layout-canvas-wrap canvas {
@@ -1178,8 +1178,7 @@
       align-items: center;
       gap: 4px;
       flex-shrink: 0;
-      margin-left: auto;
-      margin-right: 0.8rem;
+      margin-right: 0.5rem;
     }
 
     .mattori-configurator .floor-layout-card .floor-layout-include input[type="checkbox"] {
@@ -1298,8 +1297,7 @@
     .mattori-configurator .labels-fields .label-field-row span {
       font-size: 0.78rem;
       color: #999;
-      width: auto;
-      min-width: 120px;
+      width: 150px;
       flex-shrink: 0;
       text-overflow: ellipsis;
       overflow: hidden;

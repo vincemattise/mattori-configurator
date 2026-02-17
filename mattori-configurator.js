@@ -1089,27 +1089,25 @@
       const scene = new THREE.Scene();
       scene.background = null;
 
-      const wallMaterial = new THREE.MeshPhongMaterial({
+      const wallMaterial = new THREE.MeshLambertMaterial({
         color: 0x948B7C,
         flatShading: true,
-        side: THREE.DoubleSide,
-        shininess: 10
+        side: THREE.DoubleSide
       });
-      const floorMaterial = new THREE.MeshPhongMaterial({
+      const floorMaterial = new THREE.MeshLambertMaterial({
         color: 0x948B7C,
         flatShading: true,
-        side: THREE.DoubleSide,
-        shininess: 5
+        side: THREE.DoubleSide
       });
 
       if (groups.walls) scene.add(new THREE.Mesh(groups.walls, wallMaterial));
       if (groups.floor) scene.add(new THREE.Mesh(groups.floor, floorMaterial));
 
-      scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-      const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.35);
       dirLight.position.set(0, 8, 5);
       scene.add(dirLight);
-      const fillLight = new THREE.DirectionalLight(0xffffff, 0.2);
+      const fillLight = new THREE.DirectionalLight(0xffffff, 0.15);
       fillLight.position.set(-4, 6, -1);
       scene.add(fillLight);
 
