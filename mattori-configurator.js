@@ -2192,8 +2192,7 @@
     function rotateFloor(floorIndex) {
       if (!floorSettings[floorIndex]) floorSettings[floorIndex] = {};
       var current = getFloorRotate(floorIndex);
-      var next = (current + 45) % 360;
-      floorSettings[floorIndex].rotate = next;
+      floorSettings[floorIndex].rotate = current === 0 ? 180 : 0;
       updatePreviewWithLoading(function() {
         renderLayoutView();
         renderPreviewThumbnails();
@@ -2393,8 +2392,8 @@
           var rotBtn = document.createElement('button');
           rotBtn.type = 'button';
           rotBtn.className = 'floor-rotate-btn';
-          rotBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M8 0.5L10.5 2.5L8 4.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-          rotBtn.title = 'Roteer 45°';
+          rotBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16"><path d="M3 4L8 1L13 4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12L8 15L3 12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="1" x2="8" y2="15" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 1.5"/></svg>';
+          rotBtn.title = '180° draaien';
 
           (function(fi) {
             rotBtn.addEventListener('click', function() {
