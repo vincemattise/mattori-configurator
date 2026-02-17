@@ -240,8 +240,22 @@
         ancestor.style.overflow = 'visible';
         ancestor = ancestor.parentElement;
       }
-      // Reveal after overflow is set — CSS handles the breakout positioning
+      // CSS sets width:100vw; JS corrects margin-left then reveals
+      // Element starts visibility:hidden in HTML — no flash possible
+      function applyBreakout() {
+        var rect = el.getBoundingClientRect();
+        el.style.marginLeft = (-rect.left) + 'px';
+      }
+      applyBreakout();
       el.style.visibility = '';
+      // Re-correct on resize
+      window.addEventListener('resize', function() {
+        el.style.marginLeft = '0px';
+        requestAnimationFrame(function() {
+          var rect = el.getBoundingClientRect();
+          el.style.marginLeft = (-rect.left) + 'px';
+        });
+      });
     })();
 
     // ============================================================
