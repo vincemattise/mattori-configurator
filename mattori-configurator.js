@@ -1961,6 +1961,7 @@
         btnWizardNext.style.display = 'none';
       } else if (currentWizardStep === 1) {
         // Step 1: only show next if data is loaded
+        btnWizardNext.textContent = 'Start met ontwerpen \u2192';
         btnWizardNext.style.display = floors.length > 0 ? '' : 'none';
       } else if (currentWizardStep === 3) {
         // Step 3: hide wizard next — "Klopt, volgende" button handles navigation
