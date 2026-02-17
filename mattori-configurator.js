@@ -161,6 +161,7 @@
     const TOTAL_WIZARD_STEPS = 5;
     let currentFloorReviewIndex = 0;
     var viewedFloors = new Set();
+    let noFloorsMode = false;
 
     // Active viewers for cleanup
     let activeViewers = [];       // { renderer, controls, animId }
@@ -1949,9 +1950,14 @@
         // Last step: hide next, show order
         btnWizardNext.style.display = 'none';
       } else if (currentWizardStep === 1) {
-        // Step 1: only show next if data is loaded
-        btnWizardNext.textContent = 'Start met ontwerpen \u2192';
-        btnWizardNext.style.display = floors.length > 0 ? '' : 'none';
+        // Step 1: show next if data is loaded, or noFloorsMode button
+        if (noFloorsMode) {
+          btnWizardNext.textContent = 'Bestellen op goed vertrouwen \u2192';
+          btnWizardNext.style.display = '';
+        } else {
+          btnWizardNext.textContent = 'Start met ontwerpen \u2192';
+          btnWizardNext.style.display = floors.length > 0 ? '' : 'none';
+        }
       } else if (currentWizardStep === 3) {
         // Step 3: hide wizard next — "Klopt, volgende" button handles navigation
         btnWizardNext.style.display = 'none';
@@ -1961,6 +1967,11 @@
     }
 
     function nextWizardStep() {
+      // noFloorsMode: skip steps 2-5, go straight to cart
+      if (noFloorsMode && currentWizardStep === 1) {
+        submitOrder();
+        return;
+      }
       if (currentWizardStep < TOTAL_WIZARD_STEPS) {
         showWizardStep(currentWizardStep + 1);
       }
@@ -3097,10 +3108,37 @@
     function hideFundaStatus() {
       var box = document.getElementById('fundaStatus');
       if (box) box.className = 'funda-status';
+      // Also hide contact email if present
+      var emailBtn = document.getElementById('contactEmailBtn');
+      if (emailBtn) emailBtn.style.display = 'none';
+    }
+
+    function showContactEmail(fundaUrl) {
+      var existing = document.getElementById('contactEmailBtn');
+      if (existing) {
+        // Update mailto and show
+        var subject = encodeURIComponent('Frame³ bestelling — hulp nodig');
+        var body = encodeURIComponent('Hoi,\n\nIk wil graag een Frame³ bestellen maar het lukt niet via de configurator.\n\nFunda link: ' + (fundaUrl || '(niet ingevuld)') + '\n\nKunnen jullie me helpen?\n\nAlvast bedankt!');
+        existing.href = 'mailto:vince@mattori.nl?subject=' + subject + '&body=' + body;
+        existing.style.display = '';
+        return;
+      }
+      // Create email button after funda-status
+      var statusBox = document.getElementById('fundaStatus');
+      if (!statusBox) return;
+      var subject = encodeURIComponent('Frame³ bestelling — hulp nodig');
+      var body = encodeURIComponent('Hoi,\n\nIk wil graag een Frame³ bestellen maar het lukt niet via de configurator.\n\nFunda link: ' + (fundaUrl || '(niet ingevuld)') + '\n\nKunnen jullie me helpen?\n\nAlvast bedankt!');
+      var btn = document.createElement('a');
+      btn.id = 'contactEmailBtn';
+      btn.className = 'btn-contact-email';
+      btn.href = 'mailto:vince@mattori.nl?subject=' + subject + '&body=' + body;
+      btn.textContent = 'Neem contact op →';
+      statusBox.parentNode.insertBefore(btn, statusBox.nextSibling);
     }
 
     async function loadFromFunda() {
       ensureDomRefs();
+      noFloorsMode = false; // Reset on new attempt
       const url = getFundaUrl();
       clearError();
       if (!url) { setError('Voer een Funda URL in.'); return; }
@@ -3120,11 +3158,16 @@
 
         if (data.error) {
           setFundaStatus('error', `<strong>Geen plattegrond gevonden</strong><span>${data.error}</span>`);
+          showContactEmail(url);
           return;
         }
 
-        if (!data?.floors?.length) {
-          setFundaStatus('error', '<strong>Geen verdiepingen gevonden</strong><span>Deze woning heeft geen plattegrond.</span>');
+        if (!data?.floors?.length || !(data.floors ?? []).some(f => f?.designs?.[0])) {
+          // noFloorsMode: Funda link valid but no interactive floor plans
+          noFloorsMode = true;
+          lastFundaUrl = url;
+          setFundaStatus('success', '<strong>✓ Funda link herkend</strong><strong class="status-warning">✗ Geen interactieve plattegronden beschikbaar</strong><span>Geen zorgen — we bouwen je Frame³ handmatig op basis van de Funda-foto\'s.</span>');
+          updateWizardUI();
           return;
         }
 
@@ -3153,6 +3196,7 @@
         } else {
           setFundaStatus('error', `<strong>Fout</strong><span>${err.message}</span>`);
         }
+        showContactEmail(url);
       } finally {
         hideLoading();
         btnFunda.disabled = false;
@@ -3169,11 +3213,14 @@
         showToast('Product niet gevonden.');
         return;
       }
-      var orderBtn = document.getElementById('btnOrder');
+      // Disable the correct button (btnOrder for normal flow, btnWizardNext for noFloorsMode)
+      var orderBtn = noFloorsMode ? btnWizardNext : document.getElementById('btnOrder');
+      var originalText = orderBtn ? orderBtn.textContent : '';
       if (orderBtn) { orderBtn.disabled = true; orderBtn.textContent = 'Toevoegen…'; }
       var fundaLink = fundaUrlInput ? fundaUrlInput.value.trim() : '';
       var itemProperties = {};
       if (fundaLink) itemProperties['Funda link'] = fundaLink;
+      if (noFloorsMode) itemProperties['Opmerking'] = 'Geen interactieve plattegronden — handmatig opbouwen';
       fetch('/cart/add.js', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3189,7 +3236,7 @@
       })
       .catch(function(err) {
         showToast('Kon niet toevoegen aan winkelwagen.');
-        if (orderBtn) { orderBtn.disabled = false; orderBtn.textContent = 'Afronden & bestellen \u2726'; }
+        if (orderBtn) { orderBtn.disabled = false; orderBtn.textContent = originalText; }
       });
     }
     // submitOrder is triggered via onclick="submitOrder()" in HTML

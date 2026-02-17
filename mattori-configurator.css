@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v36.4/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v36.5/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -327,6 +327,29 @@
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
       flex-shrink: 0;
+    }
+
+    .mattori-configurator .funda-status .status-text .status-warning {
+      color: #ae1c28;
+      opacity: 0.85;
+    }
+
+    .mattori-configurator .btn-contact-email {
+      display: inline-block;
+      margin-top: 0.5rem;
+      padding: 0.5rem 1.1rem;
+      background: #1a1a1a;
+      color: #fff !important;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .mattori-configurator .btn-contact-email:hover {
+      background: #333;
     }
 
     /* ═══════════════════════════════════════════ */
