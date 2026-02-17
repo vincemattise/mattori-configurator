@@ -1050,7 +1050,7 @@
           if (floorsLoading) floorsLoading.classList.add('hidden');
           // Re-enable the button now rendering is done
           if (btnWizardNext) {
-            btnWizardNext.textContent = 'Volgende \u2192';
+            btnWizardNext.textContent = 'Start met ontwerpen \u2192';
             btnWizardNext.disabled = false;
           }
         }, 100);
