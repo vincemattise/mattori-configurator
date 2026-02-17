@@ -533,8 +533,9 @@
         b: { x: w.b.x, y: w.b.y },
         thickness: w.thickness ?? 20,
         openings: w.openings ?? [],
-        _clipA: null, // {nx, ny} normal of intersecting wall at endpoint A
-        _clipB: null, // {nx, ny} normal of intersecting wall at endpoint B
+        _clipA: null, // {dx, dy} direction of intersecting wall at endpoint A
+        _clipB: null, // {dx, dy} direction of intersecting wall at endpoint B
+        _isDiagonal: false, // set during extension pass
         _arcSeg: w._arcSeg ?? false,
         _heightA: w._heightA ?? 265,
         _heightB: w._heightB ?? 265
@@ -568,19 +569,10 @@
           if (sinAngle < 0.1) continue;
 
           const isDiagonal = Math.min(Math.abs(ux), Math.abs(uy)) > 0.15;
-          const otherIsDiagonal = Math.min(Math.abs(otherDx / otherLen), Math.abs(otherDy / otherLen)) > 0.15;
-
-          let ext;
-          if (isDiagonal) {
-            // Diagonal wall: no extension, clip handles it
-            ext = 0;
-          } else if (otherIsDiagonal) {
-            // Straight wall meeting diagonal: minimal extension (just own half-thickness)
-            ext = (wall.thickness ?? 20) / 2;
-          } else {
-            // Both axis-aligned: normal T-junction extension
-            ext = Math.min(otherHalfThick / sinAngle, otherHalfThick * 3);
-          }
+          if (isDiagonal) wall._isDiagonal = true;
+          // For diagonal walls: no extension, just store clip plane
+          // For axis-aligned walls: extend as before
+          const ext = isDiagonal ? 0 : Math.min(otherHalfThick / sinAngle, otherHalfThick * 3);
 
           const aShares = pointsNear(origAx, origAy, other.a.x, other.a.y) ||
                           pointsNear(origAx, origAy, other.b.x, other.b.y);
@@ -1159,6 +1151,10 @@
       });
 
       if (groups.walls) scene.add(new THREE.Mesh(groups.walls, wallMaterial));
+      if (groups.walls_diagonal) {
+        const diagMaterial = new THREE.MeshPhongMaterial({ color: 0xCC3333, flatShading: true, side: THREE.DoubleSide, shininess: 5, specular: 0x222222 });
+        scene.add(new THREE.Mesh(groups.walls_diagonal, diagMaterial));
+      }
       if (groups.floor) scene.add(new THREE.Mesh(groups.floor, floorMaterial));
 
       scene.add(new THREE.AmbientLight(0xFFF8F0, 1.0));
@@ -2764,9 +2760,13 @@
 
       const extendedWalls = extendWalls(walls);
 
-      faces.push('g walls');
+      let currentGroup = '';
 
       for (const wall of extendedWalls) {
+        // Switch OBJ group for diagonal vs normal walls (debug: different color)
+        const grp = wall._isDiagonal ? 'g walls_diagonal' : 'g walls';
+        if (grp !== currentGroup) { faces.push(grp); currentGroup = grp; }
+
         const ax = (wall.a.x - centerX) * SCALE;
         const ay = (wall.a.y - centerY) * SCALE;
         const bx = (wall.b.x - centerX) * SCALE;
