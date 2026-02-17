@@ -248,6 +248,7 @@
       }
       applyBreakout();
       el.style.visibility = '';
+      el.classList.add('revealed');
       // Re-correct on resize
       window.addEventListener('resize', function() {
         el.style.marginLeft = '0px';
