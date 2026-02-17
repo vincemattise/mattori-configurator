@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.10/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.11/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -1132,6 +1132,48 @@
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+    }
+
+    .mattori-configurator .floor-layout-gap-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 0.2rem 0.5rem;
+    }
+
+    .mattori-configurator .floor-gap-label {
+      font-size: 0.72rem;
+      color: #999;
+      flex-shrink: 0;
+    }
+
+    .mattori-configurator .floor-gap-slider {
+      flex: 1;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #e0e0e0;
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .mattori-configurator .floor-gap-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #1a1a1a;
+      cursor: pointer;
+    }
+
+    .mattori-configurator .floor-gap-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #1a1a1a;
+      border: none;
+      cursor: pointer;
     }
 
     .mattori-configurator .floor-layout-card {

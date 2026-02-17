@@ -1206,7 +1206,8 @@
     // ============================================================
     var currentLayout = null; // stores computed layout for admin controls
     var layoutAlign = 'center'; // 'center' or 'bottom' or 'top'
-    var floorSettings = {}; // per-floor: { align: 'center'|'top'|'bottom', rotate: 0|180 }
+    var layoutGapFactor = 0.08; // gap as fraction of largest floor dimension (0..0.3)
+    var floorSettings = {}; // per-floor: { align: 'center'|'top'|'bottom', rotate: 0..315 }
 
     function computeFloorLayout(zoneW, zoneH, includedIndices) {
       // Gather floor dimensions in cm
@@ -1342,7 +1343,7 @@
 
     function layoutSideBySide(items) {
       // Place floors horizontally with gap — default center-aligned
-      var gap = Math.max(items[0].w, items[0].h) * 0.08;
+      var gap = Math.max(items[0].w, items[0].h) * layoutGapFactor;
       var positions = [];
       var curX = 0;
       var maxH = Math.max.apply(null, items.map(function(i) { return i.h; }));
@@ -1356,7 +1357,7 @@
 
     function layoutStacked(items) {
       // Place floors vertically with gap
-      var gap = Math.max(items[0].w, items[0].h) * 0.08;
+      var gap = Math.max(items[0].w, items[0].h) * layoutGapFactor;
       var positions = [];
       var curY = 0;
       for (var it of items) {
@@ -1371,7 +1372,7 @@
       // Place first floor top-left, second bottom-right with slight overlap zone
       if (items.length < 2) return layoutSingle(items);
       var a = items[0], b = items[1];
-      var gap = Math.max(a.w, a.h) * 0.05;
+      var gap = Math.max(a.w, a.h) * layoutGapFactor * 0.6;
       var positions = [
         { index: a.index, x: 0, y: 0, w: a.w, h: a.h },
         { index: b.index, x: a.w * 0.35 + gap, y: a.h * 0.35 + gap, w: b.w, h: b.h }
@@ -1389,7 +1390,7 @@
       // Two on top, one centered below (or vice versa based on sizes)
       if (items.length < 3) return layoutSideBySide(items);
       var sorted = items.slice().sort(function(a, b) { return (b.w * b.h) - (a.w * a.h); });
-      var gap = Math.max(sorted[0].w, sorted[0].h) * 0.08;
+      var gap = Math.max(sorted[0].w, sorted[0].h) * layoutGapFactor;
 
       // Biggest floor on top-left, second top-right, smallest centered below
       var a = sorted[0], b = sorted[1], c = sorted[2];
@@ -1414,7 +1415,7 @@
       var rows = Math.ceil(items.length / cols);
       var maxCellW = Math.max.apply(null, items.map(function(i) { return i.w; }));
       var maxCellH = Math.max.apply(null, items.map(function(i) { return i.h; }));
-      var gap = maxCellW * 0.08;
+      var gap = maxCellW * layoutGapFactor;
       var positions = [];
       for (var i = 0; i < items.length; i++) {
         var col = i % cols;
@@ -2107,6 +2108,12 @@
       updateFloorLabels();
     }
 
+    function setLayoutGap(value) {
+      layoutGapFactor = parseFloat(value);
+      renderPreviewThumbnails();
+      updateFloorLabels();
+    }
+
     function setFloorAlign(floorIndex, align) {
       if (!floorSettings[floorIndex]) floorSettings[floorIndex] = {};
       floorSettings[floorIndex].align = align;
@@ -2162,6 +2169,26 @@
       }
       layoutViewers = [];
       floorLayoutViewer.innerHTML = '';
+
+      // Gap slider at the top
+      var gapRow = document.createElement('div');
+      gapRow.className = 'floor-layout-gap-row';
+      var gapLabel = document.createElement('span');
+      gapLabel.className = 'floor-gap-label';
+      gapLabel.textContent = 'Tussenruimte';
+      var gapSlider = document.createElement('input');
+      gapSlider.type = 'range';
+      gapSlider.className = 'floor-gap-slider';
+      gapSlider.min = '0';
+      gapSlider.max = '0.25';
+      gapSlider.step = '0.01';
+      gapSlider.value = String(layoutGapFactor);
+      gapSlider.addEventListener('input', function() {
+        setLayoutGap(this.value);
+      });
+      gapRow.appendChild(gapLabel);
+      gapRow.appendChild(gapSlider);
+      floorLayoutViewer.appendChild(gapRow);
 
       // Build ordered list: included first (in custom order), then excluded
       var includedIndices = [];
