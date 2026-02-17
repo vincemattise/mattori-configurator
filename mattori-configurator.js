@@ -1101,12 +1101,12 @@
       scene.background = null;
 
       const wallMaterial = new THREE.MeshLambertMaterial({
-        color: 0xB8AFA2,
+        color: 0xA69D8F,
         flatShading: true,
         side: THREE.DoubleSide
       });
       const floorMaterial = new THREE.MeshLambertMaterial({
-        color: 0xB8AFA2,
+        color: 0xA69D8F,
         flatShading: true,
         side: THREE.DoubleSide
       });
@@ -1507,12 +1507,35 @@
 
         // Show/hide address overlay (visible from step 2 onward)
         if (unifiedAddressOverlay) {
-          unifiedAddressOverlay.style.display = n >= 2 ? '' : 'none';
+          if (n >= 2) {
+            // Wait for Nexa Bold to load before showing address to prevent FOUT
+            unifiedAddressOverlay.style.display = '';
+            unifiedAddressOverlay.style.opacity = '0';
+            document.fonts.ready.then(() => {
+              unifiedAddressOverlay.style.transition = 'opacity 0.25s ease';
+              unifiedAddressOverlay.style.opacity = '1';
+            });
+          } else {
+            unifiedAddressOverlay.style.display = 'none';
+            unifiedAddressOverlay.style.opacity = '';
+            unifiedAddressOverlay.style.transition = '';
+          }
         }
 
         // Show/hide labels overlay (visible from step 5 onward)
         if (unifiedLabelsOverlay) {
-          unifiedLabelsOverlay.style.display = n >= 5 ? '' : 'none';
+          if (n >= 5) {
+            unifiedLabelsOverlay.style.display = '';
+            unifiedLabelsOverlay.style.opacity = '0';
+            document.fonts.ready.then(() => {
+              unifiedLabelsOverlay.style.transition = 'opacity 0.25s ease';
+              unifiedLabelsOverlay.style.opacity = '1';
+            });
+          } else {
+            unifiedLabelsOverlay.style.display = 'none';
+            unifiedLabelsOverlay.style.opacity = '';
+            unifiedLabelsOverlay.style.transition = '';
+          }
         }
 
         // Step 3: show floor review viewer in left column, hide unified preview
