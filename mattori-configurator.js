@@ -1290,6 +1290,27 @@
         });
       }
 
+      // Apply per-floor vertical alignment within the zone
+      // Find the top and bottom bounds of the scaled layout
+      var layoutTop = Infinity, layoutBottom = -Infinity;
+      for (var r of result) {
+        layoutTop = Math.min(layoutTop, r.y);
+        layoutBottom = Math.max(layoutBottom, r.y + r.h);
+      }
+      var layoutH = layoutBottom - layoutTop;
+
+      for (var ri = 0; ri < result.length; ri++) {
+        var align = getFloorAlign(result[ri].index);
+        if (align === 'top') {
+          // Push to top of zone
+          result[ri].y = layoutTop;
+        } else if (align === 'bottom') {
+          // Push to bottom of zone
+          result[ri].y = layoutBottom - result[ri].h;
+        }
+        // 'center' = default position from layout engine, no change
+      }
+
       return { scale: finalScale, positions: result, type: best.type };
     }
 
@@ -1318,15 +1339,14 @@
     }
 
     function layoutSideBySide(items) {
-      // Place floors horizontally with gap
+      // Place floors horizontally with gap — default center-aligned
       var gap = Math.max(items[0].w, items[0].h) * 0.08;
       var positions = [];
       var curX = 0;
       var maxH = Math.max.apply(null, items.map(function(i) { return i.h; }));
       for (var it of items) {
-        var align = getFloorAlign(it.index);
-        var yOff = alignY(align, maxH, it.h);
-        positions.push({ index: it.index, x: curX, y: yOff, w: it.w, h: it.h });
+        // Default vertical centering; per-floor align applied in computeFloorLayout
+        positions.push({ index: it.index, x: curX, y: (maxH - it.h) / 2, w: it.w, h: it.h });
         curX += it.w + gap;
       }
       return { type: 'side-by-side', positions: positions };
@@ -1387,7 +1407,7 @@
     }
 
     function layoutGrid(items) {
-      // Auto grid layout
+      // Auto grid layout — default center-aligned; per-floor align applied in computeFloorLayout
       var cols = Math.ceil(Math.sqrt(items.length));
       var rows = Math.ceil(items.length / cols);
       var maxCellW = Math.max.apply(null, items.map(function(i) { return i.w; }));
@@ -1399,12 +1419,10 @@
         var row = Math.floor(i / cols);
         var cellX = col * (maxCellW + gap);
         var cellY = row * (maxCellH + gap);
-        var align = getFloorAlign(items[i].index);
-        var yInCell = alignY(align, maxCellH, items[i].h);
         positions.push({
           index: items[i].index,
           x: cellX + (maxCellW - items[i].w) / 2,
-          y: cellY + yInCell,
+          y: cellY + (maxCellH - items[i].h) / 2,
           w: items[i].w,
           h: items[i].h
         });
@@ -2262,7 +2280,7 @@
           var rotBtn = document.createElement('button');
           rotBtn.type = 'button';
           rotBtn.className = 'floor-rotate-btn';
-          rotBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1.5A5.5 5.5 0 0 0 1.5 7" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M7 1.5A5.5 5.5 0 0 1 12.5 7A5.5 5.5 0 0 1 2 9" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M4.5 7.5L2 9.5L0.5 6.5" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+          rotBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M8 0.5L10.5 2.5L8 4.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
           rotBtn.title = 'Roteer 45°';
 
           (function(fi) {
