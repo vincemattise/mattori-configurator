@@ -150,6 +150,9 @@
     let originalFmlData = null;
     let originalFileName = '';
 
+    // Force-load Nexa Bold font immediately so it's ready before any overlay appears
+    var nexaFontReady = document.fonts.load('700 1em "Nexa Bold"');
+
     const CANVAS_W = 260;
     const CANVAS_H = 400;
 
@@ -1538,8 +1541,8 @@
             // Wait for Nexa Bold to load before showing address to prevent FOUT
             unifiedAddressOverlay.style.display = '';
             unifiedAddressOverlay.style.opacity = '0';
-            document.fonts.ready.then(() => {
-              unifiedAddressOverlay.style.transition = 'opacity 0.25s ease';
+            nexaFontReady.then(() => {
+              unifiedAddressOverlay.style.transition = 'opacity 0.15s ease';
               unifiedAddressOverlay.style.opacity = '1';
             });
           } else {
@@ -1554,8 +1557,8 @@
           if (n >= 5) {
             unifiedLabelsOverlay.style.display = '';
             unifiedLabelsOverlay.style.opacity = '0';
-            document.fonts.ready.then(() => {
-              unifiedLabelsOverlay.style.transition = 'opacity 0.25s ease';
+            nexaFontReady.then(() => {
+              unifiedLabelsOverlay.style.transition = 'opacity 0.15s ease';
               unifiedLabelsOverlay.style.opacity = '1';
             });
           } else {
