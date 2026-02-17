@@ -1194,21 +1194,6 @@
         camera.up.set(0, 0, -1); // Z- = up on screen (north in floorplan)
         camera.position.set(0, 50, 0);
         camera.lookAt(0, 0, 0);
-
-        // Apply vertical alignment by shifting the scene
-        // Camera looks down -Y with up=(0,0,-1):
-        //   Screen X = world X (left/right)
-        //   Screen Y = world -Z (up on screen = -Z in world)
-        // OBJ centered at (0,0,0), half-depth = size.z/2
-        // Frustum top/bottom in world Z: top = -halfFrustumH, bottom = +halfFrustumH
-        var align = getFloorAlign(floorIndex);
-        if (align === 'top' || align === 'bottom') {
-          var shiftZ = halfFrustumH - size.z / 2;
-          // 'top': move OBJ up on screen → shift scene toward -Z → scene.position.z -= shiftZ
-          // 'bottom': move OBJ down on screen → shift scene toward +Z → scene.position.z += shiftZ
-          scene.position.z += (align === 'bottom') ? shiftZ : -shiftZ;
-        }
-
         camera.updateProjectionMatrix();
       } else {
         // Perspective camera with slight tilt (for final result with depth)
@@ -1330,8 +1315,26 @@
         });
       }
 
-      // Per-floor alignment is handled in camera offset (renderStaticThumbnailSized)
-      // not in canvas positioning — this ensures pixel-perfect OBJ alignment
+      // Per-floor alignment: shift canvas Y within the layout bounding box
+      // Find the total scaled height of the layout zone used by all positions
+      var minResultY = Infinity, maxResultY = -Infinity;
+      for (var ri = 0; ri < result.length; ri++) {
+        minResultY = Math.min(minResultY, result[ri].y);
+        maxResultY = Math.max(maxResultY, result[ri].y + result[ri].h);
+      }
+      var layoutH = maxResultY - minResultY;
+      for (var ri = 0; ri < result.length; ri++) {
+        var floorAlign = getFloorAlign(result[ri].index);
+        if (floorAlign === 'bottom') {
+          // Push to bottom of layout bounding box
+          result[ri].y = minResultY + layoutH - result[ri].h;
+        } else if (floorAlign === 'top') {
+          // Push to top of layout bounding box
+          result[ri].y = minResultY;
+        }
+        // 'center' keeps the position from the layout strategy
+      }
+
       return { scale: finalScale, positions: result, type: best.type };
     }
 
@@ -2148,6 +2151,9 @@
 
     function setLayoutGap(value) {
       layoutGapFactor = parseFloat(value);
+      // Update gap value label if it exists
+      var gapValEl = document.querySelector('.floor-gap-value');
+      if (gapValEl) gapValEl.textContent = Math.round(layoutGapFactor * 100) + '%';
       updatePreviewWithLoading(function() {
         renderPreviewThumbnails();
         updateFloorLabels();
@@ -2226,7 +2232,7 @@
       gapMinus.className = 'floor-gap-btn';
       gapMinus.textContent = '−';
       gapMinus.addEventListener('click', function() {
-        setLayoutGap(Math.max(0, layoutGapFactor - 0.02));
+        setLayoutGap(Math.round(Math.max(0, layoutGapFactor * 100 - 2)) / 100);
       });
 
       var gapValue = document.createElement('span');
@@ -2238,7 +2244,7 @@
       gapPlus.className = 'floor-gap-btn';
       gapPlus.textContent = '+';
       gapPlus.addEventListener('click', function() {
-        setLayoutGap(Math.min(0.25, layoutGapFactor + 0.02));
+        setLayoutGap(Math.round(Math.min(25, layoutGapFactor * 100 + 2)) / 100);
       });
 
       gapRow.appendChild(gapLabel);
