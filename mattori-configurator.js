@@ -3170,8 +3170,9 @@
         }
 
         if (data.error) {
-          setFundaStatus('error', '<strong>Funda link niet geldig</strong><span>Controleer de link en probeer het opnieuw.</span>');
+          setFundaStatus('error', '<strong>Funda link niet geldig</strong><span>Controleer de link en probeer het opnieuw, of neem contact op.</span>');
           showContactEmail(url);
+          btnWizardNext.style.display = 'none';
           return;
         }
 
@@ -3196,11 +3197,12 @@
         processFloors(data);
       } catch (err) {
         if (err.message && (err.message.includes('Load failed') || err.message.includes('Failed to fetch'))) {
-          setFundaStatus('error', '<strong>Verbinding mislukt</strong><span>Draait de Flask server?</span>');
+          setFundaStatus('error', '<strong>Verbinding mislukt</strong><span>Controleer de link en probeer het opnieuw, of neem contact op.</span>');
         } else {
-          setFundaStatus('error', `<strong>Fout</strong><span>${err.message}</span>`);
+          setFundaStatus('error', `<strong>Fout</strong><span>Controleer de link en probeer het opnieuw, of neem contact op.</span>`);
         }
         showContactEmail(url);
+        btnWizardNext.style.display = 'none';
       } finally {
         hideLoading();
         btnFunda.disabled = false;
