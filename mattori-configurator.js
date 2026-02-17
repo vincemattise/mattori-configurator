@@ -1164,10 +1164,10 @@
       if (!result) return;
       const { scene, size, center, globalSize } = result;
 
-      // Apply 180° rotation if set for this floor
+      // Apply rotation if set for this floor
       var rotation = getFloorRotate(floorIndex);
-      if (rotation === 180) {
-        scene.rotateY(Math.PI);
+      if (rotation) {
+        scene.rotateY(rotation * Math.PI / 180);
       }
 
       const width = Math.round(forceW || container.getBoundingClientRect().width) || 200;
@@ -1545,10 +1545,10 @@
       if (!result) return null;
       const { scene, size, center, globalSize } = result;
 
-      // Apply 180° rotation if set for this floor
+      // Apply rotation if set for this floor
       var rotation = getFloorRotate(floorIndex);
-      if (rotation === 180) {
-        scene.rotateY(Math.PI);
+      if (rotation) {
+        scene.rotateY(rotation * Math.PI / 180);
       }
 
       const rect = container.getBoundingClientRect();
@@ -2092,9 +2092,11 @@
       updateFloorLabels();
     }
 
-    function setFloorRotate(floorIndex, deg) {
+    function rotateFloor(floorIndex) {
       if (!floorSettings[floorIndex]) floorSettings[floorIndex] = {};
-      floorSettings[floorIndex].rotate = deg;
+      var current = getFloorRotate(floorIndex);
+      var next = (current + 45) % 360;
+      floorSettings[floorIndex].rotate = next;
       // Re-render both step 4 viewer and preview
       renderLayoutView();
       renderPreviewThumbnails();
@@ -2215,69 +2217,61 @@
         includeWrap.appendChild(includeCb);
         includeWrap.appendChild(includeLabel);
 
-        // Per-floor controls (alignment + rotation) — only for included floors
+        // Per-floor controls (alignment icons + rotation) — only for included floors
         var floorControls = document.createElement('div');
         floorControls.className = 'floor-layout-controls';
 
         if (!isExcluded) {
-          // Alignment selector (top / center / bottom)
-          var alignWrap = document.createElement('div');
-          alignWrap.className = 'floor-control-group';
-          var alignLabel = document.createElement('span');
-          alignLabel.className = 'floor-control-label';
-          alignLabel.textContent = 'Positie';
-
-          var alignSelect = document.createElement('select');
-          alignSelect.className = 'floor-align-select';
           var currentAlign = getFloorAlign(floorIdx);
-          var alignOptions = [
-            { value: 'top', text: 'Boven' },
-            { value: 'center', text: 'Midden' },
-            { value: 'bottom', text: 'Onder' }
-          ];
-          for (var ao = 0; ao < alignOptions.length; ao++) {
-            var opt = document.createElement('option');
-            opt.value = alignOptions[ao].value;
-            opt.textContent = alignOptions[ao].text;
-            if (alignOptions[ao].value === currentAlign) opt.selected = true;
-            alignSelect.appendChild(opt);
+
+          // Alignment icon buttons (top / center / bottom)
+          var alignGroup = document.createElement('div');
+          alignGroup.className = 'floor-align-group';
+
+          var alignValues = ['top', 'center', 'bottom'];
+          // SVG icons: 3 horizontal lines with a dot indicating position
+          var alignIcons = {
+            top: '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="2" rx="0.5" fill="currentColor" opacity="1"/><rect x="3" y="6" width="8" height="1.5" rx="0.5" fill="currentColor" opacity="0.3"/><rect x="3" y="10.5" width="8" height="1.5" rx="0.5" fill="currentColor" opacity="0.3"/></svg>',
+            center: '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="3" y="1" width="8" height="1.5" rx="0.5" fill="currentColor" opacity="0.3"/><rect x="1" y="6" width="12" height="2" rx="0.5" fill="currentColor" opacity="1"/><rect x="3" y="10.5" width="8" height="1.5" rx="0.5" fill="currentColor" opacity="0.3"/></svg>',
+            bottom: '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="3" y="1" width="8" height="1.5" rx="0.5" fill="currentColor" opacity="0.3"/><rect x="3" y="5.5" width="8" height="1.5" rx="0.5" fill="currentColor" opacity="0.3"/><rect x="1" y="11" width="12" height="2" rx="0.5" fill="currentColor" opacity="1"/></svg>'
+          };
+
+          for (var ai = 0; ai < alignValues.length; ai++) {
+            var alignBtn = document.createElement('button');
+            alignBtn.type = 'button';
+            alignBtn.className = 'floor-align-btn' + (alignValues[ai] === currentAlign ? ' active' : '');
+            alignBtn.innerHTML = alignIcons[alignValues[ai]];
+            alignBtn.title = alignValues[ai] === 'top' ? 'Boven' : alignValues[ai] === 'center' ? 'Midden' : 'Onder';
+
+            (function(fi, val) {
+              alignBtn.addEventListener('click', function() {
+                setFloorAlign(fi, val);
+                // Update active state locally
+                var siblings = this.parentElement.querySelectorAll('.floor-align-btn');
+                for (var s = 0; s < siblings.length; s++) siblings[s].classList.remove('active');
+                this.classList.add('active');
+              });
+            })(floorIdx, alignValues[ai]);
+
+            alignGroup.appendChild(alignBtn);
           }
 
-          (function(fi) {
-            alignSelect.addEventListener('change', function() {
-              setFloorAlign(fi, this.value);
-            });
-          })(floorIdx);
+          floorControls.appendChild(alignGroup);
 
-          alignWrap.appendChild(alignLabel);
-          alignWrap.appendChild(alignSelect);
-          floorControls.appendChild(alignWrap);
-
-          // Rotation toggle (0° / 180°)
-          var rotWrap = document.createElement('div');
-          rotWrap.className = 'floor-control-group';
-          var rotLabel = document.createElement('span');
-          rotLabel.className = 'floor-control-label';
-          rotLabel.textContent = 'Rotatie';
-
+          // Rotation button (circular arrow, +45° each click)
           var rotBtn = document.createElement('button');
           rotBtn.type = 'button';
           rotBtn.className = 'floor-rotate-btn';
-          var currentRot = getFloorRotate(floorIdx);
-          rotBtn.textContent = currentRot === 180 ? '180°' : '0°';
-          if (currentRot === 180) rotBtn.classList.add('active');
+          rotBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1.5A5.5 5.5 0 0 0 1.5 7" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M7 1.5A5.5 5.5 0 0 1 12.5 7A5.5 5.5 0 0 1 2 9" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M4.5 7.5L2 9.5L0.5 6.5" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+          rotBtn.title = 'Roteer 45°';
 
           (function(fi) {
             rotBtn.addEventListener('click', function() {
-              var current = getFloorRotate(fi);
-              var newRot = current === 180 ? 0 : 180;
-              setFloorRotate(fi, newRot);
+              rotateFloor(fi);
             });
           })(floorIdx);
 
-          rotWrap.appendChild(rotLabel);
-          rotWrap.appendChild(rotBtn);
-          floorControls.appendChild(rotWrap);
+          floorControls.appendChild(rotBtn);
         }
 
         // Up/down arrows (only for included)

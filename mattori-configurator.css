@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.6/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.7/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -1256,7 +1256,7 @@
     .mattori-configurator .floor-layout-controls {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
       flex-shrink: 0;
     }
 
@@ -1264,53 +1264,59 @@
       visibility: hidden;
     }
 
-    .mattori-configurator .floor-control-group {
+    .mattori-configurator .floor-align-group {
+      display: flex;
+      gap: 2px;
+      background: #f0f0f0;
+      border-radius: 6px;
+      padding: 2px;
+    }
+
+    .mattori-configurator .floor-align-btn {
       display: flex;
       align-items: center;
-      gap: 4px;
-    }
-
-    .mattori-configurator .floor-control-label {
-      font-size: 0.68rem;
-      color: #999;
-      user-select: none;
-    }
-
-    .mattori-configurator .floor-align-select {
-      font-size: 0.7rem;
-      padding: 2px 4px;
-      border: 1px solid #ddd;
+      justify-content: center;
+      width: 26px;
+      height: 24px;
+      border: none;
       border-radius: 4px;
-      background: #f8f8f8;
-      color: #333;
+      background: transparent;
+      color: #999;
       cursor: pointer;
-      outline: none;
+      transition: background 0.15s ease, color 0.15s ease;
     }
 
-    .mattori-configurator .floor-align-select:focus {
-      border-color: #aaa;
+    .mattori-configurator .floor-align-btn:hover {
+      background: #e0e0e0;
+      color: #555;
+    }
+
+    .mattori-configurator .floor-align-btn.active {
+      background: #1a1a1a;
+      color: #fff;
     }
 
     .mattori-configurator .floor-rotate-btn {
-      font-size: 0.68rem;
-      padding: 2px 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: 1px solid #e0e0e0;
+      border-radius: 50%;
       background: #f8f8f8;
-      color: #333;
+      color: #666;
       cursor: pointer;
-      transition: background 0.15s ease, border-color 0.15s ease;
+      transition: background 0.15s ease, color 0.15s ease, transform 0.3s ease;
     }
 
     .mattori-configurator .floor-rotate-btn:hover {
       background: #eee;
-      border-color: #bbb;
+      color: #333;
     }
 
-    .mattori-configurator .floor-rotate-btn.active {
-      background: #1a1a1a;
-      color: #fff;
-      border-color: #1a1a1a;
+    .mattori-configurator .floor-rotate-btn:active {
+      transform: rotate(45deg);
     }
 
     /* Floor review loading overlay */
