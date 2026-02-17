@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v35.2/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v35.3/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -29,6 +29,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      /* CSS-only breakout from Shopify container */
+      width: 100vw !important;
+      margin-left: calc(-50vw + 50%) !important;
     }
 
     /* ── Admin panel ── */
