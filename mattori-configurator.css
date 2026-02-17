@@ -258,6 +258,13 @@
       opacity: 0.8;
     }
 
+    .mattori-configurator .funda-status .status-text .funda-address-line {
+      display: block;
+      font-size: 0.78rem;
+      opacity: 0.7;
+      margin-top: 2px;
+    }
+
     .mattori-configurator .funda-status .mini-spinner {
       width: 16px;
       height: 16px;
@@ -400,7 +407,7 @@
     /* Address overlay — top zone of the frame */
     .mattori-configurator .unified-address-overlay {
       position: absolute;
-      top: calc(16% + 30px);
+      top: calc(16% + 10px);
       left: 15.5%;
       right: 14%;
       height: 10%;
@@ -531,7 +538,7 @@
     /* Labels overlay — bottom zone of the frame */
     .mattori-configurator .unified-labels-overlay {
       position: absolute;
-      bottom: calc(18% + 10px);
+      bottom: calc(18% + 5px);
       left: 15.5%;
       right: 14%;
       height: 10%;
@@ -1172,6 +1179,7 @@
       gap: 4px;
       flex-shrink: 0;
       margin-left: auto;
+      margin-right: 0.8rem;
     }
 
     .mattori-configurator .floor-layout-card .floor-layout-include input[type="checkbox"] {
@@ -1290,7 +1298,7 @@
     .mattori-configurator .labels-fields .label-field-row span {
       font-size: 0.78rem;
       color: #999;
-      width: 120px;
+      width: auto;
       min-width: 120px;
       flex-shrink: 0;
       text-overflow: ellipsis;

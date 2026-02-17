@@ -3,7 +3,7 @@
 (function(){
   var sheets = [
     'https://fonts.cdnfonts.com/css/nexa-bold',
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v31.1/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v31.2/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -24,7 +24,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel" style="display:none;">
-    <div class="admin-panel-label">Admin · v31.1</div>
+    <div class="admin-panel-label">Admin · v31.2</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon">⬆</div>
@@ -157,12 +157,12 @@
             <p class="step-description">Vul het adres in dat op de lijst komt te staan.</p>
             <div class="labels-fields">
               <div class="label-field-row">
-                <span>Straat</span>
-                <input type="text" id="addressStreet" placeholder="Straat + huisnummer" />
+                <span>Straat en huisnummer</span>
+                <input type="text" id="addressStreet" placeholder="Kerkstraat 1" />
               </div>
               <div class="label-field-row">
-                <span>Plaats</span>
-                <input type="text" id="addressCity" placeholder="Stad, Land" />
+                <span>Plaats en land</span>
+                <input type="text" id="addressCity" placeholder="Amsterdam, The Netherlands" />
               </div>
             </div>
           </div>
@@ -254,4 +254,4 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v31.1/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v31.2/mattori-configurator.js"></script>

@@ -1262,22 +1262,17 @@
       const width = Math.round(rect.width) || 200;
       const height = Math.round(rect.height) || 260;
 
-      const padding = 1.3;
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const padding = 1.25;
       const halfW = (size.x * padding) / 2;
       const halfZ = (size.z * padding) / 2;
+      const halfExtent = Math.max(halfW, halfZ);
+
+      const FOV = 12;
       const aspect = width / height;
-
-      let camHalfW, camHalfH;
-      if (halfW / halfZ > aspect) {
-        camHalfW = halfW;
-        camHalfH = halfW / aspect;
-      } else {
-        camHalfH = halfZ;
-        camHalfW = halfZ * aspect;
-      }
-
-      const camera = new THREE.OrthographicCamera(-camHalfW, camHalfW, camHalfH, -camHalfH, 0.01, 1000);
-      camera.position.set(0, 50, 0);
+      const camera = new THREE.PerspectiveCamera(FOV, aspect, 0.01, halfExtent * 100);
+      const camDist = halfExtent / Math.tan((FOV / 2) * Math.PI / 180);
+      camera.position.set(0, camDist, camDist * 0.14);
       camera.lookAt(center);
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -1836,10 +1831,17 @@
         // Closure for checkbox handler
         (function(fi) {
           includeCb.addEventListener('change', function() {
-            toggleFloorExclusion(fi);
-            renderLayoutView();
-            // Also update step 3 thumbstrip
-            buildThumbstrip();
+            // Show loading in layout viewer
+            floorLayoutViewer.innerHTML = '';
+            var loader = document.createElement('div');
+            loader.className = 'wizard-step-loading';
+            loader.innerHTML = '<div class="step-spinner"></div>';
+            floorLayoutViewer.appendChild(loader);
+            setTimeout(function() {
+              toggleFloorExclusion(fi);
+              renderLayoutView();
+              buildThumbstrip();
+            }, 80);
           });
         })(floorIdx);
 
@@ -2496,12 +2498,25 @@
     btnWizardPrev.addEventListener('click', () => prevWizardStep());
     btnWizardNext.addEventListener('click', () => nextWizardStep());
 
-    // Floor review include/exclude checkbox — NO full re-render
+    // Floor review include/exclude checkbox — show loading overlay during toggle
     floorIncludeCb.addEventListener('change', () => {
-      toggleFloorExclusion(currentFloorReviewIndex);
-      // Update excluded overlay without re-rendering 3D
-      updateFloorReviewExcludedOverlay();
-      updateThumbstripState();
+      // Show loading overlay on viewer
+      if (floorReviewViewerEl) {
+        var loadEl = document.createElement('div');
+        loadEl.className = 'floor-review-loading-overlay';
+        loadEl.innerHTML = '<div class="review-spinner"></div>';
+        floorReviewViewerEl.appendChild(loadEl);
+      }
+      setTimeout(function() {
+        toggleFloorExclusion(currentFloorReviewIndex);
+        updateFloorReviewExcludedOverlay();
+        updateThumbstripState();
+        // Remove loading overlay
+        if (floorReviewViewerEl) {
+          var ld = floorReviewViewerEl.querySelector('.floor-review-loading-overlay');
+          if (ld) ld.remove();
+        }
+      }, 60);
     });
 
     // Funda URL loading (refs in ensureDomRefs)
@@ -2537,7 +2552,7 @@
       if (state === 'loading') {
         icon.innerHTML = '<div class="mini-spinner"></div>';
       } else if (state === 'success') {
-        icon.textContent = '✓';
+        icon.textContent = '';
       } else if (state === 'error') {
         icon.textContent = '✕';
       }
@@ -2593,7 +2608,8 @@
           addressCity.value = '';
         }
 
-        setFundaStatus('success', '<strong>✓ Funda link correct</strong><strong>✓ ' + data.floors.length + ' interactieve plattegrond' + (data.floors.length === 1 ? '' : 'en') + ' gevonden</strong>');
+        var addrStr = addr ? addr.street + ', ' + addr.city : 'Adres niet gevonden';
+        setFundaStatus('success', '<strong>✓ Funda link correct</strong><strong>✓ ' + data.floors.length + ' interactieve plattegrond' + (data.floors.length === 1 ? '' : 'en') + ' gevonden</strong><span class="funda-address-line">📍 ' + addrStr + '</span>');
 
         processFloors(data);
       } catch (err) {
