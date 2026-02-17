@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.13/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.14/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -1137,7 +1137,7 @@
     .mattori-configurator .floor-layout-gap-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       padding: 0 0.2rem 0.5rem;
     }
 
@@ -1147,33 +1147,35 @@
       flex-shrink: 0;
     }
 
-    .mattori-configurator .floor-gap-slider {
-      flex: 1;
-      height: 4px;
-      -webkit-appearance: none;
-      appearance: none;
-      background: #e0e0e0;
-      border-radius: 2px;
-      outline: none;
+    .mattori-configurator .floor-gap-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #f8f8f8;
+      color: #333;
+      font-size: 0.9rem;
       cursor: pointer;
+      transition: background 0.15s ease;
+      user-select: none;
     }
 
-    .mattori-configurator .floor-gap-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #1a1a1a;
-      cursor: pointer;
+    .mattori-configurator .floor-gap-btn:hover {
+      background: #eee;
     }
 
-    .mattori-configurator .floor-gap-slider::-moz-range-thumb {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #1a1a1a;
-      border: none;
-      cursor: pointer;
+    .mattori-configurator .floor-gap-btn:active {
+      background: #ddd;
+    }
+
+    .mattori-configurator .floor-gap-value {
+      font-size: 0.72rem;
+      color: #666;
+      min-width: 2rem;
+      text-align: center;
     }
 
     .mattori-configurator .floor-layout-card {

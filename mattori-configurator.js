@@ -1191,8 +1191,20 @@
         camera = new THREE.OrthographicCamera(
           -halfFrustumW, halfFrustumW, halfFrustumH, -halfFrustumH, 0.01, 1000
         );
-        camera.position.set(0, 50, 0);
-        camera.lookAt(center);
+        // Apply vertical alignment via camera Z-offset
+        // OBJ is centered at (0,0,0), size.z = OBJ depth
+        // Camera looks down Y axis, Z = "vertical" in the top-down view
+        var align = getFloorAlign(floorIndex);
+        var camZ = 0;
+        if (align === 'bottom') {
+          // Shift camera so OBJ bottom edge aligns with frustum bottom
+          camZ = halfFrustumH - size.z / 2;
+        } else if (align === 'top') {
+          // Shift camera so OBJ top edge aligns with frustum top
+          camZ = -(halfFrustumH - size.z / 2);
+        }
+        camera.position.set(0, 50, camZ);
+        camera.lookAt(0, 0, camZ);
         camera.updateProjectionMatrix();
       } else {
         // Perspective camera with slight tilt (for final result with depth)
@@ -1314,27 +1326,8 @@
         });
       }
 
-      // Apply per-floor vertical alignment within the zone
-      // Find the top and bottom bounds of the scaled layout
-      var layoutTop = Infinity, layoutBottom = -Infinity;
-      for (var r of result) {
-        layoutTop = Math.min(layoutTop, r.y);
-        layoutBottom = Math.max(layoutBottom, r.y + r.h);
-      }
-      var layoutH = layoutBottom - layoutTop;
-
-      for (var ri = 0; ri < result.length; ri++) {
-        var align = getFloorAlign(result[ri].index);
-        if (align === 'top') {
-          // Push to top of zone
-          result[ri].y = layoutTop;
-        } else if (align === 'bottom') {
-          // Push to bottom of zone
-          result[ri].y = layoutBottom - result[ri].h;
-        }
-        // 'center' = default position from layout engine, no change
-      }
-
+      // Per-floor alignment is handled in camera offset (renderStaticThumbnailSized)
+      // not in canvas positioning — this ensures pixel-perfect OBJ alignment
       return { scale: finalScale, positions: result, type: best.type };
     }
 
@@ -2202,24 +2195,37 @@
       layoutViewers = [];
       floorLayoutViewer.innerHTML = '';
 
-      // Gap slider at the top
+      // Gap control with +/- buttons
       var gapRow = document.createElement('div');
       gapRow.className = 'floor-layout-gap-row';
       var gapLabel = document.createElement('span');
       gapLabel.className = 'floor-gap-label';
       gapLabel.textContent = 'Tussenruimte';
-      var gapSlider = document.createElement('input');
-      gapSlider.type = 'range';
-      gapSlider.className = 'floor-gap-slider';
-      gapSlider.min = '0';
-      gapSlider.max = '0.25';
-      gapSlider.step = '0.01';
-      gapSlider.value = String(layoutGapFactor);
-      gapSlider.addEventListener('input', function() {
-        setLayoutGap(this.value);
+
+      var gapMinus = document.createElement('button');
+      gapMinus.type = 'button';
+      gapMinus.className = 'floor-gap-btn';
+      gapMinus.textContent = '−';
+      gapMinus.addEventListener('click', function() {
+        setLayoutGap(Math.max(0, layoutGapFactor - 0.02));
       });
+
+      var gapValue = document.createElement('span');
+      gapValue.className = 'floor-gap-value';
+      gapValue.textContent = Math.round(layoutGapFactor * 100) + '%';
+
+      var gapPlus = document.createElement('button');
+      gapPlus.type = 'button';
+      gapPlus.className = 'floor-gap-btn';
+      gapPlus.textContent = '+';
+      gapPlus.addEventListener('click', function() {
+        setLayoutGap(Math.min(0.25, layoutGapFactor + 0.02));
+      });
+
       gapRow.appendChild(gapLabel);
-      gapRow.appendChild(gapSlider);
+      gapRow.appendChild(gapMinus);
+      gapRow.appendChild(gapValue);
+      gapRow.appendChild(gapPlus);
       floorLayoutViewer.appendChild(gapRow);
 
       // Build ordered list: included first (in custom order), then excluded
