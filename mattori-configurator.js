@@ -1141,7 +1141,11 @@
       fillLight.position.set(-4, 6, -1);
       scene.add(fillLight);
 
-      return { scene, size, center };
+      // Global size based on largest floor — for uniform scaling across all viewers
+      const SCALE = 0.01;
+      const globalSize = new THREE.Vector3(maxWorldW * SCALE, size.y, maxWorldH * SCALE);
+
+      return { scene, size, center, globalSize };
     }
 
     // ============================================================
@@ -1150,16 +1154,17 @@
     function renderStaticThumbnail(floorIndex, container) {
       const result = buildFloorScene(floorIndex);
       if (!result) return;
-      const { scene, size, center } = result;
+      const { scene, size, center, globalSize } = result;
 
       const rect = container.getBoundingClientRect();
       const width = Math.round(rect.width) || 200;
       const height = Math.round(rect.height) || 260;
 
-      const maxDim = Math.max(size.x, size.y, size.z);
+      // Use globalSize for uniform scaling across all floors
+      const ref = globalSize;
       const padding = 1.25;
-      const halfW = (size.x * padding) / 2;
-      const halfZ = (size.z * padding) / 2;
+      const halfW = (ref.x * padding) / 2;
+      const halfZ = (ref.z * padding) / 2;
       const halfExtent = Math.max(halfW, halfZ);
 
       const FOV = 12;
@@ -1226,15 +1231,17 @@
     function renderInteractiveViewer(floorIndex, container) {
       const result = buildFloorScene(floorIndex);
       if (!result) return null;
-      const { scene, size, center } = result;
+      const { scene, size, center, globalSize } = result;
 
       const rect = container.getBoundingClientRect();
       const width = Math.round(rect.width) || 400;
       const height = Math.round(rect.height) || 500;
 
+      // Use globalSize for uniform scaling across all floors
+      const ref = globalSize;
       const padding = 1.25;
-      const halfW = (size.x * padding) / 2;
-      const halfZ = (size.z * padding) / 2;
+      const halfW = (ref.x * padding) / 2;
+      const halfZ = (ref.z * padding) / 2;
       const halfExtent = Math.max(halfW, halfZ);
 
       const FOV = 12;
@@ -1284,16 +1291,17 @@
     function renderOrthographicViewer(floorIndex, container) {
       const result = buildFloorScene(floorIndex);
       if (!result) return null;
-      const { scene, size, center } = result;
+      const { scene, size, center, globalSize } = result;
 
       const rect = container.getBoundingClientRect();
       const width = Math.round(rect.width) || 200;
       const height = Math.round(rect.height) || 260;
 
-      const maxDim = Math.max(size.x, size.y, size.z);
+      // Use globalSize for uniform scaling across all floors
+      const ref = globalSize;
       const padding = 1.25;
-      const halfW = (size.x * padding) / 2;
-      const halfZ = (size.z * padding) / 2;
+      const halfW = (ref.x * padding) / 2;
+      const halfZ = (ref.z * padding) / 2;
       const halfExtent = Math.max(halfW, halfZ);
 
       const FOV = 12;
