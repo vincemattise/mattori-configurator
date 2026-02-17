@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v31.11/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v31.12/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -416,7 +416,7 @@
     /* Address overlay — top zone of the frame */
     .mattori-configurator .unified-address-overlay {
       position: absolute;
-      top: calc(16% + 5px);
+      top: calc(16% + 3px);
       left: 15.5%;
       right: 14%;
       height: 10%;
@@ -446,10 +446,10 @@
 
     .mattori-configurator .frame-city {
       font-family: 'Nexa Bold', 'Nexa', Georgia, sans-serif !important;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       color: #1a1a1a;
-      margin-top: 4px;
+      margin-top: -1px;
       letter-spacing: 0.3px;
       overflow: hidden;
       text-overflow: clip;
@@ -559,7 +559,7 @@
 
     .mattori-configurator .label-item {
       font-family: 'Nexa Bold', 'Nexa', Georgia, sans-serif !important;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       color: #1a1a1a;
       letter-spacing: 0.4px;
@@ -1065,7 +1065,7 @@
     .mattori-configurator .btn-floor-issue {
       height: 40px;
       padding: 0 1rem;
-      font-size: 0.82rem;
+      font-size: 0.88rem;
       font-weight: 600;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: transparent;
@@ -1215,7 +1215,7 @@
       align-items: center;
       gap: 4px;
       flex-shrink: 0;
-      margin-right: 0.5rem;
+      margin-right: calc(0.5rem + 20px);
     }
 
     .mattori-configurator .floor-layout-card .floor-layout-include input[type="checkbox"] {
