@@ -1040,7 +1040,7 @@
           updateFloorLabels();
           if (floorsLoading) floorsLoading.classList.add('hidden');
           // Re-enable the button now rendering is done
-          if (btnWizardNext && currentWizardStep === 1) {
+          if (btnWizardNext) {
             btnWizardNext.textContent = 'Volgende \u2192';
             btnWizardNext.disabled = false;
           }
@@ -1896,19 +1896,21 @@
       // Update prev/next/order buttons
       btnWizardPrev.style.display = currentWizardStep > 1 ? '' : 'none';
 
+      // Always reset button text (guards against leftover "Laden..." state)
+      btnWizardNext.textContent = 'Volgende \u2192';
+      btnWizardNext.disabled = false;
+
       if (currentWizardStep === TOTAL_WIZARD_STEPS) {
         // Last step: hide next, show order
         btnWizardNext.style.display = 'none';
       } else if (currentWizardStep === 1) {
         // Step 1: only show next if data is loaded
         btnWizardNext.style.display = floors.length > 0 ? '' : 'none';
-        btnWizardNext.disabled = false;
       } else if (currentWizardStep === 3) {
         // Step 3: hide wizard next — "Klopt, volgende" button handles navigation
         btnWizardNext.style.display = 'none';
       } else {
         btnWizardNext.style.display = '';
-        btnWizardNext.disabled = false;
       }
     }
 
