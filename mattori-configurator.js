@@ -533,6 +533,8 @@
         b: { x: w.b.x, y: w.b.y },
         thickness: w.thickness ?? 20,
         openings: w.openings ?? [],
+        _clipA: null, // {nx, ny} normal of intersecting wall at endpoint A
+        _clipB: null, // {nx, ny} normal of intersecting wall at endpoint B
         _arcSeg: w._arcSeg ?? false,
         _heightA: w._heightA ?? 265,
         _heightB: w._heightB ?? 265
@@ -566,48 +568,36 @@
           if (sinAngle < 0.1) continue;
 
           const isDiagonal = Math.min(Math.abs(ux), Math.abs(uy)) > 0.15;
-
-          let ext;
-          if (isDiagonal) {
-            // Diagonal walls: retract endpoints so thickness corners don't overshoot
-            // The cosine component of the thickness causes the overshoot
-            const cosAngle = Math.abs(ux * (otherDx / otherLen) + uy * (otherDy / otherLen));
-            const ownHalfThick = (wall.thickness ?? 20) / 2;
-            ext = -(ownHalfThick * cosAngle / sinAngle);
-          } else {
-            // Axis-aligned walls: extend to fill T-junction gaps
-            ext = Math.min(otherHalfThick / sinAngle, otherHalfThick * 1.2);
-          }
+          // For diagonal walls: no extension, just store clip plane
+          // For axis-aligned walls: extend as before
+          const ext = isDiagonal ? 0 : Math.min(otherHalfThick / sinAngle, otherHalfThick * 3);
+          // Direction of the intersecting wall (for clipping diagonal wall endpoints)
+          const otherNx = -(otherDy / otherLen);
+          const otherNy = (otherDx / otherLen);
 
           const aShares = pointsNear(origAx, origAy, other.a.x, other.a.y) ||
                           pointsNear(origAx, origAy, other.b.x, other.b.y);
           const aOnInt = pointOnSegmentInterior(origAx, origAy, other.a.x, other.a.y, other.b.x, other.b.y);
           if (aShares || aOnInt) {
-            if (isDiagonal) { extendA = Math.min(extendA || 0, ext); }
-            else { extendA = Math.max(extendA, ext); }
+            extendA = Math.max(extendA, ext);
+            if (isDiagonal) wall._clipA = { dx: otherDx / otherLen, dy: otherDy / otherLen };
           }
 
           const bShares = pointsNear(origBx, origBy, other.a.x, other.a.y) ||
                           pointsNear(origBx, origBy, other.b.x, other.b.y);
           const bOnInt = pointOnSegmentInterior(origBx, origBy, other.a.x, other.a.y, other.b.x, other.b.y);
           if (bShares || bOnInt) {
-            if (isDiagonal) { extendB = Math.min(extendB || 0, ext); }
-            else { extendB = Math.max(extendB, ext); }
+            extendB = Math.max(extendB, ext);
+            if (isDiagonal) wall._clipB = { dx: otherDx / otherLen, dy: otherDy / otherLen };
           }
         }
 
         if (extendA > 0) {
           wall.a.x -= ux * extendA;
           wall.a.y -= uy * extendA;
-        } else if (extendA < 0) {
-          wall.a.x -= ux * extendA; // extendA is negative, so this shortens
-          wall.a.y -= uy * extendA;
         }
         if (extendB > 0) {
           wall.b.x += ux * extendB;
-          wall.b.y += uy * extendB;
-        } else if (extendB < 0) {
-          wall.b.x += ux * extendB; // extendB is negative, so this shortens
           wall.b.y += uy * extendB;
         }
       }
@@ -2679,14 +2669,60 @@
       function addFace(a, b, c, d) { faces.push(`f ${a} ${b} ${c} ${d}`); }
       function addTriFace(a, b, c) { faces.push(`f ${a} ${b} ${c}`); }
 
-      function createWallBox(x1, y1, x2, y2, bottomZ, topZ, halfThickness, normalX, normalY) {
+      // clipA/clipB: direction {dx,dy} of intersecting wall at endpoint A/B (or null)
+      // When set, the end-face is angled to align with the intersecting wall
+      function createWallBox(x1, y1, x2, y2, bottomZ, topZ, halfThickness, normalX, normalY, clipA, clipB) {
         if (topZ <= bottomZ) return;
-        const corners = [
-          { x: x1 + normalX * halfThickness, y: y1 + normalY * halfThickness },
-          { x: x2 + normalX * halfThickness, y: y2 + normalY * halfThickness },
-          { x: x2 - normalX * halfThickness, y: y2 - normalY * halfThickness },
-          { x: x1 - normalX * halfThickness, y: y1 - normalY * halfThickness }
-        ];
+        // Default rectangular corners
+        let c0 = { x: x1 + normalX * halfThickness, y: y1 + normalY * halfThickness }; // A + normal
+        let c1 = { x: x2 + normalX * halfThickness, y: y2 + normalY * halfThickness }; // B + normal
+        let c2 = { x: x2 - normalX * halfThickness, y: y2 - normalY * halfThickness }; // B - normal
+        let c3 = { x: x1 - normalX * halfThickness, y: y1 - normalY * halfThickness }; // A - normal
+
+        // Clip endpoint A: project corners c0 and c3 onto the intersecting wall's line
+        if (clipA) {
+          const cdx = clipA.dx, cdy = clipA.dy;
+          // For each corner at A, find where the line from the corner along wall direction
+          // intersects the clip line through (x1,y1) with direction (cdx,cdy)
+          // Parametric: corner + t * wallDir = (x1,y1) + s * clipDir
+          const wdx = x2 - x1, wdy = y2 - y1;
+          const wlen = Math.hypot(wdx, wdy);
+          if (wlen > 0.001) {
+            const wux = wdx / wlen, wuy = wdy / wlen;
+            const det = wux * cdy - wuy * cdx;
+            if (Math.abs(det) > 0.01) {
+              // Corner c0 (A + normal)
+              const dx0 = x1 - c0.x, dy0 = y1 - c0.y;
+              const t0 = (dx0 * cdy - dy0 * cdx) / det;
+              c0 = { x: c0.x + wux * t0, y: c0.y + wuy * t0 };
+              // Corner c3 (A - normal)
+              const dx3 = x1 - c3.x, dy3 = y1 - c3.y;
+              const t3 = (dx3 * cdy - dy3 * cdx) / det;
+              c3 = { x: c3.x + wux * t3, y: c3.y + wuy * t3 };
+            }
+          }
+        }
+
+        // Clip endpoint B: project corners c1 and c2 onto the intersecting wall's line
+        if (clipB) {
+          const cdx = clipB.dx, cdy = clipB.dy;
+          const wdx = x2 - x1, wdy = y2 - y1;
+          const wlen = Math.hypot(wdx, wdy);
+          if (wlen > 0.001) {
+            const wux = wdx / wlen, wuy = wdy / wlen;
+            const det = wux * cdy - wuy * cdx;
+            if (Math.abs(det) > 0.01) {
+              const dx1 = x2 - c1.x, dy1 = y2 - c1.y;
+              const t1 = (dx1 * cdy - dy1 * cdx) / det;
+              c1 = { x: c1.x + wux * t1, y: c1.y + wuy * t1 };
+              const dx2 = x2 - c2.x, dy2 = y2 - c2.y;
+              const t2 = (dx2 * cdy - dy2 * cdx) / det;
+              c2 = { x: c2.x + wux * t2, y: c2.y + wuy * t2 };
+            }
+          }
+        }
+
+        const corners = [c0, c1, c2, c3];
         for (const c of corners) vertices.push(`v ${c.x.toFixed(4)} ${bottomZ.toFixed(4)} ${c.y.toFixed(4)}`);
         for (const c of corners) vertices.push(`v ${c.x.toFixed(4)} ${topZ.toFixed(4)} ${c.y.toFixed(4)}`);
         const base = vertexIndex;
@@ -2740,7 +2776,7 @@
         const wallWorldLen = Math.hypot(wall.b.x - wall.a.x, wall.b.y - wall.a.y);
 
         if (openings.length === 0) {
-          createWallBox(ax, ay, bx, by, 0, WALL_HEIGHT, halfThick, wnx, wny);
+          createWallBox(ax, ay, bx, by, 0, WALL_HEIGHT, halfThick, wnx, wny, wall._clipA, wall._clipB);
         } else {
           const sortedOpenings = openings.map(op => {
             const t = op.t ?? 0.5;
