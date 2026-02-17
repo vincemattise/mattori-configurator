@@ -3156,18 +3156,22 @@
         });
         const data = await resp.json();
 
-        if (data.error) {
-          setFundaStatus('error', `<strong>Geen plattegrond gevonden</strong><span>${data.error}</span>`);
-          showContactEmail(url);
-          return;
-        }
+        // Check if Funda link was valid but no interactive floor plans found
+        var noPlattegrond = data.error && (data.error.toLowerCase().includes('geen plattegrond') || data.error.toLowerCase().includes('geen fml') || data.error.toLowerCase().includes('no floorplan'));
+        var noValidFloors = !data?.floors?.length || !(data.floors ?? []).some(f => f?.designs?.[0]);
 
-        if (!data?.floors?.length || !(data.floors ?? []).some(f => f?.designs?.[0])) {
+        if (noPlattegrond || (data.floors && noValidFloors)) {
           // noFloorsMode: Funda link valid but no interactive floor plans
           noFloorsMode = true;
           lastFundaUrl = url;
           setFundaStatus('success', '<strong>✓ Funda link herkend</strong><strong class="status-warning">✗ Geen interactieve plattegronden beschikbaar</strong><span>Geen zorgen — we bouwen je Frame³ handmatig op basis van de Funda-foto\'s.</span>');
           updateWizardUI();
+          return;
+        }
+
+        if (data.error) {
+          setFundaStatus('error', `<strong>Fout</strong><span>${data.error}</span>`);
+          showContactEmail(url);
           return;
         }
 
