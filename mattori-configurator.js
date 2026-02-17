@@ -1191,20 +1191,24 @@
         camera = new THREE.OrthographicCamera(
           -halfFrustumW, halfFrustumW, halfFrustumH, -halfFrustumH, 0.01, 1000
         );
-        // Apply vertical alignment via camera Z-offset
-        // OBJ is centered at (0,0,0), size.z = OBJ depth
-        // Camera looks down Y axis, Z = "vertical" in the top-down view
+        camera.up.set(0, 0, -1); // Z- = up on screen (north in floorplan)
+        camera.position.set(0, 50, 0);
+        camera.lookAt(0, 0, 0);
+
+        // Apply vertical alignment by shifting the scene
+        // Camera looks down -Y with up=(0,0,-1):
+        //   Screen X = world X (left/right)
+        //   Screen Y = world -Z (up on screen = -Z in world)
+        // OBJ centered at (0,0,0), half-depth = size.z/2
+        // Frustum top/bottom in world Z: top = -halfFrustumH, bottom = +halfFrustumH
         var align = getFloorAlign(floorIndex);
-        var camZ = 0;
-        if (align === 'bottom') {
-          // Shift camera so OBJ bottom edge aligns with frustum bottom
-          camZ = halfFrustumH - size.z / 2;
-        } else if (align === 'top') {
-          // Shift camera so OBJ top edge aligns with frustum top
-          camZ = -(halfFrustumH - size.z / 2);
+        if (align === 'top' || align === 'bottom') {
+          var shiftZ = halfFrustumH - size.z / 2;
+          // 'top': move OBJ up on screen → shift scene toward -Z → scene.position.z -= shiftZ
+          // 'bottom': move OBJ down on screen → shift scene toward +Z → scene.position.z += shiftZ
+          scene.position.z += (align === 'bottom') ? shiftZ : -shiftZ;
         }
-        camera.position.set(0, 50, camZ);
-        camera.lookAt(0, 0, camZ);
+
         camera.updateProjectionMatrix();
       } else {
         // Perspective camera with slight tilt (for final result with depth)
