@@ -2,7 +2,7 @@
 <script>
 (function(){
   var sheets = [
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v36.12/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v36.13/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -23,7 +23,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel" style="display:none;">
-    <div class="admin-panel-label">Admin · v36.12</div>
+    <div class="admin-panel-label">Admin · v36.13</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon">⬆</div>
@@ -175,7 +175,8 @@
               <div class="floor-review-thumbstrip" id="floorReviewThumbstrip"></div>
               <div class="floor-review-actions" id="floorReviewActions">
                 <button type="button" class="btn-floor-issue" id="btnFloorIssue" onclick="toggleFloorIssue()">Klopt niet</button>
-                <button type="button" class="btn-floor-confirm" id="btnFloorConfirm" onclick="confirmFloor()">Klopt, volgende ✓</button>
+                <button type="button" class="btn-floor-exclude" id="btnFloorExclude" onclick="excludeFloor()">Niet meenemen</button>
+                <button type="button" class="btn-floor-confirm" id="btnFloorConfirm" onclick="confirmFloor()">Wel meenemen ✓</button>
               </div>
               <div class="floor-issue-details" id="floorIssueDetails" style="display:none;">
                 <textarea id="floorIssueText" class="wizard-input" placeholder="Beschrijf kort wat er niet klopt…" rows="3"></textarea>
@@ -249,4 +250,4 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v36.12/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v36.13/mattori-configurator.js"></script>

@@ -565,7 +565,7 @@
           const sinAngle = Math.abs(ux * (otherDy / otherLen) - uy * (otherDx / otherLen));
           if (sinAngle < 0.1) continue;
 
-          const ext = Math.min(otherHalfThick / sinAngle, otherHalfThick * 3);
+          const ext = Math.min(otherHalfThick / sinAngle, otherHalfThick * 1.2);
 
           const aShares = pointsNear(origAx, origAy, other.a.x, other.a.y) ||
                           pointsNear(origAx, origAy, other.b.x, other.b.y);
@@ -2080,14 +2080,14 @@
       var issueBtn = document.getElementById('btnFloorIssue');
       if (issueBtn) issueBtn.classList.remove('active');
 
-      // Update confirm button text
+      // Update button texts and exclude highlight
       var confirmBtn = document.getElementById('btnFloorConfirm');
       if (confirmBtn) {
-        if (currentFloorReviewIndex >= floors.length - 1) {
-          confirmBtn.textContent = 'Plattegrond klopt ✓';
-        } else {
-          confirmBtn.textContent = 'Klopt, volgende ✓';
-        }
+        confirmBtn.textContent = 'Wel meenemen ✓';
+      }
+      var excludeBtn = document.getElementById('btnFloorExclude');
+      if (excludeBtn) {
+        excludeBtn.classList.toggle('active', excludedFloors.has(currentFloorReviewIndex));
       }
     }
 
@@ -2110,21 +2110,25 @@
       renderFloorReview();
     }
 
-    // "Plattegrond klopt" — confirm current floor, navigate to next or advance to step 4
+    // "Wel meenemen" — include current floor, navigate to next or advance to step 4
     function confirmFloor() {
       ensureDomRefs();
+      excludedFloors.delete(currentFloorReviewIndex); // Re-include if previously excluded
       viewedFloors.add(currentFloorReviewIndex);
       // Close any open issue panel
       var details = document.getElementById('floorIssueDetails');
       if (details) details.style.display = 'none';
       var issueBtn = document.getElementById('btnFloorIssue');
       if (issueBtn) issueBtn.classList.remove('active');
+      // Update preview thumbnails
+      renderPreviewThumbnails();
+      updateFloorLabels();
       // Navigate to next floor, or auto-advance to step 4
       if (currentFloorReviewIndex < floors.length - 1) {
         currentFloorReviewIndex++;
         renderFloorReview();
       } else {
-        // Last floor confirmed — go to step 4 automatically
+        // Last floor — go to step 4 automatically
         showWizardStep(4);
       }
     }
@@ -2137,6 +2141,28 @@
       var isOpen = details.style.display !== 'none';
       details.style.display = isOpen ? 'none' : '';
       if (issueBtn) issueBtn.classList.toggle('active', !isOpen);
+    }
+
+    // "Niet meenemen" — exclude floor and advance
+    function excludeFloor() {
+      ensureDomRefs();
+      excludedFloors.add(currentFloorReviewIndex);
+      viewedFloors.add(currentFloorReviewIndex);
+      // Close any open issue panel
+      var details = document.getElementById('floorIssueDetails');
+      if (details) details.style.display = 'none';
+      var issueBtn = document.getElementById('btnFloorIssue');
+      if (issueBtn) issueBtn.classList.remove('active');
+      // Update preview thumbnails to show excluded state
+      renderPreviewThumbnails();
+      updateFloorLabels();
+      // Navigate to next floor or advance to step 4
+      if (currentFloorReviewIndex < floors.length - 1) {
+        currentFloorReviewIndex++;
+        renderFloorReview();
+      } else {
+        showWizardStep(4);
+      }
     }
 
     // ============================================================
