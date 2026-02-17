@@ -1000,8 +1000,7 @@
       if (btnTest) btnTest.style.display = 'none';
       var adminFrameToggle = document.getElementById('adminFrameToggle');
       if (adminFrameToggle) adminFrameToggle.style.display = '';
-      var adminLayoutControls = document.getElementById('adminLayoutControls');
-      if (adminLayoutControls) adminLayoutControls.style.display = '';
+      // Layout controls moved to step 4 per-floor cards
 
       // Admin: floor dimensions overview
       var dimsEl = document.getElementById('adminFloorDims');
@@ -1165,6 +1164,12 @@
       if (!result) return;
       const { scene, size, center, globalSize } = result;
 
+      // Apply 180° rotation if set for this floor
+      var rotation = getFloorRotate(floorIndex);
+      if (rotation === 180) {
+        scene.rotateY(Math.PI);
+      }
+
       const width = Math.round(forceW || container.getBoundingClientRect().width) || 200;
       const height = Math.round(forceH || container.getBoundingClientRect().height) || 260;
 
@@ -1198,7 +1203,8 @@
     // LAYOUT ENGINE — computes scale + position for preview
     // ============================================================
     var currentLayout = null; // stores computed layout for admin controls
-    var layoutAlign = 'center'; // 'center' or 'bottom'
+    var layoutAlign = 'center'; // 'center' or 'bottom' or 'top'
+    var floorSettings = {}; // per-floor: { align: 'center'|'top'|'bottom', rotate: 0|180 }
 
     function computeFloorLayout(zoneW, zoneH, includedIndices) {
       // Gather floor dimensions in cm
@@ -1295,6 +1301,22 @@
       };
     }
 
+    function getFloorAlign(floorIndex) {
+      var fs = floorSettings[floorIndex];
+      return (fs && fs.align) ? fs.align : layoutAlign;
+    }
+
+    function getFloorRotate(floorIndex) {
+      var fs = floorSettings[floorIndex];
+      return (fs && fs.rotate) ? fs.rotate : 0;
+    }
+
+    function alignY(align, maxH, itemH) {
+      if (align === 'bottom') return maxH - itemH;
+      if (align === 'top') return 0;
+      return (maxH - itemH) / 2;
+    }
+
     function layoutSideBySide(items) {
       // Place floors horizontally with gap
       var gap = Math.max(items[0].w, items[0].h) * 0.08;
@@ -1302,7 +1324,8 @@
       var curX = 0;
       var maxH = Math.max.apply(null, items.map(function(i) { return i.h; }));
       for (var it of items) {
-        var yOff = layoutAlign === 'bottom' ? (maxH - it.h) : (maxH - it.h) / 2;
+        var align = getFloorAlign(it.index);
+        var yOff = alignY(align, maxH, it.h);
         positions.push({ index: it.index, x: curX, y: yOff, w: it.w, h: it.h });
         curX += it.w + gap;
       }
@@ -1376,7 +1399,8 @@
         var row = Math.floor(i / cols);
         var cellX = col * (maxCellW + gap);
         var cellY = row * (maxCellH + gap);
-        var yInCell = layoutAlign === 'bottom' ? (maxCellH - items[i].h) : (maxCellH - items[i].h) / 2;
+        var align = getFloorAlign(items[i].index);
+        var yInCell = alignY(align, maxCellH, items[i].h);
         positions.push({
           index: items[i].index,
           x: cellX + (maxCellW - items[i].w) / 2,
@@ -1520,6 +1544,12 @@
       const result = buildFloorScene(floorIndex);
       if (!result) return null;
       const { scene, size, center, globalSize } = result;
+
+      // Apply 180° rotation if set for this floor
+      var rotation = getFloorRotate(floorIndex);
+      if (rotation === 180) {
+        scene.rotateY(Math.PI);
+      }
 
       const rect = container.getBoundingClientRect();
       const width = Math.round(rect.width) || 200;
@@ -2055,6 +2085,22 @@
       updateFloorLabels();
     }
 
+    function setFloorAlign(floorIndex, align) {
+      if (!floorSettings[floorIndex]) floorSettings[floorIndex] = {};
+      floorSettings[floorIndex].align = align;
+      renderPreviewThumbnails();
+      updateFloorLabels();
+    }
+
+    function setFloorRotate(floorIndex, deg) {
+      if (!floorSettings[floorIndex]) floorSettings[floorIndex] = {};
+      floorSettings[floorIndex].rotate = deg;
+      // Re-render both step 4 viewer and preview
+      renderLayoutView();
+      renderPreviewThumbnails();
+      updateFloorLabels();
+    }
+
     // ============================================================
     // STEP 4: Layout View (orthographic top-down)
     // ============================================================
@@ -2169,6 +2215,71 @@
         includeWrap.appendChild(includeCb);
         includeWrap.appendChild(includeLabel);
 
+        // Per-floor controls (alignment + rotation) — only for included floors
+        var floorControls = document.createElement('div');
+        floorControls.className = 'floor-layout-controls';
+
+        if (!isExcluded) {
+          // Alignment selector (top / center / bottom)
+          var alignWrap = document.createElement('div');
+          alignWrap.className = 'floor-control-group';
+          var alignLabel = document.createElement('span');
+          alignLabel.className = 'floor-control-label';
+          alignLabel.textContent = 'Positie';
+
+          var alignSelect = document.createElement('select');
+          alignSelect.className = 'floor-align-select';
+          var currentAlign = getFloorAlign(floorIdx);
+          var alignOptions = [
+            { value: 'top', text: 'Boven' },
+            { value: 'center', text: 'Midden' },
+            { value: 'bottom', text: 'Onder' }
+          ];
+          for (var ao = 0; ao < alignOptions.length; ao++) {
+            var opt = document.createElement('option');
+            opt.value = alignOptions[ao].value;
+            opt.textContent = alignOptions[ao].text;
+            if (alignOptions[ao].value === currentAlign) opt.selected = true;
+            alignSelect.appendChild(opt);
+          }
+
+          (function(fi) {
+            alignSelect.addEventListener('change', function() {
+              setFloorAlign(fi, this.value);
+            });
+          })(floorIdx);
+
+          alignWrap.appendChild(alignLabel);
+          alignWrap.appendChild(alignSelect);
+          floorControls.appendChild(alignWrap);
+
+          // Rotation toggle (0° / 180°)
+          var rotWrap = document.createElement('div');
+          rotWrap.className = 'floor-control-group';
+          var rotLabel = document.createElement('span');
+          rotLabel.className = 'floor-control-label';
+          rotLabel.textContent = 'Rotatie';
+
+          var rotBtn = document.createElement('button');
+          rotBtn.type = 'button';
+          rotBtn.className = 'floor-rotate-btn';
+          var currentRot = getFloorRotate(floorIdx);
+          rotBtn.textContent = currentRot === 180 ? '180°' : '0°';
+          if (currentRot === 180) rotBtn.classList.add('active');
+
+          (function(fi) {
+            rotBtn.addEventListener('click', function() {
+              var current = getFloorRotate(fi);
+              var newRot = current === 180 ? 0 : 180;
+              setFloorRotate(fi, newRot);
+            });
+          })(floorIdx);
+
+          rotWrap.appendChild(rotLabel);
+          rotWrap.appendChild(rotBtn);
+          floorControls.appendChild(rotWrap);
+        }
+
         // Up/down arrows (only for included)
         var arrows = document.createElement('div');
         arrows.className = 'floor-layout-arrows';
@@ -2198,6 +2309,7 @@
         card.appendChild(canvasWrap);
         card.appendChild(nameEl);
         card.appendChild(includeWrap);
+        card.appendChild(floorControls);
         card.appendChild(arrows);
         floorLayoutViewer.appendChild(card);
 

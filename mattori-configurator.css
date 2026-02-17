@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.5/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.6/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -1138,6 +1138,7 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      flex-wrap: wrap;
       background: #fff;
       border-radius: 10px;
       padding: 0.5rem 0.7rem;
@@ -1236,7 +1237,6 @@
       align-items: center;
       gap: 4px;
       flex-shrink: 0;
-      margin-right: calc(0.5rem + 20px);
     }
 
     .mattori-configurator .floor-layout-card .floor-layout-include input[type="checkbox"] {
@@ -1251,6 +1251,66 @@
       color: #888;
       cursor: pointer;
       user-select: none;
+    }
+
+    .mattori-configurator .floor-layout-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .mattori-configurator .floor-layout-card.excluded .floor-layout-controls {
+      visibility: hidden;
+    }
+
+    .mattori-configurator .floor-control-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .mattori-configurator .floor-control-label {
+      font-size: 0.68rem;
+      color: #999;
+      user-select: none;
+    }
+
+    .mattori-configurator .floor-align-select {
+      font-size: 0.7rem;
+      padding: 2px 4px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #f8f8f8;
+      color: #333;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .mattori-configurator .floor-align-select:focus {
+      border-color: #aaa;
+    }
+
+    .mattori-configurator .floor-rotate-btn {
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #f8f8f8;
+      color: #333;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .mattori-configurator .floor-rotate-btn:hover {
+      background: #eee;
+      border-color: #bbb;
+    }
+
+    .mattori-configurator .floor-rotate-btn.active {
+      background: #1a1a1a;
+      color: #fff;
+      border-color: #1a1a1a;
     }
 
     /* Floor review loading overlay */
