@@ -1173,20 +1173,24 @@
       const width = Math.round(forceW || container.getBoundingClientRect().width) || 200;
       const height = Math.round(forceH || container.getBoundingClientRect().height) || 260;
 
-      // Use globalSize for camera framing — ensures uniform scale across all floors
-      // so alignment (top/center/bottom) is pixel-perfect
-      const ref = globalSize;
-      const padding = 1.15;
-      const halfW = (ref.x * padding) / 2;
-      const halfZ = (ref.z * padding) / 2;
-      const halfExtent = Math.max(halfW, halfZ);
-
-      const FOV = 12;
-      const aspect = width / height;
-      const camera = new THREE.PerspectiveCamera(FOV, aspect, 0.01, halfExtent * 100);
-      const camDist = halfExtent / Math.tan((FOV / 2) * Math.PI / 180);
-      camera.position.set(0, camDist, camDist * 0.14);
+      // Orthographic camera — uniform scale across all floors
+      // frustum sized to match canvas pixel-to-world mapping based on globalSize
+      const padding = 1.1;
+      // pxPerUnit: how many pixels one OBJ unit occupies
+      // The layout engine sets canvas width = worldW * layoutScale pixels
+      // OBJ width for this floor = worldW * 0.01 (SCALE in generateFloorOBJ)
+      // So: pxPerUnit = canvasWidth / (worldW * 0.01) = layoutScale / 0.01
+      // This is the same for ALL floors since layoutScale and SCALE are global
+      var floorData = floors[floorIndex];
+      var pxPerUnit = width / (floorData.worldW * 0.01 * padding);
+      var halfFrustumW = (width / 2) / pxPerUnit;
+      var halfFrustumH = (height / 2) / pxPerUnit;
+      const camera = new THREE.OrthographicCamera(
+        -halfFrustumW, halfFrustumW, halfFrustumH, -halfFrustumH, 0.01, 1000
+      );
+      camera.position.set(0, 50, 0);
       camera.lookAt(center);
+      camera.updateProjectionMatrix();
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
