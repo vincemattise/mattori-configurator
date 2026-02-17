@@ -3170,7 +3170,7 @@
         }
 
         if (data.error) {
-          setFundaStatus('error', `<strong>Fout</strong><span>${data.error}</span>`);
+          setFundaStatus('error', '<strong>✗ Funda link niet geldig</strong><span>Controleer de link en probeer het opnieuw.</span>');
           showContactEmail(url);
           return;
         }
