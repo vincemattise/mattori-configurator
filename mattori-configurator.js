@@ -1094,7 +1094,10 @@
     }
 
     // Build a Three.js scene for a floor (reused by preview thumbnails, floor review, layout)
-    function buildFloorScene(floorIndex) {
+    // Subtle floor colors per index — warm muted tones
+    var FLOOR_COLORS = [0xC4B8A8, 0xB8C4B0, 0xBDB4C4, 0xC4BCB0, 0xA8B8C4, 0xC4A8A8];
+
+    function buildFloorScene(floorIndex, floorColor) {
       const floor = floors[floorIndex];
       if (!floor) return null;
 
@@ -1126,8 +1129,9 @@
         shininess: 5,
         specular: 0x222222
       });
+      var fColor = (floorColor !== undefined) ? floorColor : 0xAA9A82;
       const floorMaterial = new THREE.MeshPhongMaterial({
-        color: 0xAA9A82,
+        color: fColor,
         flatShading: true,
         side: THREE.DoubleSide,
         shininess: 5,
@@ -1156,11 +1160,14 @@
     // STATIC THUMBNAIL RENDER (for unified preview)
     // ============================================================
     function renderStaticThumbnail(floorIndex, container) {
-      renderStaticThumbnailSized(floorIndex, container, null, null);
+      renderStaticThumbnailSized(floorIndex, container, null, null, {});
     }
 
-    function renderStaticThumbnailSized(floorIndex, container, forceW, forceH) {
-      const result = buildFloorScene(floorIndex);
+    // opts: { ortho: bool, floorColor: hex }
+    function renderStaticThumbnailSized(floorIndex, container, forceW, forceH, opts) {
+      opts = opts || {};
+      var floorColor = (opts.floorColor !== undefined) ? opts.floorColor : undefined;
+      const result = buildFloorScene(floorIndex, floorColor);
       if (!result) return;
       const { scene, size, center, globalSize } = result;
 
@@ -1173,24 +1180,34 @@
       const width = Math.round(forceW || container.getBoundingClientRect().width) || 200;
       const height = Math.round(forceH || container.getBoundingClientRect().height) || 260;
 
-      // Orthographic camera — uniform scale across all floors
-      // frustum sized to match canvas pixel-to-world mapping based on globalSize
-      const padding = 1.1;
-      // pxPerUnit: how many pixels one OBJ unit occupies
-      // The layout engine sets canvas width = worldW * layoutScale pixels
-      // OBJ width for this floor = worldW * 0.01 (SCALE in generateFloorOBJ)
-      // So: pxPerUnit = canvasWidth / (worldW * 0.01) = layoutScale / 0.01
-      // This is the same for ALL floors since layoutScale and SCALE are global
-      var floorData = floors[floorIndex];
-      var pxPerUnit = width / (floorData.worldW * 0.01 * padding);
-      var halfFrustumW = (width / 2) / pxPerUnit;
-      var halfFrustumH = (height / 2) / pxPerUnit;
-      const camera = new THREE.OrthographicCamera(
-        -halfFrustumW, halfFrustumW, halfFrustumH, -halfFrustumH, 0.01, 1000
-      );
-      camera.position.set(0, 50, 0);
-      camera.lookAt(center);
-      camera.updateProjectionMatrix();
+      var camera;
+      if (opts.ortho) {
+        // Orthographic camera — uniform scale, flat top-down (for editing)
+        var floorData = floors[floorIndex];
+        var padding = 1.1;
+        var pxPerUnit = width / (floorData.worldW * 0.01 * padding);
+        var halfFrustumW = (width / 2) / pxPerUnit;
+        var halfFrustumH = (height / 2) / pxPerUnit;
+        camera = new THREE.OrthographicCamera(
+          -halfFrustumW, halfFrustumW, halfFrustumH, -halfFrustumH, 0.01, 1000
+        );
+        camera.position.set(0, 50, 0);
+        camera.lookAt(center);
+        camera.updateProjectionMatrix();
+      } else {
+        // Perspective camera with slight tilt (for final result with depth)
+        var ref = globalSize;
+        var padding = 1.15;
+        var halfW = (ref.x * padding) / 2;
+        var halfZ = (ref.z * padding) / 2;
+        var halfExtent = Math.max(halfW, halfZ);
+        var FOV = 12;
+        var aspect = width / height;
+        camera = new THREE.PerspectiveCamera(FOV, aspect, 0.01, halfExtent * 100);
+        var camDist = halfExtent / Math.tan((FOV / 2) * Math.PI / 180);
+        camera.position.set(0, camDist, camDist * 0.14);
+        camera.lookAt(center);
+      }
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -1486,8 +1503,12 @@
       // Compute layout
       currentLayout = computeFloorLayout(zoneW, zoneH, includedIndices);
 
+      // Use ortho + colored floors during editing (steps 2-4), perspective for final (step 5)
+      var useOrtho = currentWizardStep < 5;
+
       // Render each floor at its computed position
-      for (var pos of currentLayout.positions) {
+      for (var pi = 0; pi < currentLayout.positions.length; pi++) {
+        var pos = currentLayout.positions[pi];
         var wrap = document.createElement('div');
         wrap.className = 'floor-canvas-wrap';
         wrap.style.position = 'absolute';
@@ -1498,7 +1519,11 @@
 
         floorsGrid.appendChild(wrap);
 
-        renderStaticThumbnailSized(pos.index, wrap, pos.w, pos.h);
+        var renderOpts = { ortho: useOrtho };
+        if (useOrtho) {
+          renderOpts.floorColor = FLOOR_COLORS[pi % FLOOR_COLORS.length];
+        }
+        renderStaticThumbnailSized(pos.index, wrap, pos.w, pos.h, renderOpts);
       }
     }
 
@@ -1580,8 +1605,8 @@
       const width = Math.round(rect.width) || 200;
       const height = Math.round(rect.height) || 260;
 
-      // Use globalSize for uniform scaling across all floors
-      const ref = globalSize;
+      // Use own size for card thumbnails — each card fills its own space
+      const ref = size;
       const padding = 1.25;
       const halfW = (ref.x * padding) / 2;
       const halfZ = (ref.z * padding) / 2;
@@ -1877,6 +1902,9 @@
           renderPreviewThumbnails();
           updateFloorLabels();
         } else if (n === 5) {
+          // Re-render with perspective camera (final look with depth)
+          renderPreviewThumbnails();
+          updateFloorLabels();
           renderLabelsFields();
         }
       }, delay);
