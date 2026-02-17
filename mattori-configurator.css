@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.23/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.24/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -1364,24 +1364,6 @@
 
     .mattori-configurator .floor-rotate-btn:active {
       transform: scale(0.9);
-    }
-
-    /* Floor controls loading overlay (blocks buttons during render) */
-    .mattori-configurator .floor-controls-loading-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,0.85);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-      border-radius: 8px;
-      pointer-events: all;
-    }
-    .mattori-configurator .floor-controls-loading-overlay .step-spinner {
-      width: 20px;
-      height: 20px;
-      border-width: 2.5px;
     }
 
     /* Floor review loading overlay */

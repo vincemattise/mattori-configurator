@@ -2152,28 +2152,27 @@
       updateFloorLabels();
     }
 
-    // Show loading overlay on control panel, do work, then hide
+    // Clear control panel, show spinner, do work, rebuild
     function updatePreviewWithLoading(fn) {
-      // Add loading overlay on the control panel to block interactions
-      var overlay = null;
+      // Clear layout viewer and show spinner (same pattern as step transitions)
       if (floorLayoutViewer) {
-        floorLayoutViewer.style.position = 'relative';
-        overlay = document.createElement('div');
-        overlay.className = 'floor-controls-loading-overlay';
-        overlay.innerHTML = '<div class="step-spinner"></div>';
-        floorLayoutViewer.appendChild(overlay);
+        // Dispose old renderers first
+        for (var v of layoutViewers) { if (v.renderer) v.renderer.dispose(); }
+        layoutViewers = [];
+        floorLayoutViewer.innerHTML = '';
+        var loader = document.createElement('div');
+        loader.className = 'wizard-step-loading';
+        loader.innerHTML = '<div class="step-spinner"></div>';
+        floorLayoutViewer.appendChild(loader);
       }
       setTimeout(function() {
         fn();
-        if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        renderLayoutView();
       }, 60);
     }
 
     function setLayoutGap(value) {
       layoutGapFactor = parseFloat(value);
-      // Update gap value label if it exists
-      var gapValEl = document.querySelector('.floor-gap-value');
-      if (gapValEl) gapValEl.textContent = Math.round(layoutGapFactor * 100) + '%';
       updatePreviewWithLoading(function() {
         renderPreviewThumbnails();
         updateFloorLabels();
@@ -2197,7 +2196,6 @@
       var current = getFloorRotate(floorIndex);
       floorSettings[floorIndex].rotate = current === 0 ? 180 : 0;
       updatePreviewWithLoading(function() {
-        renderLayoutView();
         renderPreviewThumbnails();
         updateFloorLabels();
       });
@@ -2213,23 +2211,18 @@
       if (!floorOrder || toIdx < 0 || toIdx >= floorOrder.length) return;
       var item = floorOrder.splice(fromIdx, 1)[0];
       floorOrder.splice(toIdx, 0, item);
-      // Show loading overlay on control panel
-      floorLayoutViewer.style.position = 'relative';
-      var overlay = document.createElement('div');
-      overlay.className = 'floor-controls-loading-overlay';
-      overlay.innerHTML = '<div class="step-spinner"></div>';
-      floorLayoutViewer.appendChild(overlay);
-      setTimeout(function() {
-        renderLayoutView();
-        // Highlight moved card briefly
-        var cards = floorLayoutViewer.querySelectorAll('.floor-layout-card');
-        if (cards[toIdx]) {
-          cards[toIdx].classList.add('just-moved');
-          setTimeout(function() { cards[toIdx].classList.remove('just-moved'); }, 600);
-        }
+      updatePreviewWithLoading(function() {
         renderPreviewThumbnails();
         updateFloorLabels();
-      }, 120);
+        // Highlight moved card briefly after renderLayoutView rebuilds cards
+        setTimeout(function() {
+          var cards = floorLayoutViewer.querySelectorAll('.floor-layout-card');
+          if (cards[toIdx]) {
+            cards[toIdx].classList.add('just-moved');
+            setTimeout(function() { cards[toIdx].classList.remove('just-moved'); }, 600);
+          }
+        }, 20);
+      });
     }
 
     function renderLayoutView() {
