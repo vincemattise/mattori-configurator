@@ -1688,6 +1688,22 @@
 
       // Update checkbox
       floorIncludeCb.checked = !excludedFloors.has(currentFloorReviewIndex);
+
+      // Reset issue panel
+      var issueDetails = document.getElementById('floorIssueDetails');
+      if (issueDetails) issueDetails.style.display = 'none';
+      var issueBtn = document.getElementById('btnFloorIssue');
+      if (issueBtn) issueBtn.classList.remove('active');
+
+      // Update confirm button text
+      var confirmBtn = document.getElementById('btnFloorConfirm');
+      if (confirmBtn) {
+        if (currentFloorReviewIndex >= floors.length - 1) {
+          confirmBtn.textContent = 'Plattegrond klopt ✓';
+        } else {
+          confirmBtn.textContent = 'Klopt, volgende ✓';
+        }
+      }
     }
 
     function updateFloorReviewExcludedOverlay() {
@@ -1711,11 +1727,33 @@
       renderFloorReview();
     }
 
-    // "Er klopt iets niet" toggle
+    // "Plattegrond klopt" — confirm current floor, navigate to next
+    function confirmFloor() {
+      ensureDomRefs();
+      viewedFloors.add(currentFloorReviewIndex);
+      // Close any open issue panel
+      var details = document.getElementById('floorIssueDetails');
+      if (details) details.style.display = 'none';
+      var issueBtn = document.getElementById('btnFloorIssue');
+      if (issueBtn) issueBtn.classList.remove('active');
+      // Navigate to next unviewed floor, or just next floor
+      if (currentFloorReviewIndex < floors.length - 1) {
+        currentFloorReviewIndex++;
+        renderFloorReview();
+      } else {
+        // All floors seen — update UI so "Volgende" enables
+        updateWizardUI();
+      }
+    }
+
+    // "Klopt niet" toggle — show/hide issue textarea
     function toggleFloorIssue() {
       var details = document.getElementById('floorIssueDetails');
-      var cb = document.getElementById('floorIssueCb');
-      if (details) details.style.display = cb && cb.checked ? '' : 'none';
+      var issueBtn = document.getElementById('btnFloorIssue');
+      if (!details) return;
+      var isOpen = details.style.display !== 'none';
+      details.style.display = isOpen ? 'none' : '';
+      if (issueBtn) issueBtn.classList.toggle('active', !isOpen);
     }
 
     // ============================================================

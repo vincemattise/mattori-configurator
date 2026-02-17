@@ -1027,32 +1027,60 @@
       letter-spacing: 1.5px;
     }
 
-    /* "Er klopt iets niet" issue section */
-    .mattori-configurator .floor-review-issue {
+    /* Floor review action buttons */
+    .mattori-configurator .floor-review-actions {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 0;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
     }
 
-    .mattori-configurator .floor-review-issue input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: #c0392b;
+    .mattori-configurator .btn-floor-confirm {
+      flex: 1;
+      height: 40px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
       cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .mattori-configurator .btn-floor-confirm:hover {
+      background: #333;
+      transform: translateY(-1px);
+    }
+
+    .mattori-configurator .btn-floor-issue {
+      height: 40px;
+      padding: 0 1rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: transparent;
+      color: #999;
+      border: 1.5px solid #ddd;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.2s ease, color 0.2s ease;
       flex-shrink: 0;
     }
 
-    .mattori-configurator .floor-review-issue label {
-      font-size: 0.88rem;
+    .mattori-configurator .btn-floor-issue:hover {
+      border-color: #aaa;
       color: #555;
-      cursor: pointer;
-      user-select: none;
+    }
+
+    .mattori-configurator .btn-floor-issue.active {
+      border-color: #c0392b;
+      color: #c0392b;
     }
 
     .mattori-configurator .floor-issue-details {
-      margin-top: 0.6rem;
+      margin-top: 0.4rem;
+      margin-bottom: 0.5rem;
     }
 
     .mattori-configurator .floor-issue-details textarea.wizard-input {
