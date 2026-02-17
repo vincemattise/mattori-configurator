@@ -2032,8 +2032,8 @@
     // ============================================================
     // ADMIN: Toggle frame image (One.png ↔ Two.png)
     // ============================================================
-    var FRAME_IMG_ONE = 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/One_0187b93c-82a1-4719-a04f-b35df3ad7819.png?v=1771264630';
-    var FRAME_IMG_TWO = 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Two_8287c251-136d-4286-83ac-88b941cf2290.png?v=1771264631';
+    var FRAME_IMG_ONE = 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/One_6ca91ccb-41c3-4f74-b387-4f0b5f64292a.png?v=1771340361';
+    var FRAME_IMG_TWO = 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Two_1a0d36a8-e861-4cec-8417-f251458bb134.png?v=1771340362';
 
     function toggleAdminFrame() {
       ensureDomRefs();
