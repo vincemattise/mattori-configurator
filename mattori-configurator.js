@@ -240,8 +240,14 @@
         ancestor.style.overflow = 'visible';
         ancestor = ancestor.parentElement;
       }
-      // Breakout is now handled by CSS (width: 100vw + left: 50% + transform: translateX(-50%))
-      // No JS measurement needed — this approach is immune to Shopify container changes
+      function applyBreakout() {
+        var cw = document.documentElement.clientWidth;
+        var rect = el.parentElement.getBoundingClientRect();
+        el.style.width = cw + 'px';
+        el.style.marginLeft = (-rect.left) + 'px';
+      }
+      applyBreakout();
+      window.addEventListener('resize', applyBreakout);
     })();
 
     // ============================================================
