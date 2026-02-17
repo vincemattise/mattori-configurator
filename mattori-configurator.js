@@ -2366,9 +2366,9 @@
           // SVG icons: two rectangles (tall + short) aligned relative to each other
           // Shows inter-floor alignment, not frame-edge alignment
           var alignIcons = {
-            top: '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="4" height="10" rx="1" fill="currentColor" opacity="0.9"/><rect x="8" y="2" width="4" height="6" rx="1" fill="currentColor" opacity="0.5"/></svg>',
-            center: '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="4" height="10" rx="1" fill="currentColor" opacity="0.9"/><rect x="8" y="4" width="4" height="6" rx="1" fill="currentColor" opacity="0.5"/></svg>',
-            bottom: '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="4" height="10" rx="1" fill="currentColor" opacity="0.9"/><rect x="8" y="6" width="4" height="6" rx="1" fill="currentColor" opacity="0.5"/></svg>'
+            top: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="14" rx="1.2" fill="currentColor" opacity="0.9"/><rect x="9" y="1" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.45"/></svg>',
+            center: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="14" rx="1.2" fill="currentColor" opacity="0.9"/><rect x="9" y="3.5" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.45"/></svg>',
+            bottom: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="14" rx="1.2" fill="currentColor" opacity="0.9"/><rect x="9" y="6" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.45"/></svg>'
           };
 
           for (var ai = 0; ai < alignValues.length; ai++) {
