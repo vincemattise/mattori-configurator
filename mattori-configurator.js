@@ -2180,9 +2180,12 @@
       });
     }
 
-    function setFloorAlign(floorIndex, align) {
-      if (!floorSettings[floorIndex]) floorSettings[floorIndex] = {};
-      floorSettings[floorIndex].align = align;
+    function setGlobalAlign(align) {
+      layoutAlign = align;
+      // Clear any per-floor overrides
+      for (var key in floorSettings) {
+        if (floorSettings[key]) delete floorSettings[key].align;
+      }
       updatePreviewWithLoading(function() {
         renderPreviewThumbnails();
         updateFloorLabels();
@@ -2236,6 +2239,47 @@
       }
       layoutViewers = [];
       floorLayoutViewer.innerHTML = '';
+
+      // Global alignment control
+      var alignRow = document.createElement('div');
+      alignRow.className = 'floor-layout-gap-row';
+      var alignLabel = document.createElement('span');
+      alignLabel.className = 'floor-gap-label';
+      alignLabel.textContent = 'Uitlijning';
+
+      var alignGroup = document.createElement('div');
+      alignGroup.className = 'floor-align-group';
+
+      var alignValues = ['top', 'center', 'bottom'];
+      var alignIcons = {
+        top: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="14" rx="1.2" fill="currentColor" opacity="0.9"/><rect x="9" y="1" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.45"/></svg>',
+        center: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="14" rx="1.2" fill="currentColor" opacity="0.9"/><rect x="9" y="3.5" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.45"/></svg>',
+        bottom: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="14" rx="1.2" fill="currentColor" opacity="0.9"/><rect x="9" y="6" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.45"/></svg>'
+      };
+      var alignTitles = { top: 'Bovenkant uitlijnen', center: 'Midden uitlijnen', bottom: 'Onderkant uitlijnen' };
+
+      for (var ai = 0; ai < alignValues.length; ai++) {
+        var alignBtn = document.createElement('button');
+        alignBtn.type = 'button';
+        alignBtn.className = 'floor-align-btn' + (alignValues[ai] === layoutAlign ? ' active' : '');
+        alignBtn.innerHTML = alignIcons[alignValues[ai]];
+        alignBtn.title = alignTitles[alignValues[ai]];
+
+        (function(val) {
+          alignBtn.addEventListener('click', function() {
+            setGlobalAlign(val);
+            var siblings = this.parentElement.querySelectorAll('.floor-align-btn');
+            for (var s = 0; s < siblings.length; s++) siblings[s].classList.remove('active');
+            this.classList.add('active');
+          });
+        })(alignValues[ai]);
+
+        alignGroup.appendChild(alignBtn);
+      }
+
+      alignRow.appendChild(alignLabel);
+      alignRow.appendChild(alignGroup);
+      floorLayoutViewer.appendChild(alignRow);
 
       // Gap control with +/- buttons
       var gapRow = document.createElement('div');
@@ -2346,49 +2390,12 @@
         includeWrap.appendChild(includeCb);
         includeWrap.appendChild(includeLabel);
 
-        // Per-floor controls (alignment icons + rotation) — only for included floors
+        // Per-floor controls (rotation only) — only for included floors
         var floorControls = document.createElement('div');
         floorControls.className = 'floor-layout-controls';
 
         if (!isExcluded) {
-          var currentAlign = getFloorAlign(floorIdx);
-
-          // Alignment icon buttons (top / center / bottom)
-          var alignGroup = document.createElement('div');
-          alignGroup.className = 'floor-align-group';
-
-          var alignValues = ['top', 'center', 'bottom'];
-          // SVG icons: two rectangles (tall + short) aligned relative to each other
-          // Shows inter-floor alignment, not frame-edge alignment
-          var alignIcons = {
-            top: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="14" rx="1.2" fill="currentColor" opacity="0.9"/><rect x="9" y="1" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.45"/></svg>',
-            center: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="14" rx="1.2" fill="currentColor" opacity="0.9"/><rect x="9" y="3.5" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.45"/></svg>',
-            bottom: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="14" rx="1.2" fill="currentColor" opacity="0.9"/><rect x="9" y="6" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.45"/></svg>'
-          };
-
-          for (var ai = 0; ai < alignValues.length; ai++) {
-            var alignBtn = document.createElement('button');
-            alignBtn.type = 'button';
-            alignBtn.className = 'floor-align-btn' + (alignValues[ai] === currentAlign ? ' active' : '');
-            alignBtn.innerHTML = alignIcons[alignValues[ai]];
-            alignBtn.title = alignValues[ai] === 'top' ? 'Bovenkant uitlijnen' : alignValues[ai] === 'center' ? 'Midden uitlijnen' : 'Onderkant uitlijnen';
-
-            (function(fi, val) {
-              alignBtn.addEventListener('click', function() {
-                setFloorAlign(fi, val);
-                // Update active state locally
-                var siblings = this.parentElement.querySelectorAll('.floor-align-btn');
-                for (var s = 0; s < siblings.length; s++) siblings[s].classList.remove('active');
-                this.classList.add('active');
-              });
-            })(floorIdx, alignValues[ai]);
-
-            alignGroup.appendChild(alignBtn);
-          }
-
-          floorControls.appendChild(alignGroup);
-
-          // Rotation button (circular arrow, +45° each click)
+          // 180° flip button
           var rotBtn = document.createElement('button');
           rotBtn.type = 'button';
           rotBtn.className = 'floor-rotate-btn';
