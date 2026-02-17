@@ -1000,6 +1000,8 @@
       if (btnTest) btnTest.style.display = 'none';
       var adminFrameToggle = document.getElementById('adminFrameToggle');
       if (adminFrameToggle) adminFrameToggle.style.display = '';
+      var adminLayoutControls = document.getElementById('adminLayoutControls');
+      if (adminLayoutControls) adminLayoutControls.style.display = '';
 
       // Admin: floor dimensions overview
       var dimsEl = document.getElementById('adminFloorDims');
@@ -1196,6 +1198,7 @@
     // LAYOUT ENGINE — computes scale + position for preview
     // ============================================================
     var currentLayout = null; // stores computed layout for admin controls
+    var layoutAlign = 'center'; // 'center' or 'bottom'
 
     function computeFloorLayout(zoneW, zoneH, includedIndices) {
       // Gather floor dimensions in cm
@@ -1297,10 +1300,10 @@
       var gap = Math.max(items[0].w, items[0].h) * 0.08;
       var positions = [];
       var curX = 0;
+      var maxH = Math.max.apply(null, items.map(function(i) { return i.h; }));
       for (var it of items) {
-        // Vertically center each floor
-        var maxH = Math.max.apply(null, items.map(function(i) { return i.h; }));
-        positions.push({ index: it.index, x: curX, y: (maxH - it.h) / 2, w: it.w, h: it.h });
+        var yOff = layoutAlign === 'bottom' ? (maxH - it.h) : (maxH - it.h) / 2;
+        positions.push({ index: it.index, x: curX, y: yOff, w: it.w, h: it.h });
         curX += it.w + gap;
       }
       return { type: 'side-by-side', positions: positions };
@@ -1373,11 +1376,11 @@
         var row = Math.floor(i / cols);
         var cellX = col * (maxCellW + gap);
         var cellY = row * (maxCellH + gap);
-        // Center floor within cell
+        var yInCell = layoutAlign === 'bottom' ? (maxCellH - items[i].h) : (maxCellH - items[i].h) / 2;
         positions.push({
           index: items[i].index,
           x: cellX + (maxCellW - items[i].w) / 2,
-          y: cellY + (maxCellH - items[i].h) / 2,
+          y: cellY + yInCell,
           w: items[i].w,
           h: items[i].h
         });
@@ -2041,6 +2044,15 @@
       var img = document.getElementById('unifiedFrameImage');
       if (!cb || !img) return;
       img.src = cb.checked ? FRAME_IMG_TWO : FRAME_IMG_ONE;
+    }
+
+    function toggleLayoutAlign() {
+      ensureDomRefs();
+      var cb = document.getElementById('adminAlignBottom');
+      layoutAlign = (cb && cb.checked) ? 'bottom' : 'center';
+      // Re-render preview with new alignment
+      renderPreviewThumbnails();
+      updateFloorLabels();
     }
 
     // ============================================================
