@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v32.8/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.1/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -529,41 +529,14 @@
     }
 
     .mattori-configurator .floors-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 0.5rem;
-      width: 100%;
-    }
-
-    .mattori-configurator .floor-card {
       position: relative;
-      background: transparent;
-      border: none;
-      border-radius: 0;
-      padding: 0.2rem;
-      overflow: hidden;
-      transition: opacity 0.3s ease;
-    }
-
-    .mattori-configurator .floor-card.excluded {
-      opacity: 0.3;
-      filter: grayscale(0.5);
-    }
-
-    .mattori-configurator .floor-name {
-      font-size: 0.55rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #999;
-      margin-bottom: 0.25rem;
-      text-align: center;
+      width: 100%;
+      height: 100%;
     }
 
     .mattori-configurator .floor-canvas-wrap {
-      width: 100%;
-      aspect-ratio: 3 / 4;
-      position: relative;
+      position: absolute;
+      overflow: hidden;
     }
 
     .mattori-configurator .floor-canvas-wrap canvas {
@@ -1687,7 +1660,7 @@
         flex-direction: column;
       }
       .mattori-configurator .floors-grid {
-        grid-template-columns: 1fr;
+        /* layout engine handles positioning */
       }
       .mattori-configurator .product-title {
         font-size: 1.7rem;

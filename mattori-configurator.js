@@ -1155,19 +1155,21 @@
     // STATIC THUMBNAIL RENDER (for unified preview)
     // ============================================================
     function renderStaticThumbnail(floorIndex, container) {
+      renderStaticThumbnailSized(floorIndex, container, null, null);
+    }
+
+    function renderStaticThumbnailSized(floorIndex, container, forceW, forceH) {
       const result = buildFloorScene(floorIndex);
       if (!result) return;
       const { scene, size, center, globalSize } = result;
 
-      const rect = container.getBoundingClientRect();
-      const width = Math.round(rect.width) || 200;
-      const height = Math.round(rect.height) || 260;
+      const width = Math.round(forceW || container.getBoundingClientRect().width) || 200;
+      const height = Math.round(forceH || container.getBoundingClientRect().height) || 260;
 
-      // Use globalSize for uniform scaling across all floors
-      const ref = globalSize;
-      const padding = 1.25;
-      const halfW = (ref.x * padding) / 2;
-      const halfZ = (ref.z * padding) / 2;
+      // Use own size for camera framing — layout engine handles relative scaling
+      const padding = 1.15;
+      const halfW = (size.x * padding) / 2;
+      const halfZ = (size.z * padding) / 2;
       const halfExtent = Math.max(halfW, halfZ);
 
       const FOV = 12;
@@ -1190,6 +1192,214 @@
       previewViewers.push({ renderer });
     }
 
+    // ============================================================
+    // LAYOUT ENGINE — computes scale + position for preview
+    // ============================================================
+    var currentLayout = null; // stores computed layout for admin controls
+
+    function computeFloorLayout(zoneW, zoneH, includedIndices) {
+      // Gather floor dimensions in cm
+      var items = includedIndices.map(function(i) {
+        var f = floors[i];
+        return { index: i, w: f.worldW, h: f.worldH, name: f.name || '' };
+      });
+
+      if (items.length === 0) return { scale: 1, positions: [] };
+
+      // Total bounding box if we stack all floors
+      var totalW = 0, totalH = 0;
+      for (var it of items) {
+        totalW = Math.max(totalW, it.w);
+        totalH = Math.max(totalH, it.h);
+      }
+
+      // Available zone aspect ratio
+      var zoneAspect = zoneW / zoneH;
+
+      // Try different layout strategies and pick the best
+      var layouts = [];
+
+      if (items.length === 1) {
+        // Single floor — centered
+        layouts.push(layoutSingle(items));
+      } else if (items.length === 2) {
+        // Two floors — try side-by-side, stacked, and diagonal
+        layouts.push(layoutSideBySide(items));
+        layouts.push(layoutStacked(items));
+        layouts.push(layoutDiagonal(items));
+      } else if (items.length === 3) {
+        layouts.push(layoutTriangle(items));
+        layouts.push(layoutSideBySide(items));
+        layouts.push(layoutStacked(items));
+      } else {
+        // 4+ floors — grid-based
+        layouts.push(layoutGrid(items));
+        layouts.push(layoutSideBySide(items));
+      }
+
+      // Score each layout: how well does it fill the zone?
+      var best = null, bestScore = -1;
+      for (var layout of layouts) {
+        var bbox = layoutBoundingBox(layout.positions);
+        if (bbox.w === 0 || bbox.h === 0) continue;
+
+        // Scale to fit zone
+        var scaleX = zoneW / bbox.w;
+        var scaleY = zoneH / bbox.h;
+        var scale = Math.min(scaleX, scaleY);
+
+        // Score: how much of the zone is filled (0..1)
+        var fillRatio = (bbox.w * scale * bbox.h * scale) / (zoneW * zoneH);
+        // Prefer layouts closer to zone aspect ratio
+        var layoutAspect = bbox.w / bbox.h;
+        var aspectMatch = 1 - Math.abs(layoutAspect - zoneAspect) / Math.max(layoutAspect, zoneAspect);
+        var score = fillRatio * 0.6 + aspectMatch * 0.4;
+
+        if (score > bestScore) {
+          bestScore = score;
+          best = { positions: layout.positions, bbox: bbox, scale: scale, type: layout.type };
+        }
+      }
+
+      if (!best) return { scale: 1, positions: [] };
+
+      // Center the layout in the zone
+      var finalScale = best.scale * 0.88; // 12% padding
+      var scaledW = best.bbox.w * finalScale;
+      var scaledH = best.bbox.h * finalScale;
+      var offsetX = (zoneW - scaledW) / 2 - best.bbox.x * finalScale;
+      var offsetY = (zoneH - scaledH) / 2 - best.bbox.y * finalScale;
+
+      var result = [];
+      for (var pos of best.positions) {
+        result.push({
+          index: pos.index,
+          x: pos.x * finalScale + offsetX,
+          y: pos.y * finalScale + offsetY,
+          w: pos.w * finalScale,
+          h: pos.h * finalScale
+        });
+      }
+
+      return { scale: finalScale, positions: result, type: best.type };
+    }
+
+    function layoutSingle(items) {
+      var it = items[0];
+      return {
+        type: 'centered',
+        positions: [{ index: it.index, x: 0, y: 0, w: it.w, h: it.h }]
+      };
+    }
+
+    function layoutSideBySide(items) {
+      // Place floors horizontally with gap
+      var gap = Math.max(items[0].w, items[0].h) * 0.08;
+      var positions = [];
+      var curX = 0;
+      for (var it of items) {
+        // Vertically center each floor
+        var maxH = Math.max.apply(null, items.map(function(i) { return i.h; }));
+        positions.push({ index: it.index, x: curX, y: (maxH - it.h) / 2, w: it.w, h: it.h });
+        curX += it.w + gap;
+      }
+      return { type: 'side-by-side', positions: positions };
+    }
+
+    function layoutStacked(items) {
+      // Place floors vertically with gap
+      var gap = Math.max(items[0].w, items[0].h) * 0.08;
+      var positions = [];
+      var curY = 0;
+      for (var it of items) {
+        var maxW = Math.max.apply(null, items.map(function(i) { return i.w; }));
+        positions.push({ index: it.index, x: (maxW - it.w) / 2, y: curY, w: it.w, h: it.h });
+        curY += it.h + gap;
+      }
+      return { type: 'stacked', positions: positions };
+    }
+
+    function layoutDiagonal(items) {
+      // Place first floor top-left, second bottom-right with slight overlap zone
+      if (items.length < 2) return layoutSingle(items);
+      var a = items[0], b = items[1];
+      var gap = Math.max(a.w, a.h) * 0.05;
+      var positions = [
+        { index: a.index, x: 0, y: 0, w: a.w, h: a.h },
+        { index: b.index, x: a.w * 0.35 + gap, y: a.h * 0.35 + gap, w: b.w, h: b.h }
+      ];
+      // Add remaining floors (if any) stacked to the right
+      var curX = Math.max(a.w, positions[1].x + b.w) + gap;
+      for (var i = 2; i < items.length; i++) {
+        positions.push({ index: items[i].index, x: curX, y: 0, w: items[i].w, h: items[i].h });
+        curX += items[i].w + gap;
+      }
+      return { type: 'diagonal', positions: positions };
+    }
+
+    function layoutTriangle(items) {
+      // Two on top, one centered below (or vice versa based on sizes)
+      if (items.length < 3) return layoutSideBySide(items);
+      var sorted = items.slice().sort(function(a, b) { return (b.w * b.h) - (a.w * a.h); });
+      var gap = Math.max(sorted[0].w, sorted[0].h) * 0.08;
+
+      // Biggest floor on top-left, second top-right, smallest centered below
+      var a = sorted[0], b = sorted[1], c = sorted[2];
+      var topW = a.w + gap + b.w;
+      var positions = [
+        { index: a.index, x: 0, y: 0, w: a.w, h: a.h },
+        { index: b.index, x: a.w + gap, y: 0, w: b.w, h: b.h },
+        { index: c.index, x: (topW - c.w) / 2, y: Math.max(a.h, b.h) + gap, w: c.w, h: c.h }
+      ];
+      // Add remaining items
+      var curY = Math.max(a.h, b.h) + gap + c.h + gap;
+      for (var i = 3; i < items.length; i++) {
+        positions.push({ index: items[i].index, x: (topW - items[i].w) / 2, y: curY, w: items[i].w, h: items[i].h });
+        curY += items[i].h + gap;
+      }
+      return { type: 'triangle', positions: positions };
+    }
+
+    function layoutGrid(items) {
+      // Auto grid layout
+      var cols = Math.ceil(Math.sqrt(items.length));
+      var rows = Math.ceil(items.length / cols);
+      var maxCellW = Math.max.apply(null, items.map(function(i) { return i.w; }));
+      var maxCellH = Math.max.apply(null, items.map(function(i) { return i.h; }));
+      var gap = maxCellW * 0.08;
+      var positions = [];
+      for (var i = 0; i < items.length; i++) {
+        var col = i % cols;
+        var row = Math.floor(i / cols);
+        var cellX = col * (maxCellW + gap);
+        var cellY = row * (maxCellH + gap);
+        // Center floor within cell
+        positions.push({
+          index: items[i].index,
+          x: cellX + (maxCellW - items[i].w) / 2,
+          y: cellY + (maxCellH - items[i].h) / 2,
+          w: items[i].w,
+          h: items[i].h
+        });
+      }
+      return { type: 'grid', positions: positions };
+    }
+
+    function layoutBoundingBox(positions) {
+      if (!positions.length) return { x: 0, y: 0, w: 0, h: 0 };
+      var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (var p of positions) {
+        minX = Math.min(minX, p.x);
+        minY = Math.min(minY, p.y);
+        maxX = Math.max(maxX, p.x + p.w);
+        maxY = Math.max(maxY, p.y + p.h);
+      }
+      return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+    }
+
+    // ============================================================
+    // RENDER PREVIEW USING LAYOUT ENGINE
+    // ============================================================
     function renderPreviewThumbnails() {
       // Cleanup old preview viewers
       for (const v of previewViewers) {
@@ -1199,32 +1409,44 @@
 
       floorsGrid.innerHTML = '';
 
-      // Count included floors and determine single-floor mode
+      // Collect included floor indices
       var includedIndices = [];
       for (let i = 0; i < floors.length; i++) {
         if (!excludedFloors.has(i)) includedIndices.push(i);
       }
-      // Respect custom floor order from layout step
       if (floorOrder && floorOrder.length === includedIndices.length) {
         includedIndices = floorOrder.slice();
       }
-      const regularCount = includedIndices.filter(i => {
-        const n = (floors[i].name || '').toLowerCase().trim();
-        return !(/^(kelder|zolder|berging|garage|dak|tuin)/.test(n));
-      }).length;
-      const isSingleFloor = regularCount <= 1;
 
-      for (const i of includedIndices) {
-        const card = document.createElement('div');
-        card.className = 'floor-card';
+      // Get overlay zone dimensions
+      var overlayRect = floorsGrid.parentElement.getBoundingClientRect();
+      var zoneW = overlayRect.width;
+      var zoneH = overlayRect.height;
 
-        const viewerWrap = document.createElement('div');
-        viewerWrap.className = 'floor-canvas-wrap';
+      if (zoneW < 10 || zoneH < 10 || includedIndices.length === 0) return;
 
-        card.appendChild(viewerWrap);
-        floorsGrid.appendChild(card);
+      // Make floorsGrid a positioning container
+      floorsGrid.style.position = 'relative';
+      floorsGrid.style.width = '100%';
+      floorsGrid.style.height = '100%';
+      floorsGrid.style.display = 'block';
 
-        renderStaticThumbnail(i, viewerWrap);
+      // Compute layout
+      currentLayout = computeFloorLayout(zoneW, zoneH, includedIndices);
+
+      // Render each floor at its computed position
+      for (var pos of currentLayout.positions) {
+        var wrap = document.createElement('div');
+        wrap.className = 'floor-canvas-wrap';
+        wrap.style.position = 'absolute';
+        wrap.style.left = pos.x + 'px';
+        wrap.style.top = pos.y + 'px';
+        wrap.style.width = pos.w + 'px';
+        wrap.style.height = pos.h + 'px';
+
+        floorsGrid.appendChild(wrap);
+
+        renderStaticThumbnailSized(pos.index, wrap, pos.w, pos.h);
       }
     }
 
