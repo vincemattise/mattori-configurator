@@ -2243,7 +2243,7 @@
       var alignGroup = document.createElement('div');
       alignGroup.className = 'floor-align-group';
 
-      var alignValues = ['top', 'center', 'bottom'];
+      var alignValues = ['bottom', 'center', 'top'];
       var alignIcons = {
         top: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="14" rx="1.2" fill="currentColor" opacity="0.9"/><rect x="9" y="1" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.45"/></svg>',
         center: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="14" rx="1.2" fill="currentColor" opacity="0.9"/><rect x="9" y="3.5" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.45"/></svg>',
