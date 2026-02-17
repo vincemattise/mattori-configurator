@@ -565,22 +565,21 @@
           if (otherLen < 0.1) continue;
 
           const sinAngle = Math.abs(ux * (otherDy / otherLen) - uy * (otherDx / otherLen));
-          if (sinAngle < 0.1) continue;
+          if (sinAngle < 0.1) continue; // Nearly parallel — skip
 
-          const isDiagonal = Math.min(Math.abs(ux), Math.abs(uy)) > 0.15;
-          // For diagonal walls: no extension, just store clip plane
-          // For axis-aligned walls: extend as before
-          const ext = isDiagonal ? 0 : Math.min(otherHalfThick / sinAngle, otherHalfThick * 3);
-          // Direction of the intersecting wall (for clipping diagonal wall endpoints)
-          const otherNx = -(otherDy / otherLen);
-          const otherNy = (otherDx / otherLen);
+          const bothAxisAligned = Math.min(Math.abs(ux), Math.abs(uy)) < 0.15 &&
+                                  Math.min(Math.abs(otherDx / otherLen), Math.abs(otherDy / otherLen)) < 0.15;
+
+          // Only extend for axis-aligned T-junctions (both walls axis-aligned)
+          const ext = bothAxisAligned ? Math.min(otherHalfThick / sinAngle, otherHalfThick * 3) : 0;
 
           const aShares = pointsNear(origAx, origAy, other.a.x, other.a.y) ||
                           pointsNear(origAx, origAy, other.b.x, other.b.y);
           const aOnInt = pointOnSegmentInterior(origAx, origAy, other.a.x, other.a.y, other.b.x, other.b.y);
           if (aShares || aOnInt) {
             extendA = Math.max(extendA, ext);
-            if (isDiagonal) wall._clipA = { dx: otherDx / otherLen, dy: otherDy / otherLen };
+            // Store clip direction when meeting a non-parallel wall
+            if (!bothAxisAligned) wall._clipA = { dx: otherDx / otherLen, dy: otherDy / otherLen };
           }
 
           const bShares = pointsNear(origBx, origBy, other.a.x, other.a.y) ||
@@ -588,7 +587,7 @@
           const bOnInt = pointOnSegmentInterior(origBx, origBy, other.a.x, other.a.y, other.b.x, other.b.y);
           if (bShares || bOnInt) {
             extendB = Math.max(extendB, ext);
-            if (isDiagonal) wall._clipB = { dx: otherDx / otherLen, dy: otherDy / otherLen };
+            if (!bothAxisAligned) wall._clipB = { dx: otherDx / otherLen, dy: otherDy / otherLen };
           }
         }
 
