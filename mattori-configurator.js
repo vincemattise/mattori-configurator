@@ -998,6 +998,21 @@
       var adminFrameToggle = document.getElementById('adminFrameToggle');
       if (adminFrameToggle) adminFrameToggle.style.display = '';
 
+      // Admin: floor dimensions overview
+      var dimsEl = document.getElementById('adminFloorDims');
+      if (dimsEl) {
+        var html = '<div class="dims-title">Afmetingen (L × B in m)</div>';
+        for (var fi = 0; fi < floors.length; fi++) {
+          var f = floors[fi];
+          var l = (f.worldW / 100).toFixed(1);
+          var b = (f.worldH / 100).toFixed(1);
+          var excl = excludedFloors.has(fi) ? ' excluded' : '';
+          html += '<div class="dims-row' + excl + '"><span>' + f.name + '</span><span>' + l + ' × ' + b + '</span></div>';
+        }
+        dimsEl.innerHTML = html;
+        dimsEl.style.display = '';
+      }
+
       // Switch to unified preview
       if (productHeroImage) productHeroImage.style.display = 'none';
       unifiedFramePreview.style.display = '';
