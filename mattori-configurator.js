@@ -565,7 +565,11 @@
           const sinAngle = Math.abs(ux * (otherDy / otherLen) - uy * (otherDx / otherLen));
           if (sinAngle < 0.1) continue;
 
-          const ext = Math.min(otherHalfThick / sinAngle, otherHalfThick * 1.2);
+          // Check if current wall is diagonal (not axis-aligned)
+          const isDiagonal = Math.min(Math.abs(ux), Math.abs(uy)) > 0.15;
+          // For diagonal walls: minimal extension only; for axis-aligned: normal extension
+          const maxExt = isDiagonal ? (wall.thickness ?? 20) / 2 : otherHalfThick * 1.2;
+          const ext = Math.min(otherHalfThick / sinAngle, maxExt);
 
           const aShares = pointsNear(origAx, origAy, other.a.x, other.a.y) ||
                           pointsNear(origAx, origAy, other.b.x, other.b.y);
