@@ -2,7 +2,7 @@
 <script>
 (function(){
   var sheets = [
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v35.5/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v35.6/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -23,7 +23,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel" style="display:none;">
-    <div class="admin-panel-label">Admin · v35.5</div>
+    <div class="admin-panel-label">Admin · v35.6</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon">⬆</div>
@@ -61,7 +61,7 @@
     <div class="page-col-left">
 
       <!-- Initieel: productafbeelding (verborgen na Funda laden) -->
-      <div class="product-hero-image" id="productHeroImage">
+      <div class="product-hero-image stagger-in" id="productHeroImage" style="--stagger:0s">
         <div class="product-image-wrapper">
           <span class="product-example-badge">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" /></svg>
@@ -109,20 +109,20 @@
     <div class="page-col-right">
       <div class="page-col-right-inner">
 
-        <h1 class="product-title collapsible-info">Maak je eigen Frame³</h1>
+        <h1 class="product-title collapsible-info stagger-in" style="--stagger:0.06s">Maak je eigen Frame³</h1>
 
-        <div class="product-price-block collapsible-info">
+        <div class="product-price-block collapsible-info stagger-in" style="--stagger:0.12s">
           <span class="product-price-old">&euro;99,95</span>
           <span class="product-price-new">&euro;79,95</span>
           <span class="product-price-tax">incl. BTW</span>
         </div>
 
-        <p class="product-description collapsible-info">
+        <p class="product-description collapsible-info stagger-in" style="--stagger:0.18s">
           Na ontvangst van je bestelling starten wij direct met het zorgvuldig omzetten van jouw 2D Funda-plattegrond naar een 3D model. Elk model wordt door het team van MATTORI handmatig opgebouwd met focus op een realistische weergave.
         </p>
 
         <!-- Start configurator button -->
-        <button class="btn-start-configurator" id="btnStartConfigurator" onclick="startConfigurator()">
+        <button class="btn-start-configurator stagger-in" id="btnStartConfigurator" onclick="startConfigurator()" style="--stagger:0.24s">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" /></svg>
           Maak je eigen Frame³
         </button>
@@ -211,7 +211,7 @@
         </div>
 
         <!-- Info badges -->
-        <div class="product-badges collapsible-info">
+        <div class="product-badges collapsible-info stagger-in" style="--stagger:0.30s">
           <div class="product-badge">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>
             Gratis verzending met PostNL
@@ -227,7 +227,7 @@
         </div>
 
         <!-- Specificaties -->
-        <div class="product-specs collapsible-info">
+        <div class="product-specs collapsible-info stagger-in" style="--stagger:0.36s">
           <div class="product-specs-title">Specificaties</div>
           <ul class="product-specs-list">
             <li><span class="spec-label">Materiaal lijst</span><span class="spec-value">Duurzaam kunststof</span></li>
@@ -249,4 +249,4 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v35.5/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v35.6/mattori-configurator.js"></script>
