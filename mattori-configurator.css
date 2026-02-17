@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.20/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v33.21/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -500,12 +500,15 @@
     }
 
     .mattori-configurator .floors-loading {
+      position: absolute;
+      inset: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1rem;
-      padding: 3rem 0;
+      gap: 0.6rem;
+      z-index: 5;
+      pointer-events: none;
     }
 
     .mattori-configurator .floors-loading.hidden {
@@ -513,19 +516,19 @@
     }
 
     .mattori-configurator .floors-loading-spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid rgba(26,26,26,0.15);
+      width: 24px;
+      height: 24px;
+      border: 2.5px solid rgba(26,26,26,0.12);
       border-top-color: #1a1a1a;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
 
     .mattori-configurator .floors-loading-text {
-      font-size: 0.82rem;
-      color: #999;
+      font-size: 0.75rem;
+      color: #888;
       font-weight: 500;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.2px;
     }
 
     .mattori-configurator .floors-grid {
@@ -1367,13 +1370,18 @@
     .mattori-configurator .floor-controls-loading-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.85);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 10;
       border-radius: 8px;
       pointer-events: all;
+    }
+    .mattori-configurator .floor-controls-loading-overlay .step-spinner {
+      width: 20px;
+      height: 20px;
+      border-width: 2.5px;
     }
 
     /* Floor review loading overlay */

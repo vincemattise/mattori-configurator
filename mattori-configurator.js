@@ -2152,9 +2152,8 @@
       updateFloorLabels();
     }
 
-    // Show loading overlay on control panel + preview, do work, then hide
+    // Show loading overlay on control panel, do work, then hide
     function updatePreviewWithLoading(fn) {
-      if (floorsLoading) floorsLoading.classList.remove('hidden');
       // Add loading overlay on the control panel to block interactions
       var overlay = null;
       if (floorLayoutViewer) {
@@ -2166,7 +2165,6 @@
       }
       setTimeout(function() {
         fn();
-        if (floorsLoading) floorsLoading.classList.add('hidden');
         if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
       }, 60);
     }
@@ -2213,13 +2211,12 @@
       if (!floorOrder || toIdx < 0 || toIdx >= floorOrder.length) return;
       var item = floorOrder.splice(fromIdx, 1)[0];
       floorOrder.splice(toIdx, 0, item);
-      // Show loading spinners on both layout viewer and preview
-      floorLayoutViewer.innerHTML = '';
-      var loader = document.createElement('div');
-      loader.className = 'wizard-step-loading';
-      loader.innerHTML = '<div class="step-spinner"></div>';
-      floorLayoutViewer.appendChild(loader);
-      if (floorsLoading) floorsLoading.classList.remove('hidden');
+      // Show loading overlay on control panel
+      floorLayoutViewer.style.position = 'relative';
+      var overlay = document.createElement('div');
+      overlay.className = 'floor-controls-loading-overlay';
+      overlay.innerHTML = '<div class="step-spinner"></div>';
+      floorLayoutViewer.appendChild(overlay);
       setTimeout(function() {
         renderLayoutView();
         // Highlight moved card briefly
@@ -2230,7 +2227,6 @@
         }
         renderPreviewThumbnails();
         updateFloorLabels();
-        if (floorsLoading) floorsLoading.classList.add('hidden');
       }, 120);
     }
 
