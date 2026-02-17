@@ -1559,13 +1559,6 @@
       // Update prev/next/order buttons
       btnWizardPrev.style.display = currentWizardStep > 1 ? '' : 'none';
 
-      // Floor nav button (step 3 only — cycles through floors, hidden on last)
-      var btnFN = document.getElementById('btnFloorNext');
-      if (btnFN) {
-        var showFloorNav = currentWizardStep === 3 && currentFloorReviewIndex < floors.length - 1;
-        btnFN.style.display = showFloorNav ? '' : 'none';
-      }
-
       if (currentWizardStep === TOTAL_WIZARD_STEPS) {
         // Last step: hide next, show order
         btnWizardNext.style.display = 'none';
@@ -1574,9 +1567,8 @@
         btnWizardNext.style.display = floors.length > 0 ? '' : 'none';
         btnWizardNext.disabled = false;
       } else if (currentWizardStep === 3) {
-        // Step 3 (floor review): disable next until all floors viewed
-        btnWizardNext.style.display = '';
-        btnWizardNext.disabled = viewedFloors.size < floors.length;
+        // Step 3: hide wizard next — "Klopt, volgende" button handles navigation
+        btnWizardNext.style.display = 'none';
       } else {
         btnWizardNext.style.display = '';
         btnWizardNext.disabled = false;
@@ -1686,9 +1678,6 @@
       // Update thumbstrip state (highlight active, don't rebuild)
       updateThumbstripState();
 
-      // Update checkbox
-      floorIncludeCb.checked = !excludedFloors.has(currentFloorReviewIndex);
-
       // Reset issue panel
       var issueDetails = document.getElementById('floorIssueDetails');
       if (issueDetails) issueDetails.style.display = 'none';
@@ -1716,8 +1705,6 @@
         overlay.innerHTML = '<span>Uitgezet</span>';
         floorReviewViewerEl.appendChild(overlay);
       }
-      // Sync checkbox
-      if (floorIncludeCb) floorIncludeCb.checked = !excludedFloors.has(currentFloorReviewIndex);
     }
 
     function navigateFloorReview(direction) {
@@ -1727,7 +1714,7 @@
       renderFloorReview();
     }
 
-    // "Plattegrond klopt" — confirm current floor, navigate to next
+    // "Plattegrond klopt" — confirm current floor, navigate to next or advance to step 4
     function confirmFloor() {
       ensureDomRefs();
       viewedFloors.add(currentFloorReviewIndex);
@@ -1736,13 +1723,13 @@
       if (details) details.style.display = 'none';
       var issueBtn = document.getElementById('btnFloorIssue');
       if (issueBtn) issueBtn.classList.remove('active');
-      // Navigate to next unviewed floor, or just next floor
+      // Navigate to next floor, or auto-advance to step 4
       if (currentFloorReviewIndex < floors.length - 1) {
         currentFloorReviewIndex++;
         renderFloorReview();
       } else {
-        // All floors seen — update UI so "Volgende" enables
-        updateWizardUI();
+        // Last floor confirmed — go to step 4 automatically
+        showWizardStep(4);
       }
     }
 
@@ -2533,27 +2520,6 @@
     // Wizard navigation
     btnWizardPrev.addEventListener('click', () => prevWizardStep());
     btnWizardNext.addEventListener('click', () => nextWizardStep());
-
-    // Floor review include/exclude checkbox — show loading overlay during toggle
-    floorIncludeCb.addEventListener('change', () => {
-      // Show loading overlay on viewer
-      if (floorReviewViewerEl) {
-        var loadEl = document.createElement('div');
-        loadEl.className = 'floor-review-loading-overlay';
-        loadEl.innerHTML = '<div class="review-spinner"></div>';
-        floorReviewViewerEl.appendChild(loadEl);
-      }
-      setTimeout(function() {
-        toggleFloorExclusion(currentFloorReviewIndex);
-        updateFloorReviewExcludedOverlay();
-        updateThumbstripState();
-        // Remove loading overlay
-        if (floorReviewViewerEl) {
-          var ld = floorReviewViewerEl.querySelector('.floor-review-loading-overlay');
-          if (ld) ld.remove();
-        }
-      }, 60);
-    });
 
     // Funda URL loading (refs in ensureDomRefs)
 
