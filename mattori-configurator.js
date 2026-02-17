@@ -1005,10 +1005,14 @@
       // Update address in preview
       updateFrameAddress();
 
-      // Stay on step 1, update UI to show "Volgende" button immediately
+      // Stay on step 1, update UI to show "Volgende" button with loading spinner
       updateWizardUI();
+      if (btnWizardNext) {
+        btnWizardNext.innerHTML = '<span class="btn-spinner"></span> Laden...';
+        btnWizardNext.disabled = true;
+      }
 
-      // Render thumbnails (hidden until step 5) — delayed so UI stays responsive
+      // Render thumbnails one-by-one so UI stays responsive between renders
       if (unifiedFloorsOverlay) unifiedFloorsOverlay.style.display = 'none';
       if (floorsLoading) floorsLoading.classList.remove('hidden');
       requestAnimationFrame(() => {
@@ -1016,6 +1020,11 @@
           renderPreviewThumbnails();
           updateFloorLabels();
           if (floorsLoading) floorsLoading.classList.add('hidden');
+          // Re-enable the button now rendering is done
+          if (btnWizardNext && currentWizardStep === 1) {
+            btnWizardNext.textContent = 'Volgende \u2192';
+            btnWizardNext.disabled = false;
+          }
         }, 100);
       });
     }
