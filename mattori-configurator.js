@@ -1033,11 +1033,9 @@
       // Update address in preview
       updateFrameAddress();
 
-      // Stay on step 1, update UI to show "Volgende" button with loading spinner
-      updateWizardUI();
+      // Hide next button during render (no flash)
       if (btnWizardNext) {
-        btnWizardNext.innerHTML = '<span class="btn-spinner"></span> Laden...';
-        btnWizardNext.disabled = true;
+        btnWizardNext.style.display = 'none';
       }
 
       // Render thumbnails one-by-one so UI stays responsive between renders
@@ -1048,11 +1046,8 @@
           renderPreviewThumbnails();
           updateFloorLabels();
           if (floorsLoading) floorsLoading.classList.add('hidden');
-          // Re-enable the button now rendering is done
-          if (btnWizardNext) {
-            btnWizardNext.textContent = 'Start met ontwerpen \u2192';
-            btnWizardNext.disabled = false;
-          }
+          // Show button with correct text after render
+          updateWizardUI();
         }, 100);
       });
     }
