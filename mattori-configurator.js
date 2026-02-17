@@ -234,6 +234,8 @@
     (function breakoutConfigurator() {
       var el = document.querySelector('.mattori-configurator');
       if (!el) return;
+      // Hide until breakout is applied to prevent flash
+      el.style.visibility = 'hidden';
       // Force overflow visible on all ancestors up to body
       var ancestor = el.parentElement;
       while (ancestor && ancestor !== document.body && ancestor !== document.documentElement) {
@@ -246,7 +248,13 @@
         el.style.width = cw + 'px';
         el.style.marginLeft = (-rect.left) + 'px';
       }
-      applyBreakout();
+      // Wait for layout to stabilize, then apply and reveal
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          applyBreakout();
+          el.style.visibility = '';
+        });
+      });
       window.addEventListener('resize', applyBreakout);
     })();
 
