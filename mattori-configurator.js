@@ -1173,10 +1173,12 @@
       const width = Math.round(forceW || container.getBoundingClientRect().width) || 200;
       const height = Math.round(forceH || container.getBoundingClientRect().height) || 260;
 
-      // Use own size for camera framing — layout engine handles relative scaling
+      // Use globalSize for camera framing — ensures uniform scale across all floors
+      // so alignment (top/center/bottom) is pixel-perfect
+      const ref = globalSize;
       const padding = 1.15;
-      const halfW = (size.x * padding) / 2;
-      const halfZ = (size.z * padding) / 2;
+      const halfW = (ref.x * padding) / 2;
+      const halfZ = (ref.z * padding) / 2;
       const halfExtent = Math.max(halfW, halfZ);
 
       const FOV = 12;
