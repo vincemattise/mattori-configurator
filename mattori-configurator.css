@@ -1,4 +1,13 @@
-/* Hide Shopify's native buy button & sticky bar */
+/* Self-hosted Nexa Bold — exact OTF from local system */
+    @font-face {
+      font-family: 'Nexa Bold';
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v31.8/NexaBold.otf') format('opentype');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    /* Hide Shopify's native buy button & sticky bar */
     product-form-component,
     .buy-buttons-block,
     sticky-add-to-cart {
@@ -424,7 +433,7 @@
     }
 
     .mattori-configurator .frame-street {
-      font-family: 'Nexa', 'Nexa Bold', Georgia, sans-serif !important;
+      font-family: 'Nexa Bold', 'Nexa', Georgia, sans-serif !important;
       font-size: 18px;
       font-weight: 700;
       color: #1a1a1a;
@@ -436,7 +445,7 @@
     }
 
     .mattori-configurator .frame-city {
-      font-family: 'Nexa', 'Nexa Bold', Georgia, sans-serif !important;
+      font-family: 'Nexa Bold', 'Nexa', Georgia, sans-serif !important;
       font-size: 11px;
       font-weight: 700;
       color: #1a1a1a;
@@ -549,7 +558,7 @@
     }
 
     .mattori-configurator .label-item {
-      font-family: 'Nexa', 'Nexa Bold', Georgia, sans-serif !important;
+      font-family: 'Nexa Bold', 'Nexa', Georgia, sans-serif !important;
       font-size: 11px;
       font-weight: 700;
       color: #1a1a1a;
