@@ -234,7 +234,7 @@
     (function breakoutConfigurator() {
       var el = document.querySelector('.mattori-configurator');
       if (!el) return;
-      // Hide until breakout is applied to prevent flash
+      // Hide until first stable breakout
       el.style.visibility = 'hidden';
       // Force overflow visible on all ancestors up to body
       var ancestor = el.parentElement;
@@ -248,13 +248,18 @@
         el.style.width = cw + 'px';
         el.style.marginLeft = (-rect.left) + 'px';
       }
-      // Wait for layout to stabilize, then apply and reveal
-      requestAnimationFrame(function() {
-        requestAnimationFrame(function() {
-          applyBreakout();
-          el.style.visibility = '';
-        });
-      });
+      // Re-apply breakout several times as Shopify settles
+      var revealed = false;
+      function tick() {
+        applyBreakout();
+        if (!revealed) { el.style.visibility = ''; revealed = true; }
+      }
+      // First apply after layout stabilizes
+      setTimeout(tick, 80);
+      // Keep correcting as Shopify theme JS runs
+      setTimeout(tick, 300);
+      setTimeout(tick, 600);
+      setTimeout(tick, 1200);
       window.addEventListener('resize', applyBreakout);
     })();
 
