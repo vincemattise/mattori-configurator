@@ -565,28 +565,49 @@
           const sinAngle = Math.abs(ux * (otherDy / otherLen) - uy * (otherDx / otherLen));
           if (sinAngle < 0.1) continue;
 
-          // Skip extension entirely for diagonal walls — thickness extrusion handles overlap
           const isDiagonal = Math.min(Math.abs(ux), Math.abs(uy)) > 0.15;
-          if (isDiagonal) continue;
-          const ext = Math.min(otherHalfThick / sinAngle, otherHalfThick * 1.2);
+
+          let ext;
+          if (isDiagonal) {
+            // Diagonal walls: retract endpoints so thickness corners don't overshoot
+            // The cosine component of the thickness causes the overshoot
+            const cosAngle = Math.abs(ux * (otherDx / otherLen) + uy * (otherDy / otherLen));
+            const ownHalfThick = (wall.thickness ?? 20) / 2;
+            ext = -(ownHalfThick * cosAngle / sinAngle);
+          } else {
+            // Axis-aligned walls: extend to fill T-junction gaps
+            ext = Math.min(otherHalfThick / sinAngle, otherHalfThick * 1.2);
+          }
 
           const aShares = pointsNear(origAx, origAy, other.a.x, other.a.y) ||
                           pointsNear(origAx, origAy, other.b.x, other.b.y);
           const aOnInt = pointOnSegmentInterior(origAx, origAy, other.a.x, other.a.y, other.b.x, other.b.y);
-          if (aShares || aOnInt) extendA = Math.max(extendA, ext);
+          if (aShares || aOnInt) {
+            if (isDiagonal) { extendA = Math.min(extendA || 0, ext); }
+            else { extendA = Math.max(extendA, ext); }
+          }
 
           const bShares = pointsNear(origBx, origBy, other.a.x, other.a.y) ||
                           pointsNear(origBx, origBy, other.b.x, other.b.y);
           const bOnInt = pointOnSegmentInterior(origBx, origBy, other.a.x, other.a.y, other.b.x, other.b.y);
-          if (bShares || bOnInt) extendB = Math.max(extendB, ext);
+          if (bShares || bOnInt) {
+            if (isDiagonal) { extendB = Math.min(extendB || 0, ext); }
+            else { extendB = Math.max(extendB, ext); }
+          }
         }
 
         if (extendA > 0) {
           wall.a.x -= ux * extendA;
           wall.a.y -= uy * extendA;
+        } else if (extendA < 0) {
+          wall.a.x -= ux * extendA; // extendA is negative, so this shortens
+          wall.a.y -= uy * extendA;
         }
         if (extendB > 0) {
           wall.b.x += ux * extendB;
+          wall.b.y += uy * extendB;
+        } else if (extendB < 0) {
+          wall.b.x += ux * extendB; // extendB is negative, so this shortens
           wall.b.y += uy * extendB;
         }
       }
