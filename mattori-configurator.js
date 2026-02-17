@@ -1033,12 +1033,7 @@
       // Update address in preview
       updateFrameAddress();
 
-      // Hide next button during render (no flash)
-      if (btnWizardNext) {
-        btnWizardNext.style.display = 'none';
-      }
-
-      // Render thumbnails one-by-one so UI stays responsive between renders
+      // Render thumbnails, then show the button
       if (unifiedFloorsOverlay) unifiedFloorsOverlay.style.display = 'none';
       if (floorsLoading) floorsLoading.classList.remove('hidden');
       requestAnimationFrame(() => {
@@ -1046,7 +1041,6 @@
           renderPreviewThumbnails();
           updateFloorLabels();
           if (floorsLoading) floorsLoading.classList.add('hidden');
-          // Show button with correct text after render
           updateWizardUI();
         }, 100);
       });
