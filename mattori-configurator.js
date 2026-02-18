@@ -521,13 +521,18 @@
       const ux = dx / len, uy = dy / len;
       const nx = -uy, ny = ux;
       const ht = (w.thickness ?? 20) / 2;
+      // Extend each wall rectangle by a small margin along its length
+      // to guarantee overlap at junctions (prevents floating-point gaps)
+      const EXT = 1; // 1 cm extension in each direction
+      const eax = ax - ux * EXT, eay = ay - uy * EXT;
+      const ebx = bx + ux * EXT, eby = by + uy * EXT;
       // 4 corners: leftA, leftB, rightB, rightA (CCW)
       return [
-        [ax + nx * ht, ay + ny * ht],
-        [bx + nx * ht, by + ny * ht],
-        [bx - nx * ht, by - ny * ht],
-        [ax - nx * ht, ay - ny * ht],
-        [ax + nx * ht, ay + ny * ht] // close ring
+        [eax + nx * ht, eay + ny * ht],
+        [ebx + nx * ht, eby + ny * ht],
+        [ebx - nx * ht, eby - ny * ht],
+        [eax - nx * ht, eay - ny * ht],
+        [eax + nx * ht, eay + ny * ht] // close ring
       ];
     }
 
@@ -2665,6 +2670,77 @@
       // Union all solid walls into merged 2D polygons
       const wallUnion = computeWallUnion(solidWalls);
 
+      // Ear-clipping triangulation for concave 2D polygons
+      function earClipTriangulate(pts) {
+        // pts = array of {x, y} — must be in CCW order
+        // Returns array of [i, j, k] index triples
+        const n = pts.length;
+        if (n < 3) return [];
+        if (n === 3) return [[0, 1, 2]];
+
+        // Ensure CCW winding
+        let area = 0;
+        for (let i = 0; i < n; i++) {
+          const j = (i + 1) % n;
+          area += pts[i].x * pts[j].y - pts[j].x * pts[i].y;
+        }
+        const indices = [];
+        for (let i = 0; i < n; i++) indices.push(i);
+        if (area < 0) indices.reverse(); // was CW, flip to CCW
+
+        const tris = [];
+        let remaining = indices.slice();
+
+        function cross2d(o, a, b) {
+          return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+        }
+
+        function pointInTriangle(px, py, ax, ay, bx, by, cx, cy) {
+          const d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by);
+          const d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy);
+          const d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay);
+          const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+          const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+          return !(hasNeg && hasPos);
+        }
+
+        let safety = remaining.length * 3;
+        while (remaining.length > 3 && safety-- > 0) {
+          let earFound = false;
+          for (let i = 0; i < remaining.length; i++) {
+            const prev = remaining[(i - 1 + remaining.length) % remaining.length];
+            const curr = remaining[i];
+            const next = remaining[(i + 1) % remaining.length];
+            const p = pts[prev], c = pts[curr], nx2 = pts[next];
+
+            // Is this a convex vertex?
+            if (cross2d(p, c, nx2) <= 0) continue;
+
+            // Does any other vertex fall inside this triangle?
+            let inside = false;
+            for (let j = 0; j < remaining.length; j++) {
+              const vi = remaining[j];
+              if (vi === prev || vi === curr || vi === next) continue;
+              if (pointInTriangle(pts[vi].x, pts[vi].y, p.x, p.y, c.x, c.y, nx2.x, nx2.y)) {
+                inside = true;
+                break;
+              }
+            }
+            if (inside) continue;
+
+            tris.push([prev, curr, next]);
+            remaining.splice(i, 1);
+            earFound = true;
+            break;
+          }
+          if (!earFound) break; // degenerate polygon
+        }
+        if (remaining.length === 3) {
+          tris.push([remaining[0], remaining[1], remaining[2]]);
+        }
+        return tris;
+      }
+
       // Helper: extrude a 2D polygon ring to 3D wall geometry
       function extrudeWallPoly(ring, bottomZ, topZ) {
         if (ring.length < 3) return;
@@ -2694,22 +2770,16 @@
           vertexIndex++;
         }
 
-        // Top + bottom faces via fan triangulation from centroid
-        let cx = 0, cy = 0;
-        for (const p of objPts) { cx += p.x; cy += p.y; }
-        cx /= n; cy /= n;
-        // Bottom center vertex
-        vertices.push(`v ${cx.toFixed(4)} ${bottomZ.toFixed(4)} ${cy.toFixed(4)}`);
-        const botCenter = vertexIndex++;
-        // Top center vertex
-        vertices.push(`v ${cx.toFixed(4)} ${topZ.toFixed(4)} ${cy.toFixed(4)}`);
-        const topCenter = vertexIndex++;
+        // Triangulate the polygon (handles concave shapes correctly)
+        const tris = earClipTriangulate(objPts);
+        for (const [a, b, c] of tris) {
+          addTriFace(baseBot + a, baseBot + c, baseBot + b); // bottom face (flip winding)
+          addTriFace(baseTop + a, baseTop + b, baseTop + c); // top face
+        }
 
+        // Side faces
         for (let i = 0; i < n; i++) {
           const j = (i + 1) % n;
-          addTriFace(botCenter, baseBot + j, baseBot + i); // bottom face (CW from below)
-          addTriFace(topCenter, baseTop + i, baseTop + j); // top face (CCW from above)
-          // Side face
           addFace(baseBot + i, baseBot + j, baseTop + j, baseTop + i);
         }
       }
