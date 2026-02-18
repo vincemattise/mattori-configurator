@@ -923,7 +923,7 @@
         const design = allFloorDesigns[fi];
 
         for (const surface of design.surfaces ?? []) {
-          if ((surface.role ?? -1) !== 14) continue;
+          if ((surface.role ?? -1) !== 14 && !surface.isCutout) continue;
           const poly = tessellateSurfacePoly(surface.poly ?? []);
           if (poly.length >= 3) {
             voidsByFloor[fi].push(poly.map(p => ({ x: p.x, y: p.y })));
@@ -3020,6 +3020,7 @@
         }
 
         for (const surface of design.surfaces ?? []) {
+          if (surface.isCutout) continue; // cutouts are voids, not floor sources
           if (isSurfaceOutsideWalls(surface, wallBBox)) continue;
           const sName = (surface.name ?? "").trim();
           const cName = (surface.customName ?? "").trim();
