@@ -3043,6 +3043,18 @@
             }
           }
         }
+        // Add zero-thickness walls as thin floor strips (they separate areas but have no 3D geometry)
+        for (const w of walls) {
+          if ((w.thickness ?? 20) > 0.1) continue; // only zero-thickness walls
+          const zLen = Math.hypot(w.b.x - w.a.x, w.b.y - w.a.y);
+          if (zLen < 0.1) continue;
+          const zw = { a: w.a, b: w.b, thickness: 6 }; // give a small floor-only thickness
+          const zr = wallToRect(zw, 0, 0);
+          if (zr) {
+            const pts = zr.slice(0, 4).map(p => ({ x: p[0], y: p[1] }));
+            floorSources.push(pts);
+          }
+        }
         // Also add opening walls (not in the union) — with L-junction extension
         for (const w of openingWalls) {
           const _dx = w.b.x - w.a.x, _dy = w.b.y - w.a.y;
