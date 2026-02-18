@@ -3019,8 +3019,6 @@
       const floorVoids = floor.voids ?? [];
 
       {
-        const CELL = 3;
-
         const floorSources = [];
 
         for (const area of design.areas ?? []) {
@@ -3109,98 +3107,97 @@
           if (fill.length >= 3) floorSources.push(fill);
         }
 
-        // Expand each floor source polygon outward by EXPAND using edge normals
-        const EXPAND = 2;
-        for (let si = 0; si < floorSources.length; si++) {
-          const poly = floorSources[si];
-          if (poly.length < 3) continue;
-          const n = poly.length;
-          const expanded = [];
-          for (let i = 0; i < n; i++) {
-            const prev = poly[(i - 1 + n) % n];
-            const curr = poly[i];
-            const next = poly[(i + 1) % n];
-            // Edge normals (outward)
-            const e1dx = curr.x - prev.x, e1dy = curr.y - prev.y;
-            const e1len = Math.hypot(e1dx, e1dy) || 1;
-            const n1x = -e1dy / e1len, n1y = e1dx / e1len;
-            const e2dx = next.x - curr.x, e2dy = next.y - curr.y;
-            const e2len = Math.hypot(e2dx, e2dy) || 1;
-            const n2x = -e2dy / e2len, n2y = e2dx / e2len;
-            // Average normal at vertex
-            let nx = n1x + n2x, ny = n1y + n2y;
-            const nlen = Math.hypot(nx, ny);
-            if (nlen < 0.001) { expanded.push({ x: curr.x, y: curr.y }); continue; }
-            nx /= nlen; ny /= nlen;
-            // Check winding: normal should point outward (away from centroid)
-            let cx = 0, cy = 0;
-            for (const p of poly) { cx += p.x; cy += p.y; }
-            cx /= n; cy /= n;
-            const toCx = cx - curr.x, toCy = cy - curr.y;
-            if (nx * toCx + ny * toCy > 0) { nx = -nx; ny = -ny; } // flip if pointing inward
-            expanded.push({ x: curr.x + nx * EXPAND, y: curr.y + ny * EXPAND });
-          }
-          floorSources[si] = expanded;
-        }
-
-        let gMinX = Infinity, gMaxX = -Infinity, gMinY = Infinity, gMaxY = -Infinity;
+        // --- Polygon-based floor: union all sources, subtract voids, extrude ---
+        // Convert floorSources {x,y}[] to polygonClipping format [[[x,y],...]]
+        const floorPolys = [];
         for (const src of floorSources) {
-          for (const p of src) {
-            gMinX = Math.min(gMinX, p.x); gMaxX = Math.max(gMaxX, p.x);
-            gMinY = Math.min(gMinY, p.y); gMaxY = Math.max(gMaxY, p.y);
+          if (src.length < 3) continue;
+          const ring = src.map(p => [p.x, p.y]);
+          const f = ring[0], l = ring[ring.length - 1];
+          if (Math.hypot(f[0] - l[0], f[1] - l[1]) > 0.01) ring.push([f[0], f[1]]);
+          floorPolys.push([ring]);
+        }
+
+        // Union all floor sources into combined polygons
+        let floorResult = [];
+        if (floorPolys.length > 0) {
+          try {
+            floorResult = polygonClipping.union(...floorPolys);
+          } catch (e) {
+            console.warn('Floor union failed, using individual polygons', e);
+            floorResult = floorPolys;
           }
         }
-        gMinX = Math.floor(gMinX / CELL) * CELL;
-        gMinY = Math.floor(gMinY / CELL) * CELL;
-        gMaxX = Math.ceil(gMaxX / CELL) * CELL;
-        gMaxY = Math.ceil(gMaxY / CELL) * CELL;
 
-        for (let wx = gMinX; wx < gMaxX; wx += CELL) {
-          for (let wy = gMinY; wy < gMaxY; wy += CELL) {
-            const wcx = wx + CELL / 2;
-            const wcy = wy + CELL / 2;
+        // Subtract voids (stair openings)
+        for (const v of floorVoids) {
+          if (v.length < 3) continue;
+          const vRing = v.map(p => [p.x, p.y]);
+          const vf = vRing[0], vl = vRing[vRing.length - 1];
+          if (Math.hypot(vf[0] - vl[0], vf[1] - vl[1]) > 0.01) vRing.push([vf[0], vf[1]]);
+          try {
+            floorResult = polygonClipping.difference(floorResult, [[vRing]]);
+          } catch (e) {
+            console.warn('Floor void subtraction failed', e);
+          }
+        }
 
-            let inVoid = false;
-            for (const v of floorVoids) {
-              if (pointInPolygon(wcx, wcy, v)) { inVoid = true; break; }
+        // Extrude each result polygon
+        const botY = (-FLOOR_THICKNESS).toFixed(4);
+        const topY = (0).toFixed(4);
+
+        for (const polygon of floorResult) {
+          // polygon = [outerRing, ...holeRings]
+          for (let ri = 0; ri < polygon.length; ri++) {
+            const ring = polygon[ri];
+            // Remove closing duplicate for triangulation
+            const pts = ring.slice();
+            if (pts.length > 1) {
+              const ff = pts[0], ll = pts[pts.length - 1];
+              if (Math.hypot(ff[0] - ll[0], ff[1] - ll[1]) < 0.01) pts.pop();
             }
-            if (inVoid) continue;
+            if (pts.length < 3) continue;
 
-            let inFloor = false;
-            for (const src of floorSources) {
-              if (pointInPolygon(wcx, wcy, src)) { inFloor = true; break; }
+            const objPts = pts.map(p => ({
+              x: (p[0] - centerX) * SCALE,
+              y: (p[1] - centerY) * SCALE
+            }));
+
+            if (ri === 0) {
+              // Outer ring → top and bottom face triangulation
+              const tris = earClipTriangulate(objPts);
+              const baseBot = vertexIndex;
+              for (const pt of objPts) {
+                vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
+              }
+              vertexIndex += objPts.length;
+              const baseTop = vertexIndex;
+              for (const pt of objPts) {
+                vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
+              }
+              vertexIndex += objPts.length;
+              for (const [a, b, c] of tris) {
+                addTriFace(baseBot + a, baseBot + c, baseBot + b); // bottom (flipped winding)
+                addTriFace(baseTop + a, baseTop + b, baseTop + c); // top
+              }
             }
-            if (!inFloor) continue;
 
-            const x0 = (wx - centerX) * SCALE;
-            const y0 = (wy - centerY) * SCALE;
-            const x1 = (wx + CELL - centerX) * SCALE;
-            const y1 = (wy + CELL - centerY) * SCALE;
-
-            const base = vertexIndex;
-            var botY = (-FLOOR_THICKNESS).toFixed(4);
-            var topY = (0).toFixed(4);
-            // Bottom face vertices
-            vertices.push(`v ${x0.toFixed(4)} ${botY} ${y0.toFixed(4)}`);
-            vertices.push(`v ${x1.toFixed(4)} ${botY} ${y0.toFixed(4)}`);
-            vertices.push(`v ${x1.toFixed(4)} ${botY} ${y1.toFixed(4)}`);
-            vertices.push(`v ${x0.toFixed(4)} ${botY} ${y1.toFixed(4)}`);
-            // Top face vertices
-            vertices.push(`v ${x0.toFixed(4)} ${topY} ${y0.toFixed(4)}`);
-            vertices.push(`v ${x1.toFixed(4)} ${topY} ${y0.toFixed(4)}`);
-            vertices.push(`v ${x1.toFixed(4)} ${topY} ${y1.toFixed(4)}`);
-            vertices.push(`v ${x0.toFixed(4)} ${topY} ${y1.toFixed(4)}`);
-            vertexIndex += 8;
-
-            // Bottom face
-            addFace(base + 3, base + 2, base + 1, base + 0);
-            // Top face
-            addFace(base + 4, base + 5, base + 6, base + 7);
-            // Side faces
-            addFace(base + 0, base + 1, base + 5, base + 4);
-            addFace(base + 2, base + 3, base + 7, base + 6);
-            addFace(base + 3, base + 0, base + 4, base + 7);
-            addFace(base + 1, base + 2, base + 6, base + 5);
+            // Side faces for every ring (outer + holes)
+            const nPts = objPts.length;
+            const sideBaseBot = vertexIndex;
+            for (const pt of objPts) {
+              vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
+            }
+            vertexIndex += nPts;
+            const sideBaseTop = vertexIndex;
+            for (const pt of objPts) {
+              vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
+            }
+            vertexIndex += nPts;
+            for (let i = 0; i < nPts; i++) {
+              const j = (i + 1) % nPts;
+              addFace(sideBaseBot + i, sideBaseBot + j, sideBaseTop + j, sideBaseTop + i);
+            }
           }
         }
       }
