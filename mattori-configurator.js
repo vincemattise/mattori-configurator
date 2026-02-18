@@ -513,7 +513,7 @@
     // Each wall → 2D rectangle. Boolean-union all rectangles into
     // one merged outline using polygon-clipping library. Extrude to 3D.
 
-    function wallToRect(w) {
+    function wallToRect(w, extA, extB) {
       const ax = w.a.x, ay = w.a.y, bx = w.b.x, by = w.b.y;
       const dx = bx - ax, dy = by - ay;
       const len = Math.hypot(dx, dy);
@@ -521,38 +521,80 @@
       const ux = dx / len, uy = dy / len;
       const nx = -uy, ny = ux;
       const ht = (w.thickness ?? 20) / 2;
-      // Axis-aligned walls: extend by half-thickness at kopse kanten so that
-      // at 90° junctions the wall rectangle fully overlaps the adjacent wall.
-      // Diagonal walls: NO extension (would poke through crossing walls).
-      const isDiagonal = Math.min(Math.abs(ux), Math.abs(uy)) > 0.15;
-      const EXT = isDiagonal ? 0 : ht;
-      const eax = ax - ux * EXT, eay = ay - uy * EXT;
-      const ebx = bx + ux * EXT, eby = by + uy * EXT;
-      // 4 corners: leftA, leftB, rightB, rightA (CCW)
+      const eax = ax - ux * extA, eay = ay - uy * extA;
+      const ebx = bx + ux * extB, eby = by + uy * extB;
       return [
         [eax + nx * ht, eay + ny * ht],
         [ebx + nx * ht, eby + ny * ht],
         [ebx - nx * ht, eby - ny * ht],
         [eax - nx * ht, eay - ny * ht],
-        [eax + nx * ht, eay + ny * ht] // close ring
+        [eax + nx * ht, eay + ny * ht]
       ];
     }
 
     function computeWallUnion(walls) {
-      // Build array of polygon-clipping format rectangles
-      const rects = [];
-      for (const w of walls) {
-        const r = wallToRect(w);
-        if (r) rects.push([r]); // each rect = one polygon with one ring
+      const TOLERANCE = 3;
+
+      // Helper: check if point is on the interior of a wall segment
+      function pointOnInterior(px, py, w) {
+        const wdx = w.b.x - w.a.x, wdy = w.b.y - w.a.y;
+        const wlen2 = wdx * wdx + wdy * wdy;
+        if (wlen2 < 0.001) return false;
+        const t = ((px - w.a.x) * wdx + (py - w.a.y) * wdy) / wlen2;
+        if (t < 0.02 || t > 0.98) return false;
+        const projX = w.a.x + wdx * t, projY = w.a.y + wdy * t;
+        return Math.hypot(px - projX, py - projY) < TOLERANCE;
       }
+
+      // For each wall, determine extension per endpoint
+      const rects = [];
+      for (let i = 0; i < walls.length; i++) {
+        const w = walls[i];
+        const wdx = w.b.x - w.a.x, wdy = w.b.y - w.a.y;
+        const wlen = Math.hypot(wdx, wdy);
+        if (wlen < 0.1) continue;
+        const ux = wdx / wlen, uy = wdy / wlen;
+        const isDiagonal = Math.min(Math.abs(ux), Math.abs(uy)) > 0.15;
+
+        let extA = 0, extB = 0;
+
+        if (!isDiagonal) {
+          // Check each endpoint: L-junction (shared endpoint) → extend,
+          // T-junction (on interior of other wall) → no extension
+          for (let j = 0; j < walls.length; j++) {
+            if (i === j) continue;
+            const other = walls[j];
+            const otherHt = (other.thickness ?? 20) / 2;
+
+            // Check endpoint A
+            const aSharesEndpoint =
+              Math.hypot(w.a.x - other.a.x, w.a.y - other.a.y) < TOLERANCE ||
+              Math.hypot(w.a.x - other.b.x, w.a.y - other.b.y) < TOLERANCE;
+            if (aSharesEndpoint) {
+              extA = Math.max(extA, otherHt);
+            }
+            // If A sits on interior of other wall → no extension (already overlaps)
+
+            // Check endpoint B
+            const bSharesEndpoint =
+              Math.hypot(w.b.x - other.a.x, w.b.y - other.a.y) < TOLERANCE ||
+              Math.hypot(w.b.x - other.b.x, w.b.y - other.b.y) < TOLERANCE;
+            if (bSharesEndpoint) {
+              extB = Math.max(extB, otherHt);
+            }
+          }
+        }
+
+        const r = wallToRect(w, extA, extB);
+        if (r) rects.push([r]);
+      }
+
       if (rects.length === 0) return [];
-      // Union all wall rectangles into merged polygons
       try {
-        const result = polygonClipping.union(...rects);
-        return result; // MultiPolygon: array of polygons, each = array of rings
+        return polygonClipping.union(...rects);
       } catch (e) {
         console.warn('Wall union failed, falling back to individual rects', e);
-        return rects; // fallback: return individual rects
+        return rects;
       }
     }
 
@@ -2922,7 +2964,7 @@
         }
 
         for (const w of walls) {
-          const r = wallToRect(w);
+          const r = wallToRect(w, 0, 0);
           if (r) {
             // wallToRect returns [[x,y],...] — convert to [{x,y},...]
             const pts = r.slice(0, 4).map(p => ({ x: p[0], y: p[1] }));
