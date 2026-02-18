@@ -650,14 +650,14 @@
         const len = Math.hypot(dx, dy);
         if (len < 0.1) return { ...bal };
         const ux = dx / len, uy = dy / len;
-        const ext = (bal.thickness ?? 10) * 1.0;
-        // Only extend at endpoints connected to another balustrade
+        // Only extend at endpoints connected to another balustrade, by half the OTHER's thickness
         let extA = 0, extB = 0;
         for (let i = 0; i < balustrades.length; i++) {
           if (i === idx) continue;
           const o = balustrades[i];
-          if (Math.hypot(ax - o.a.x, ay - o.a.y) < TOL || Math.hypot(ax - o.b.x, ay - o.b.y) < TOL) extA = ext;
-          if (Math.hypot(bx - o.a.x, by - o.a.y) < TOL || Math.hypot(bx - o.b.x, by - o.b.y) < TOL) extB = ext;
+          const oHt = (o.thickness ?? 10) / 2;
+          if (Math.hypot(ax - o.a.x, ay - o.a.y) < TOL || Math.hypot(ax - o.b.x, ay - o.b.y) < TOL) extA = Math.max(extA, oHt);
+          if (Math.hypot(bx - o.a.x, by - o.a.y) < TOL || Math.hypot(bx - o.b.x, by - o.b.y) < TOL) extB = Math.max(extB, oHt);
         }
         return {
           a: { x: ax - ux * extA, y: ay - uy * extA },
