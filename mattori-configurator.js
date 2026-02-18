@@ -553,6 +553,15 @@
           for (let j = 0; j < allWalls.length; j++) {
             const other = allWalls[j];
             if (other === w) continue;
+            // Skip diagonal walls — extension along a straight wall's direction
+            // would poke out alongside the diagonal. The union handles the overlap.
+            const otherDx = other.b.x - other.a.x, otherDy = other.b.y - other.a.y;
+            const otherLen = Math.hypot(otherDx, otherDy);
+            if (otherLen < 0.1) continue;
+            const otherUx = otherDx / otherLen, otherUy = otherDy / otherLen;
+            const otherIsDiagonal = Math.min(Math.abs(otherUx), Math.abs(otherUy)) > 0.15;
+            if (otherIsDiagonal) continue;
+
             const otherHt = (other.thickness ?? 20) / 2;
 
             // Check endpoint A — only L-junctions (shared endpoints)
