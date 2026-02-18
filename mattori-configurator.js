@@ -642,7 +642,8 @@
     // BALUSTRADE ENDPOINT EXTENSION
     // ============================================================
     function extendBalustrades(balustrades) {
-      return balustrades.map(bal => {
+      const TOL = 15;
+      return balustrades.map((bal, idx) => {
         const ax = bal.a.x, ay = bal.a.y;
         const bx = bal.b.x, by = bal.b.y;
         const dx = bx - ax, dy = by - ay;
@@ -650,9 +651,17 @@
         if (len < 0.1) return { ...bal };
         const ux = dx / len, uy = dy / len;
         const ext = (bal.thickness ?? 10) * 1.0;
+        // Only extend at endpoints connected to another balustrade
+        let extA = 0, extB = 0;
+        for (let i = 0; i < balustrades.length; i++) {
+          if (i === idx) continue;
+          const o = balustrades[i];
+          if (Math.hypot(ax - o.a.x, ay - o.a.y) < TOL || Math.hypot(ax - o.b.x, ay - o.b.y) < TOL) extA = ext;
+          if (Math.hypot(bx - o.a.x, by - o.a.y) < TOL || Math.hypot(bx - o.b.x, by - o.b.y) < TOL) extB = ext;
+        }
         return {
-          a: { x: ax - ux * ext, y: ay - uy * ext },
-          b: { x: bx + ux * ext, y: by + uy * ext },
+          a: { x: ax - ux * extA, y: ay - uy * extA },
+          b: { x: bx + ux * extB, y: by + uy * extB },
           thickness: bal.thickness ?? 10,
           height: bal.height ?? 100
         };
