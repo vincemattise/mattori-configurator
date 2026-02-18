@@ -1053,8 +1053,10 @@
 
       // Show admin export buttons + frame toggle
       document.getElementById('uploadActions').classList.add('active');
-      const btnTest = document.getElementById('btnTest');
-      if (btnTest) btnTest.style.display = 'none';
+      for (const n of [1, 2]) {
+        const bt = document.getElementById('btnTest' + n);
+        if (bt) bt.style.display = 'none';
+      }
       var adminFrameToggle = document.getElementById('adminFrameToggle');
       if (adminFrameToggle) adminFrameToggle.style.display = '';
       // Layout controls moved to step 4 per-floor cards
@@ -3330,15 +3332,17 @@
     btnFunda.addEventListener('click', () => loadFromFunda());
 
     // Function declaration so it hoists (Shopify addEventListener issue)
-    function pasteTestLink() {
+    const TEST_LINKS = {
+      1: 'https://www.funda.nl/detail/koop/haarlem/appartement-prinsen-bolwerk-72/43226270/',
+      2: 'https://www.funda.nl/detail/koop/amsterdam/appartement-hoofdweg-275-1/89691599/'
+    };
+    function pasteTestLink(n) {
       var input = document.getElementById('fundaUrl');
-      if (input) input.value = 'https://www.funda.nl/detail/koop/haarlem/appartement-prinsen-bolwerk-72/43226270/';
+      if (input) input.value = TEST_LINKS[n] || TEST_LINKS[1];
     }
-    const btnTest = document.getElementById('btnTest');
-    if (btnTest) {
-      btnTest.addEventListener('click', () => {
-        pasteTestLink();
-      });
+    for (const n of [1, 2]) {
+      const btn = document.getElementById('btnTest' + n);
+      if (btn) btn.addEventListener('click', () => pasteTestLink(n));
     }
 
     // Funda status checker
