@@ -508,137 +508,45 @@
     }
 
     // ============================================================
-    // WALL CONTOUR COMPUTATION (Funda-style polygon union)
+    // WALL POLYGON UNION (Funda-style rendering)
     // ============================================================
-    // Instead of rendering each wall as a separate box, compute the
-    // correct corner points at junctions by intersecting edge lines.
-    // This produces seamless wall geometry with no overshoot or gaps.
+    // Each wall → 2D rectangle. Boolean-union all rectangles into
+    // one merged outline using polygon-clipping library. Extrude to 3D.
 
-    function computeWallContours(walls) {
-      const TOLERANCE = 3;
+    function wallToRect(w) {
+      const ax = w.a.x, ay = w.a.y, bx = w.b.x, by = w.b.y;
+      const dx = bx - ax, dy = by - ay;
+      const len = Math.hypot(dx, dy);
+      if (len < 0.1) return null;
+      const ux = dx / len, uy = dy / len;
+      const nx = -uy, ny = ux;
+      const ht = (w.thickness ?? 20) / 2;
+      // 4 corners: leftA, leftB, rightB, rightA (CCW)
+      return [
+        [ax + nx * ht, ay + ny * ht],
+        [bx + nx * ht, by + ny * ht],
+        [bx - nx * ht, by - ny * ht],
+        [ax - nx * ht, ay - ny * ht],
+        [ax + nx * ht, ay + ny * ht] // close ring
+      ];
+    }
 
-      // Line-line intersection helper. Returns {t, u, x, y} or null if parallel.
-      // t = parameter along line A, u = parameter along line B.
-      function intersectLines(p1x, p1y, d1x, d1y, p2x, p2y, d2x, d2y) {
-        const det = d1x * d2y - d1y * d2x;
-        if (Math.abs(det) < 0.0001) return null;
-        const dx = p2x - p1x, dy = p2y - p1y;
-        const t = (dx * d2y - dy * d2x) / det;
-        const u = (dx * d1y - dy * d1x) / det;
-        return { t, u, x: p1x + d1x * t, y: p1y + d1y * t };
+    function computeWallUnion(walls) {
+      // Build array of polygon-clipping format rectangles
+      const rects = [];
+      for (const w of walls) {
+        const r = wallToRect(w);
+        if (r) rects.push([r]); // each rect = one polygon with one ring
       }
-
-      // For each wall, compute left/right edge lines (midline ± halfThick)
-      const wallEdges = walls.map(w => {
-        const ax = w.a.x, ay = w.a.y, bx = w.b.x, by = w.b.y;
-        const dx = bx - ax, dy = by - ay;
-        const len = Math.hypot(dx, dy);
-        if (len < 0.1) return null;
-        const ux = dx / len, uy = dy / len;
-        const nx = -uy, ny = ux; // normal (left side)
-        const ht = (w.thickness ?? 20) / 2;
-        return {
-          wall: w,
-          ux, uy, nx, ny, ht, len,
-          // Final corner points (will be modified at junctions)
-          corners: {
-            leftA:  { x: ax + nx * ht, y: ay + ny * ht },
-            leftB:  { x: bx + nx * ht, y: by + ny * ht },
-            rightA: { x: ax - nx * ht, y: ay - ny * ht },
-            rightB: { x: bx - nx * ht, y: by - ny * ht }
-          }
-        };
-      });
-
-      // Build junction map: group wall indices by shared endpoints
-      // Also detect T-junctions (endpoint on interior of another wall)
-      const junctions = new Map(); // key: "x,y" → array of {wallIdx, endpoint: 'a'|'b'}
-
-      function addToJunction(px, py, wallIdx, endpoint) {
-        for (const [key, members] of junctions) {
-          const [kx, ky] = key.split(',').map(Number);
-          if (Math.hypot(px - kx, py - ky) < TOLERANCE) {
-            members.push({ wallIdx, endpoint });
-            return;
-          }
-        }
-        junctions.set(`${px},${py}`, [{ wallIdx, endpoint }]);
+      if (rects.length === 0) return [];
+      // Union all wall rectangles into merged polygons
+      try {
+        const result = polygonClipping.union(...rects);
+        return result; // MultiPolygon: array of polygons, each = array of rings
+      } catch (e) {
+        console.warn('Wall union failed, falling back to individual rects', e);
+        return rects; // fallback: return individual rects
       }
-
-      for (let i = 0; i < walls.length; i++) {
-        if (!wallEdges[i]) continue;
-        addToJunction(walls[i].a.x, walls[i].a.y, i, 'a');
-        addToJunction(walls[i].b.x, walls[i].b.y, i, 'b');
-      }
-
-      // For each junction with 2+ walls, compute mitered corners
-      for (const [key, members] of junctions) {
-        if (members.length < 2) continue;
-
-        // Sort members by angle (direction pointing away from junction)
-        const withAngle = members.map(m => {
-          const e = wallEdges[m.wallIdx];
-          // Direction pointing AWAY from the junction
-          const dx = m.endpoint === 'a' ? -e.ux : e.ux;
-          const dy = m.endpoint === 'a' ? -e.uy : e.uy;
-          return { ...m, angle: Math.atan2(dy, dx), dx, dy, edge: e };
-        });
-        withAngle.sort((a, b) => a.angle - b.angle);
-
-        const n = withAngle.length;
-
-        // For each consecutive pair of walls (in angular order around junction),
-        // intersect their facing edges to find the shared miter point.
-        for (let i = 0; i < n; i++) {
-          const A = withAngle[i];
-          const B = withAngle[(i + 1) % n];
-          const ea = A.edge, eb = B.edge;
-
-          // A is CCW from B → A's RIGHT edge faces B's LEFT edge
-          // (because sorted by angle, consecutive pair: A then B going CCW)
-          // A.right at junction endpoint meets B.left at junction endpoint
-
-          // Edge line for A's right side: starts at rightA or rightB (at junction end), direction along wall
-          let aEdgePx, aEdgePy, aDx, aDy, aCornerKey;
-          if (A.endpoint === 'a') {
-            // Junction is at A-end → right edge starts at rightA, goes toward rightB
-            aEdgePx = ea.corners.rightA.x; aEdgePy = ea.corners.rightA.y;
-            aDx = ea.ux; aDy = ea.uy;
-            aCornerKey = 'rightA';
-          } else {
-            // Junction is at B-end → right edge starts at rightB, goes toward rightA
-            aEdgePx = ea.corners.rightB.x; aEdgePy = ea.corners.rightB.y;
-            aDx = -ea.ux; aDy = -ea.uy;
-            aCornerKey = 'rightB';
-          }
-
-          // Edge line for B's left side
-          let bEdgePx, bEdgePy, bDx, bDy, bCornerKey;
-          if (B.endpoint === 'a') {
-            bEdgePx = eb.corners.leftA.x; bEdgePy = eb.corners.leftA.y;
-            bDx = eb.ux; bDy = eb.uy;
-            bCornerKey = 'leftA';
-          } else {
-            bEdgePx = eb.corners.leftB.x; bEdgePy = eb.corners.leftB.y;
-            bDx = -eb.ux; bDy = -eb.uy;
-            bCornerKey = 'leftB';
-          }
-
-          const hit = intersectLines(aEdgePx, aEdgePy, aDx, aDy, bEdgePx, bEdgePy, bDx, bDy);
-          if (!hit) continue;
-
-          // Sanity check: don't let the intersection be too far from the junction.
-          // Max reasonable distance = max of both walls' half-thickness × 3
-          const maxDist = Math.max(ea.ht, eb.ht) * 4;
-          const jx = Number(key.split(',')[0]), jy = Number(key.split(',')[1]);
-          if (Math.hypot(hit.x - jx, hit.y - jy) > maxDist) continue;
-
-          ea.corners[aCornerKey] = { x: hit.x, y: hit.y };
-          eb.corners[bCornerKey] = { x: hit.x, y: hit.y };
-        }
-      }
-
-      return wallEdges;
     }
 
     // ============================================================
@@ -2747,105 +2655,131 @@
       const centerX = (bbox.minX + bbox.maxX) / 2;
       const centerY = (bbox.minY + bbox.maxY) / 2;
 
-      // Compute wall contours with junction-corrected corners
-      const wallContours = computeWallContours(walls);
+      // ── Polygon-union wall rendering ──────────────────────────
+      // Walls WITHOUT openings → boolean union → extrude as polygon
+      // Walls WITH openings → render as individual segment boxes
 
-      // Helper: create extruded box from 4 corner points
-      function createContourBox(c0, c1, c2, c3, bottomZ, topZ) {
-        if (topZ <= bottomZ) return;
-        const corners = [c0, c1, c2, c3];
-        for (const c of corners) vertices.push(`v ${c.x.toFixed(4)} ${bottomZ.toFixed(4)} ${c.y.toFixed(4)}`);
-        for (const c of corners) vertices.push(`v ${c.x.toFixed(4)} ${topZ.toFixed(4)} ${c.y.toFixed(4)}`);
-        const base = vertexIndex;
-        addFace(base + 3, base + 2, base + 1, base + 0);
-        addFace(base + 4, base + 5, base + 6, base + 7);
-        addFace(base + 0, base + 1, base + 5, base + 4);
-        addFace(base + 2, base + 3, base + 7, base + 6);
-        addFace(base + 3, base + 0, base + 4, base + 7);
-        addFace(base + 1, base + 2, base + 6, base + 5);
-        vertexIndex += 8;
+      const solidWalls = walls.filter(w => !(w.openings && w.openings.length > 0));
+      const openingWalls = walls.filter(w => w.openings && w.openings.length > 0);
+
+      // Union all solid walls into merged 2D polygons
+      const wallUnion = computeWallUnion(solidWalls);
+
+      // Helper: extrude a 2D polygon ring to 3D wall geometry
+      function extrudeWallPoly(ring, bottomZ, topZ) {
+        if (ring.length < 3) return;
+        // ring = array of [x,y] in world coords; may or may not repeat first point
+        const pts = ring.slice();
+        // Remove closing duplicate if present
+        const first = pts[0], last = pts[pts.length - 1];
+        if (Math.hypot(first[0] - last[0], first[1] - last[1]) < 0.01) pts.pop();
+        if (pts.length < 3) return;
+
+        const n = pts.length;
+        // Convert to OBJ coords
+        const objPts = pts.map(p => ({
+          x: (p[0] - centerX) * SCALE,
+          y: (p[1] - centerY) * SCALE
+        }));
+
+        // Bottom + top vertices
+        const baseBot = vertexIndex;
+        for (const p of objPts) {
+          vertices.push(`v ${p.x.toFixed(4)} ${bottomZ.toFixed(4)} ${p.y.toFixed(4)}`);
+          vertexIndex++;
+        }
+        const baseTop = vertexIndex;
+        for (const p of objPts) {
+          vertices.push(`v ${p.x.toFixed(4)} ${topZ.toFixed(4)} ${p.y.toFixed(4)}`);
+          vertexIndex++;
+        }
+
+        // Top + bottom faces via fan triangulation from centroid
+        let cx = 0, cy = 0;
+        for (const p of objPts) { cx += p.x; cy += p.y; }
+        cx /= n; cy /= n;
+        // Bottom center vertex
+        vertices.push(`v ${cx.toFixed(4)} ${bottomZ.toFixed(4)} ${cy.toFixed(4)}`);
+        const botCenter = vertexIndex++;
+        // Top center vertex
+        vertices.push(`v ${cx.toFixed(4)} ${topZ.toFixed(4)} ${cy.toFixed(4)}`);
+        const topCenter = vertexIndex++;
+
+        for (let i = 0; i < n; i++) {
+          const j = (i + 1) % n;
+          addTriFace(botCenter, baseBot + j, baseBot + i); // bottom face (CW from below)
+          addTriFace(topCenter, baseTop + i, baseTop + j); // top face (CCW from above)
+          // Side face
+          addFace(baseBot + i, baseBot + j, baseTop + j, baseTop + i);
+        }
       }
 
       faces.push('g walls');
 
-      for (let wi = 0; wi < walls.length; wi++) {
-        const edge = wallContours[wi];
-        if (!edge) continue;
-        const wall = walls[wi];
-
-        // Scale corners to OBJ coordinates
-        const la = { x: (edge.corners.leftA.x - centerX) * SCALE, y: (edge.corners.leftA.y - centerY) * SCALE };
-        const lb = { x: (edge.corners.leftB.x - centerX) * SCALE, y: (edge.corners.leftB.y - centerY) * SCALE };
-        const ra = { x: (edge.corners.rightA.x - centerX) * SCALE, y: (edge.corners.rightA.y - centerY) * SCALE };
-        const rb = { x: (edge.corners.rightB.x - centerX) * SCALE, y: (edge.corners.rightB.y - centerY) * SCALE };
-
-        const openings = wall.openings ?? [];
-
-        if (openings.length === 0) {
-          // Full wall with junction-corrected corners: leftA, leftB, rightB, rightA
-          createContourBox(la, lb, rb, ra, 0, WALL_HEIGHT);
-        } else {
-          // Wall with openings: use midline parametric positions
-          const ax = (wall.a.x - centerX) * SCALE;
-          const ay = (wall.a.y - centerY) * SCALE;
-          const bx = (wall.b.x - centerX) * SCALE;
-          const by = (wall.b.y - centerY) * SCALE;
-          const wdx = bx - ax, wdy = by - ay;
-          const wlen = Math.hypot(wdx, wdy);
-          if (wlen < 0.001) continue;
-          const wnx = -wdy / wlen, wny = wdx / wlen;
-          const halfThick = (wall.thickness ?? 20) / 2 * SCALE;
-          const wallWorldLen = Math.hypot(wall.b.x - wall.a.x, wall.b.y - wall.a.y);
-
-          const sortedOpenings = openings.map(op => {
-            const t = op.t ?? 0.5;
-            const halfW = (op.width ?? 90) / 2 / wallWorldLen;
-            const height = (op.height ?? (op.type === "door" ? 210 : 120)) * SCALE;
-            const elevation = (op.elevation ?? (op.type === "door" ? 0 : 90)) * SCALE;
-            return {
-              startT: Math.max(0, t - halfW),
-              endT: Math.min(1, t + halfW),
-              bottomZ: elevation,
-              topZ: elevation + height,
-              type: op.type ?? "door"
-            };
-          }).sort((a, b) => a.startT - b.startT);
-
-          // Helper: interpolate contour corners at parametric t along the wall
-          function cornersAtT(t) {
-            return {
-              left:  { x: la.x + (lb.x - la.x) * t, y: la.y + (lb.y - la.y) * t },
-              right: { x: ra.x + (rb.x - ra.x) * t, y: ra.y + (rb.y - ra.y) * t }
-            };
+      // Render unioned solid walls
+      for (const polygon of wallUnion) {
+        // polygon = array of rings. First ring = outer, rest = holes
+        for (let ri = 0; ri < polygon.length; ri++) {
+          const ring = polygon[ri];
+          if (ri === 0) {
+            // Outer ring → extrude as wall
+            extrudeWallPoly(ring, 0, WALL_HEIGHT);
           }
+          // Holes are interior cutouts — skip for wall geometry
+          // (they represent empty space inside wall outlines, rare but possible)
+        }
+      }
 
-          let currentT = 0;
-          for (const op of sortedOpenings) {
-            if (op.startT > currentT) {
-              const cA = cornersAtT(currentT), cB = cornersAtT(op.startT);
-              createContourBox(cA.left, cB.left, cB.right, cA.right, 0, WALL_HEIGHT);
-            }
-            // Opening segments (sill below, wall above)
-            const oA = cornersAtT(op.startT), oB = cornersAtT(op.endT);
-            if (op.bottomZ > 0.01) {
-              createContourBox(oA.left, oB.left, oB.right, oA.right, 0, op.bottomZ);
-            }
-            if (op.topZ < WALL_HEIGHT - 0.01) {
-              createContourBox(oA.left, oB.left, oB.right, oA.right, op.topZ, WALL_HEIGHT);
-            }
-            // Frame
-            const oAx = ax + wdx * op.startT, oAy = ay + wdy * op.startT;
-            const oBx = ax + wdx * op.endT, oBy = ay + wdy * op.endT;
-            const frameSize = 0.05;
-            const frameThick = halfThick * 0.8;
-            createOpeningFrame(oAx, oAy, oBx, oBy, op.bottomZ, op.topZ, frameSize, frameThick, wnx, wny);
+      // Render walls WITH openings as individual boxes (old approach)
+      for (const wall of openingWalls) {
+        const ax = (wall.a.x - centerX) * SCALE;
+        const ay = (wall.a.y - centerY) * SCALE;
+        const bx = (wall.b.x - centerX) * SCALE;
+        const by = (wall.b.y - centerY) * SCALE;
+        const wdx = bx - ax, wdy = by - ay;
+        const wlen = Math.hypot(wdx, wdy);
+        if (wlen < 0.001) continue;
+        const wnx = -wdy / wlen, wny = wdx / wlen;
+        const halfThick = (wall.thickness ?? 20) / 2 * SCALE;
+        const wallWorldLen = Math.hypot(wall.b.x - wall.a.x, wall.b.y - wall.a.y);
 
-            currentT = Math.max(currentT, op.endT);
+        const sortedOpenings = (wall.openings ?? []).map(op => {
+          const t = op.t ?? 0.5;
+          const halfW = (op.width ?? 90) / 2 / wallWorldLen;
+          const height = (op.height ?? (op.type === "door" ? 210 : 120)) * SCALE;
+          const elevation = (op.elevation ?? (op.type === "door" ? 0 : 90)) * SCALE;
+          return {
+            startT: Math.max(0, t - halfW),
+            endT: Math.min(1, t + halfW),
+            bottomZ: elevation,
+            topZ: elevation + height,
+            type: op.type ?? "door"
+          };
+        }).sort((a, b) => a.startT - b.startT);
+
+        let currentT = 0;
+        for (const op of sortedOpenings) {
+          if (op.startT > currentT) {
+            const sAx = ax + wdx * currentT, sAy = ay + wdy * currentT;
+            const sBx = ax + wdx * op.startT, sBy = ay + wdy * op.startT;
+            createWallBox(sAx, sAy, sBx, sBy, 0, WALL_HEIGHT, halfThick, wnx, wny);
           }
-          if (currentT < 1) {
-            const cA = cornersAtT(currentT), cB = cornersAtT(1);
-            createContourBox(cA.left, cB.left, cB.right, cA.right, 0, WALL_HEIGHT);
+          const oAx = ax + wdx * op.startT, oAy = ay + wdy * op.startT;
+          const oBx = ax + wdx * op.endT, oBy = ay + wdy * op.endT;
+          if (op.bottomZ > 0.01) {
+            createWallBox(oAx, oAy, oBx, oBy, 0, op.bottomZ, halfThick, wnx, wny);
           }
+          if (op.topZ < WALL_HEIGHT - 0.01) {
+            createWallBox(oAx, oAy, oBx, oBy, op.topZ, WALL_HEIGHT, halfThick, wnx, wny);
+          }
+          const frameSize = 0.05;
+          const frameThick = halfThick * 0.8;
+          createOpeningFrame(oAx, oAy, oBx, oBy, op.bottomZ, op.topZ, frameSize, frameThick, wnx, wny);
+          currentT = Math.max(currentT, op.endT);
+        }
+        if (currentT < 1) {
+          const sAx = ax + wdx * currentT, sAy = ay + wdy * currentT;
+          createWallBox(sAx, sAy, bx, by, 0, WALL_HEIGHT, halfThick, wnx, wny);
         }
       }
 
@@ -2915,15 +2849,13 @@
           if (tessellated.length >= 3) floorSources.push(tessellated);
         }
 
-        for (let wi = 0; wi < walls.length; wi++) {
-          const edge = wallContours[wi];
-          if (!edge) continue;
-          floorSources.push([
-            edge.corners.leftA,
-            edge.corners.leftB,
-            edge.corners.rightB,
-            edge.corners.rightA
-          ]);
+        for (const w of walls) {
+          const r = wallToRect(w);
+          if (r) {
+            // wallToRect returns [[x,y],...] — convert to [{x,y},...]
+            const pts = r.slice(0, 4).map(p => ({ x: p[0], y: p[1] }));
+            floorSources.push(pts);
+          }
         }
 
         const balStripsOBJ = mergeBalustradeStrips(design.balustrades ?? []);
