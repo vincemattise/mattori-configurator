@@ -3022,9 +3022,9 @@
         for (const surface of design.surfaces ?? []) {
           if (isSurfaceOutsideWalls(surface, wallBBox)) continue;
           const sName = (surface.name ?? "").trim();
-          if (!sName) continue;
           const cName = (surface.customName ?? "").trim();
-          if (cName && cName.toLowerCase() !== sName.toLowerCase()) continue;
+          if (!sName && !cName) continue; // skip only if BOTH name and customName are empty
+          if (sName && cName && cName.toLowerCase() !== sName.toLowerCase()) continue;
           const tessellated = tessellateSurfacePoly(surface.poly ?? []);
           if (tessellated.length >= 3) floorSources.push(tessellated);
         }
