@@ -3043,6 +3043,14 @@
             }
           }
         }
+        // Also add individual wall rects as floor sources (bypasses union precision issues)
+        for (const w of walls) {
+          if ((w.thickness ?? 20) < 0.1) continue; // skip zero-thickness (handled separately below)
+          const r = wallToRect(w, 0, 0);
+          if (r) {
+            floorSources.push(r.slice(0, 4).map(p => ({ x: p[0], y: p[1] })));
+          }
+        }
         // Add zero-thickness walls as thin floor strips (they separate areas but have no 3D geometry)
         for (const w of walls) {
           if ((w.thickness ?? 20) > 0.1) continue; // only zero-thickness walls
