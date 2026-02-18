@@ -535,21 +535,17 @@
     function computeWallUnion(walls, allWalls) {
       const TOLERANCE = 3;
 
-      // Step 1: Create plain rectangles for each wall (no extension)
-      const rects = [];
-      for (const w of walls) {
-        const r = wallToRect(w, 0, 0);
-        if (r) rects.push([r]);
+      function isDiagWall(w) {
+        const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y;
+        const len = Math.hypot(dx, dy);
+        if (len < 0.1) return false;
+        return Math.min(Math.abs(dx / len), Math.abs(dy / len)) > 0.15;
       }
 
-      // Step 2: Build junction map from ALL walls, then add fill polygons
-      // at every junction where 2+ walls share an endpoint.
-      // The fill polygon connects all wall edge-points at the junction,
-      // filling the gap that exists between the plain rectangles.
-      const junctions = new Map(); // key: "x,y" → array of wall refs + endpoint
+      // Step 1: Build junction map from ALL walls
+      const junctions = new Map();
       for (const w of allWalls) {
-        const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y;
-        if (Math.hypot(dx, dy) < 0.1) continue;
+        if (Math.hypot(w.b.x - w.a.x, w.b.y - w.a.y) < 0.1) continue;
         for (const ep of ['a', 'b']) {
           const px = w[ep].x, py = w[ep].y;
           let found = false;
@@ -567,45 +563,69 @@
         }
       }
 
+      // Step 2: For each wall, compute extension per endpoint.
+      // Straight walls at L-junctions with other STRAIGHT walls → extend.
+      // Skip extension if the other wall is diagonal.
+      const rects = [];
+      for (let i = 0; i < walls.length; i++) {
+        const w = walls[i];
+        const wdx = w.b.x - w.a.x, wdy = w.b.y - w.a.y;
+        const wlen = Math.hypot(wdx, wdy);
+        if (wlen < 0.1) continue;
+        const wIsDiag = isDiagWall(w);
+
+        let extA = 0, extB = 0;
+
+        if (!wIsDiag) {
+          for (const other of allWalls) {
+            if (other === w) continue;
+            if (isDiagWall(other)) continue; // skip diagonal others
+
+            const otherHt = (other.thickness ?? 20) / 2;
+            const aShares =
+              Math.hypot(w.a.x - other.a.x, w.a.y - other.a.y) < TOLERANCE ||
+              Math.hypot(w.a.x - other.b.x, w.a.y - other.b.y) < TOLERANCE;
+            if (aShares) extA = Math.max(extA, otherHt);
+
+            const bShares =
+              Math.hypot(w.b.x - other.a.x, w.b.y - other.a.y) < TOLERANCE ||
+              Math.hypot(w.b.x - other.b.x, w.b.y - other.b.y) < TOLERANCE;
+            if (bShares) extB = Math.max(extB, otherHt);
+          }
+        }
+
+        const r = wallToRect(w, extA, extB);
+        if (r) rects.push([r]);
+      }
+
+      // Step 3: Add fill polygons ONLY at junctions involving a diagonal wall.
+      // These fill the gap between straight and diagonal wall rectangles.
       for (const [key, members] of junctions) {
         if (members.length < 2) continue;
-        // Collect all edge-points (left + right) at this junction for each wall
+        const hasDiagonal = members.some(m => isDiagWall(m.wall));
+        if (!hasDiagonal) continue; // straight-only junctions handled by extension
+
         const edgePoints = [];
         for (const m of members) {
           const w = m.wall;
           const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y;
           const len = Math.hypot(dx, dy);
           if (len < 0.1) continue;
-          const ux = dx / len, uy = dy / len;
-          const nx = -uy, ny = ux;
+          const nx = -dy / len, ny = dx / len;
           const ht = (w.thickness ?? 20) / 2;
           const px = w[m.endpoint].x, py = w[m.endpoint].y;
-          // Left and right edge points at this endpoint
           edgePoints.push({ x: px + nx * ht, y: py + ny * ht });
           edgePoints.push({ x: px - nx * ht, y: py - ny * ht });
         }
-
         if (edgePoints.length < 3) continue;
 
-        // Sort edge points by angle around junction center to form a convex hull
         const jx = Number(key.split(',')[0]), jy = Number(key.split(',')[1]);
         edgePoints.sort((a, b) =>
           Math.atan2(a.y - jy, a.x - jx) - Math.atan2(b.y - jy, b.x - jx)
         );
 
-        // Expand each edge point slightly outward from junction center
-        // so the fill polygon overlaps with adjacent wall rectangles.
-        const EXPAND = 2; // 2cm expansion ensures solid overlap
-        const expanded = edgePoints.map(p => {
-          const dx = p.x - jx, dy = p.y - jy;
-          const dist = Math.hypot(dx, dy);
-          if (dist < 0.01) return p;
-          return { x: p.x + (dx / dist) * EXPAND, y: p.y + (dy / dist) * EXPAND };
-        });
-
-        // Create fill polygon (closed ring)
-        const fillRing = expanded.map(p => [p.x, p.y]);
-        fillRing.push([expanded[0].x, expanded[0].y]); // close
+        const fillRing = edgePoints.map(p => [p.x, p.y]);
+        fillRing.push([edgePoints[0].x, edgePoints[0].y]);
         rects.push([fillRing]);
       }
 
