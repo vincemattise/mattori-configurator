@@ -3099,19 +3099,38 @@
           if (fill.length >= 3) floorSources.push(fill);
         }
 
-        const EXPAND = 1;
+        // Expand each floor source polygon outward by EXPAND using edge normals
+        const EXPAND = 2;
         for (let si = 0; si < floorSources.length; si++) {
           const poly = floorSources[si];
           if (poly.length < 3) continue;
-          let cx = 0, cy = 0;
-          for (const p of poly) { cx += p.x; cy += p.y; }
-          cx /= poly.length; cy /= poly.length;
-          floorSources[si] = poly.map(p => {
-            const dx = p.x - cx, dy = p.y - cy;
-            const dist = Math.hypot(dx, dy);
-            if (dist < 0.001) return { x: p.x, y: p.y };
-            return { x: p.x + (dx / dist) * EXPAND, y: p.y + (dy / dist) * EXPAND };
-          });
+          const n = poly.length;
+          const expanded = [];
+          for (let i = 0; i < n; i++) {
+            const prev = poly[(i - 1 + n) % n];
+            const curr = poly[i];
+            const next = poly[(i + 1) % n];
+            // Edge normals (outward)
+            const e1dx = curr.x - prev.x, e1dy = curr.y - prev.y;
+            const e1len = Math.hypot(e1dx, e1dy) || 1;
+            const n1x = -e1dy / e1len, n1y = e1dx / e1len;
+            const e2dx = next.x - curr.x, e2dy = next.y - curr.y;
+            const e2len = Math.hypot(e2dx, e2dy) || 1;
+            const n2x = -e2dy / e2len, n2y = e2dx / e2len;
+            // Average normal at vertex
+            let nx = n1x + n2x, ny = n1y + n2y;
+            const nlen = Math.hypot(nx, ny);
+            if (nlen < 0.001) { expanded.push({ x: curr.x, y: curr.y }); continue; }
+            nx /= nlen; ny /= nlen;
+            // Check winding: normal should point outward (away from centroid)
+            let cx = 0, cy = 0;
+            for (const p of poly) { cx += p.x; cy += p.y; }
+            cx /= n; cy /= n;
+            const toCx = cx - curr.x, toCy = cy - curr.y;
+            if (nx * toCx + ny * toCy > 0) { nx = -nx; ny = -ny; } // flip if pointing inward
+            expanded.push({ x: curr.x + nx * EXPAND, y: curr.y + ny * EXPAND });
+          }
+          floorSources[si] = expanded;
         }
 
         let gMinX = Infinity, gMaxX = -Infinity, gMinY = Infinity, gMaxY = -Infinity;
