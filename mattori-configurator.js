@@ -532,21 +532,11 @@
       ];
     }
 
-    function computeWallUnion(walls) {
+    function computeWallUnion(walls, allWalls) {
       const TOLERANCE = 3;
 
-      // Helper: check if point is on the interior of a wall segment
-      function pointOnInterior(px, py, w) {
-        const wdx = w.b.x - w.a.x, wdy = w.b.y - w.a.y;
-        const wlen2 = wdx * wdx + wdy * wdy;
-        if (wlen2 < 0.001) return false;
-        const t = ((px - w.a.x) * wdx + (py - w.a.y) * wdy) / wlen2;
-        if (t < 0.02 || t > 0.98) return false;
-        const projX = w.a.x + wdx * t, projY = w.a.y + wdy * t;
-        return Math.hypot(px - projX, py - projY) < TOLERANCE;
-      }
-
-      // For each wall, determine extension per endpoint
+      // For each wall, determine extension per endpoint.
+      // Check against ALL walls (including those with openings) for junction detection.
       const rects = [];
       for (let i = 0; i < walls.length; i++) {
         const w = walls[i];
@@ -559,21 +549,19 @@
         let extA = 0, extB = 0;
 
         if (!isDiagonal) {
-          // Check each endpoint: L-junction (shared endpoint) → extend,
-          // T-junction (on interior of other wall) → no extension
-          for (let j = 0; j < walls.length; j++) {
-            if (i === j) continue;
-            const other = walls[j];
+          // Check against ALL walls for L-junction detection
+          for (let j = 0; j < allWalls.length; j++) {
+            const other = allWalls[j];
+            if (other === w) continue;
             const otherHt = (other.thickness ?? 20) / 2;
 
-            // Check endpoint A
+            // Check endpoint A — only L-junctions (shared endpoints)
             const aSharesEndpoint =
               Math.hypot(w.a.x - other.a.x, w.a.y - other.a.y) < TOLERANCE ||
               Math.hypot(w.a.x - other.b.x, w.a.y - other.b.y) < TOLERANCE;
             if (aSharesEndpoint) {
               extA = Math.max(extA, otherHt);
             }
-            // If A sits on interior of other wall → no extension (already overlaps)
 
             // Check endpoint B
             const bSharesEndpoint =
@@ -2712,7 +2700,7 @@
       const openingWalls = walls.filter(w => w.openings && w.openings.length > 0);
 
       // Union all solid walls into merged 2D polygons
-      const wallUnion = computeWallUnion(solidWalls);
+      const wallUnion = computeWallUnion(solidWalls, walls);
 
       // Ear-clipping triangulation for concave 2D polygons
       function earClipTriangulate(pts) {
