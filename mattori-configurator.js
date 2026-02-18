@@ -517,6 +517,17 @@
     function computeWallContours(walls) {
       const TOLERANCE = 3;
 
+      // Line-line intersection helper. Returns {t, u, x, y} or null if parallel.
+      // t = parameter along line A, u = parameter along line B.
+      function intersectLines(p1x, p1y, d1x, d1y, p2x, p2y, d2x, d2y) {
+        const det = d1x * d2y - d1y * d2x;
+        if (Math.abs(det) < 0.0001) return null;
+        const dx = p2x - p1x, dy = p2y - p1y;
+        const t = (dx * d2y - dy * d2x) / det;
+        const u = (dx * d1y - dy * d1x) / det;
+        return { t, u, x: p1x + d1x * t, y: p1y + d1y * t };
+      }
+
       // For each wall, compute left/right edge lines (midline ± halfThick)
       const wallEdges = walls.map(w => {
         const ax = w.a.x, ay = w.a.y, bx = w.b.x, by = w.b.y;
@@ -529,16 +540,10 @@
         return {
           wall: w,
           ux, uy, nx, ny, ht, len,
-          // Left edge: A+normal*ht → B+normal*ht
-          leftA: { x: ax + nx * ht, y: ay + ny * ht },
-          leftB: { x: bx + nx * ht, y: by + ny * ht },
-          // Right edge: A-normal*ht → B-normal*ht
-          rightA: { x: ax - nx * ht, y: ay - ny * ht },
-          rightB: { x: bx - nx * ht, y: by - ny * ht },
           // Final corner points (will be modified at junctions)
           corners: {
-            leftA: { x: ax + nx * ht, y: ay + ny * ht },
-            leftB: { x: bx + nx * ht, y: by + ny * ht },
+            leftA:  { x: ax + nx * ht, y: ay + ny * ht },
+            leftB:  { x: bx + nx * ht, y: by + ny * ht },
             rightA: { x: ax - nx * ht, y: ay - ny * ht },
             rightB: { x: bx - nx * ht, y: by - ny * ht }
           }
@@ -546,98 +551,90 @@
       });
 
       // Build junction map: group wall indices by shared endpoints
+      // Also detect T-junctions (endpoint on interior of another wall)
       const junctions = new Map(); // key: "x,y" → array of {wallIdx, endpoint: 'a'|'b'}
-      for (let i = 0; i < walls.length; i++) {
-        if (!wallEdges[i]) continue;
-        const w = walls[i];
-        for (const ep of ['a', 'b']) {
-          const px = w[ep].x, py = w[ep].y;
-          let found = false;
-          for (const [key, members] of junctions) {
-            const [kx, ky] = key.split(',').map(Number);
-            if (Math.hypot(px - kx, py - ky) < TOLERANCE) {
-              members.push({ wallIdx: i, endpoint: ep });
-              found = true;
-              break;
-            }
-          }
-          if (!found) {
-            junctions.set(`${px},${py}`, [{ wallIdx: i, endpoint: ep }]);
+
+      function addToJunction(px, py, wallIdx, endpoint) {
+        for (const [key, members] of junctions) {
+          const [kx, ky] = key.split(',').map(Number);
+          if (Math.hypot(px - kx, py - ky) < TOLERANCE) {
+            members.push({ wallIdx, endpoint });
+            return;
           }
         }
+        junctions.set(`${px},${py}`, [{ wallIdx, endpoint }]);
       }
 
-      // For each junction with 2+ walls, compute edge-line intersections
+      for (let i = 0; i < walls.length; i++) {
+        if (!wallEdges[i]) continue;
+        addToJunction(walls[i].a.x, walls[i].a.y, i, 'a');
+        addToJunction(walls[i].b.x, walls[i].b.y, i, 'b');
+      }
+
+      // For each junction with 2+ walls, compute mitered corners
       for (const [key, members] of junctions) {
         if (members.length < 2) continue;
 
-        // For each pair of walls at this junction, intersect their edge lines
-        for (let mi = 0; mi < members.length; mi++) {
-          for (let mj = mi + 1; mj < members.length; mj++) {
-            const a = members[mi], b = members[mj];
-            const ea = wallEdges[a.wallIdx], eb = wallEdges[b.wallIdx];
-            if (!ea || !eb) continue;
+        // Sort members by angle (direction pointing away from junction)
+        const withAngle = members.map(m => {
+          const e = wallEdges[m.wallIdx];
+          // Direction pointing AWAY from the junction
+          const dx = m.endpoint === 'a' ? -e.ux : e.ux;
+          const dy = m.endpoint === 'a' ? -e.uy : e.uy;
+          return { ...m, angle: Math.atan2(dy, dx), dx, dy, edge: e };
+        });
+        withAngle.sort((a, b) => a.angle - b.angle);
 
-            // Determine which edges to intersect based on relative angles
-            // Wall A direction (pointing away from junction)
-            const dirAx = a.endpoint === 'a' ? -ea.ux : ea.ux;
-            const dirAy = a.endpoint === 'a' ? -ea.uy : ea.uy;
-            // Wall B direction (pointing away from junction)
-            const dirBx = b.endpoint === 'a' ? -eb.ux : eb.ux;
-            const dirBy = b.endpoint === 'a' ? -eb.uy : eb.uy;
+        const n = withAngle.length;
 
-            // Cross product to determine which side the other wall is on
-            const cross = dirAx * dirBy - dirAy * dirBx;
-            if (Math.abs(cross) < 0.01) continue; // Parallel walls, skip
+        // For each consecutive pair of walls (in angular order around junction),
+        // intersect their facing edges to find the shared miter point.
+        for (let i = 0; i < n; i++) {
+          const A = withAngle[i];
+          const B = withAngle[(i + 1) % n];
+          const ea = A.edge, eb = B.edge;
 
-            // When cross > 0: wall B is to the left of wall A
-            //   → intersect A's left edge with B's right edge (they face each other)
-            // When cross < 0: wall B is to the right of wall A
-            //   → intersect A's right edge with B's left edge
+          // A is CCW from B → A's RIGHT edge faces B's LEFT edge
+          // (because sorted by angle, consecutive pair: A then B going CCW)
+          // A.right at junction endpoint meets B.left at junction endpoint
 
-            let edgeA1, edgeA2, edgeB1, edgeB2;
-            let cornerKeyA, cornerKeyB;
-
-            if (cross > 0) {
-              // A's left edge meets B's right edge
-              if (a.endpoint === 'a') {
-                edgeA1 = ea.leftA; edgeA2 = ea.leftB; cornerKeyA = 'leftA';
-              } else {
-                edgeA1 = ea.leftB; edgeA2 = ea.leftA; cornerKeyA = 'leftB';
-              }
-              if (b.endpoint === 'a') {
-                edgeB1 = eb.rightA; edgeB2 = eb.rightB; cornerKeyB = 'rightA';
-              } else {
-                edgeB1 = eb.rightB; edgeB2 = eb.rightA; cornerKeyB = 'rightB';
-              }
-            } else {
-              // A's right edge meets B's left edge
-              if (a.endpoint === 'a') {
-                edgeA1 = ea.rightA; edgeA2 = ea.rightB; cornerKeyA = 'rightA';
-              } else {
-                edgeA1 = ea.rightB; edgeA2 = ea.rightA; cornerKeyA = 'rightB';
-              }
-              if (b.endpoint === 'a') {
-                edgeB1 = eb.leftA; edgeB2 = eb.leftB; cornerKeyB = 'leftA';
-              } else {
-                edgeB1 = eb.leftB; edgeB2 = eb.leftA; cornerKeyB = 'leftB';
-              }
-            }
-
-            // Compute line-line intersection
-            const dAx = edgeA2.x - edgeA1.x, dAy = edgeA2.y - edgeA1.y;
-            const dBx = edgeB2.x - edgeB1.x, dBy = edgeB2.y - edgeB1.y;
-            const det = dAx * dBy - dAy * dBx;
-            if (Math.abs(det) < 0.001) continue;
-
-            const t = ((edgeB1.x - edgeA1.x) * dBy - (edgeB1.y - edgeA1.y) * dBx) / det;
-            const ix = edgeA1.x + dAx * t;
-            const iy = edgeA1.y + dAy * t;
-
-            // Apply intersection point to both walls' corners
-            ea.corners[cornerKeyA] = { x: ix, y: iy };
-            eb.corners[cornerKeyB] = { x: ix, y: iy };
+          // Edge line for A's right side: starts at rightA or rightB (at junction end), direction along wall
+          let aEdgePx, aEdgePy, aDx, aDy, aCornerKey;
+          if (A.endpoint === 'a') {
+            // Junction is at A-end → right edge starts at rightA, goes toward rightB
+            aEdgePx = ea.corners.rightA.x; aEdgePy = ea.corners.rightA.y;
+            aDx = ea.ux; aDy = ea.uy;
+            aCornerKey = 'rightA';
+          } else {
+            // Junction is at B-end → right edge starts at rightB, goes toward rightA
+            aEdgePx = ea.corners.rightB.x; aEdgePy = ea.corners.rightB.y;
+            aDx = -ea.ux; aDy = -ea.uy;
+            aCornerKey = 'rightB';
           }
+
+          // Edge line for B's left side
+          let bEdgePx, bEdgePy, bDx, bDy, bCornerKey;
+          if (B.endpoint === 'a') {
+            bEdgePx = eb.corners.leftA.x; bEdgePy = eb.corners.leftA.y;
+            bDx = eb.ux; bDy = eb.uy;
+            bCornerKey = 'leftA';
+          } else {
+            bEdgePx = eb.corners.leftB.x; bEdgePy = eb.corners.leftB.y;
+            bDx = -eb.ux; bDy = -eb.uy;
+            bCornerKey = 'leftB';
+          }
+
+          const hit = intersectLines(aEdgePx, aEdgePy, aDx, aDy, bEdgePx, bEdgePy, bDx, bDy);
+          if (!hit) continue;
+
+          // Sanity check: don't let the intersection be too far from the junction.
+          // Max reasonable distance = max of both walls' half-thickness × 3
+          const maxDist = Math.max(ea.ht, eb.ht) * 4;
+          const jx = Number(key.split(',')[0]), jy = Number(key.split(',')[1]);
+          if (Math.hypot(hit.x - jx, hit.y - jy) > maxDist) continue;
+
+          ea.corners[aCornerKey] = { x: hit.x, y: hit.y };
+          eb.corners[bCornerKey] = { x: hit.x, y: hit.y };
         }
       }
 
