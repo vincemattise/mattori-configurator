@@ -2884,12 +2884,36 @@
         }
       }
 
-      // Render walls WITH openings as individual boxes (old approach)
+      // Render walls WITH openings as individual boxes (with L-junction extension)
       for (const wall of openingWalls) {
-        const ax = (wall.a.x - centerX) * SCALE;
-        const ay = (wall.a.y - centerY) * SCALE;
-        const bx = (wall.b.x - centerX) * SCALE;
-        const by = (wall.b.y - centerY) * SCALE;
+        // Compute L-junction extension for opening walls too (same logic as solid walls)
+        const _wdx = wall.b.x - wall.a.x, _wdy = wall.b.y - wall.a.y;
+        const _wlen = Math.hypot(_wdx, _wdy);
+        const _wIsDiag = _wlen > 0.1 && Math.min(Math.abs(_wdx / _wlen), Math.abs(_wdy / _wlen)) > 0.15;
+        let owExtA = 0, owExtB = 0;
+        if (!_wIsDiag && _wlen > 0.1) {
+          const _ux = _wdx / _wlen, _uy = _wdy / _wlen;
+          for (const other of walls) {
+            if (other === wall) continue;
+            const odx = other.b.x - other.a.x, ody = other.b.y - other.a.y;
+            const olen = Math.hypot(odx, ody);
+            if (olen < 0.1) continue;
+            if (Math.min(Math.abs(odx / olen), Math.abs(ody / olen)) > 0.15) continue; // skip diag
+            const otherHt = (other.thickness ?? 20) / 2;
+            if (Math.hypot(wall.a.x - other.a.x, wall.a.y - other.a.y) < 3 ||
+                Math.hypot(wall.a.x - other.b.x, wall.a.y - other.b.y) < 3) {
+              owExtA = Math.max(owExtA, otherHt);
+            }
+            if (Math.hypot(wall.b.x - other.a.x, wall.b.y - other.a.y) < 3 ||
+                Math.hypot(wall.b.x - other.b.x, wall.b.y - other.b.y) < 3) {
+              owExtB = Math.max(owExtB, otherHt);
+            }
+          }
+        }
+        const ax = (wall.a.x - centerX) * SCALE - (_wlen > 0.1 ? (_wdx / _wlen) * owExtA * SCALE : 0);
+        const ay = (wall.a.y - centerY) * SCALE - (_wlen > 0.1 ? (_wdy / _wlen) * owExtA * SCALE : 0);
+        const bx = (wall.b.x - centerX) * SCALE + (_wlen > 0.1 ? (_wdx / _wlen) * owExtB * SCALE : 0);
+        const by = (wall.b.y - centerY) * SCALE + (_wlen > 0.1 ? (_wdy / _wlen) * owExtB * SCALE : 0);
         const wdx = bx - ax, wdy = by - ay;
         const wlen = Math.hypot(wdx, wdy);
         if (wlen < 0.001) continue;
