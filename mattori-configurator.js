@@ -3041,9 +3041,27 @@
             }
           }
         }
-        // Also add opening walls (not in the union)
+        // Also add opening walls (not in the union) — with L-junction extension
         for (const w of openingWalls) {
-          const r = wallToRect(w, 0, 0);
+          const _dx = w.b.x - w.a.x, _dy = w.b.y - w.a.y;
+          const _len = Math.hypot(_dx, _dy);
+          const _isDiag = _len > 0.1 && Math.min(Math.abs(_dx / _len), Math.abs(_dy / _len)) > 0.15;
+          let _extA = 0, _extB = 0;
+          if (!_isDiag && _len > 0.1) {
+            for (const other of walls) {
+              if (other === w) continue;
+              const odx = other.b.x - other.a.x, ody = other.b.y - other.a.y;
+              const olen = Math.hypot(odx, ody);
+              if (olen < 0.1) continue;
+              if (Math.min(Math.abs(odx / olen), Math.abs(ody / olen)) > 0.15) continue;
+              const oHt = (other.thickness ?? 20) / 2;
+              if (Math.hypot(w.a.x - other.a.x, w.a.y - other.a.y) < 3 ||
+                  Math.hypot(w.a.x - other.b.x, w.a.y - other.b.y) < 3) _extA = Math.max(_extA, oHt);
+              if (Math.hypot(w.b.x - other.a.x, w.b.y - other.a.y) < 3 ||
+                  Math.hypot(w.b.x - other.b.x, w.b.y - other.b.y) < 3) _extB = Math.max(_extB, oHt);
+            }
+          }
+          const r = wallToRect(w, _extA, _extB);
           if (r) {
             const pts = r.slice(0, 4).map(p => ({ x: p[0], y: p[1] }));
             floorSources.push(pts);
