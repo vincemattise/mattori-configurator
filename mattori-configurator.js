@@ -508,100 +508,140 @@
     }
 
     // ============================================================
-    // WALL ENDPOINT EXTENSION
+    // WALL CONTOUR COMPUTATION (Funda-style polygon union)
     // ============================================================
-    function extendWalls(walls) {
+    // Instead of rendering each wall as a separate box, compute the
+    // correct corner points at junctions by intersecting edge lines.
+    // This produces seamless wall geometry with no overshoot or gaps.
+
+    function computeWallContours(walls) {
       const TOLERANCE = 3;
 
-      function pointsNear(px, py, qx, qy) {
-        return Math.hypot(px - qx, py - qy) < TOLERANCE;
-      }
-
-      function pointOnSegmentInterior(px, py, wallAx, wallAy, wallBx, wallBy) {
-        const wdx = wallBx - wallAx, wdy = wallBy - wallAy;
-        const wlen2 = wdx * wdx + wdy * wdy;
-        if (wlen2 < 0.001) return false;
-        const t = ((px - wallAx) * wdx + (py - wallAy) * wdy) / wlen2;
-        if (t < 0.02 || t > 0.98) return false;
-        const projX = wallAx + wdx * t;
-        const projY = wallAy + wdy * t;
-        return Math.hypot(px - projX, py - projY) < TOLERANCE;
-      }
-
-      const extended = walls.map(w => ({
-        a: { x: w.a.x, y: w.a.y },
-        b: { x: w.b.x, y: w.b.y },
-        thickness: w.thickness ?? 20,
-        openings: w.openings ?? [],
-        _clipA: null, // {dx, dy} direction of intersecting wall at endpoint A
-        _clipB: null, // {dx, dy} direction of intersecting wall at endpoint B
-        _isDiagonal: false, // set during extension pass
-        _arcSeg: w._arcSeg ?? false,
-        _heightA: w._heightA ?? 265,
-        _heightB: w._heightB ?? 265
-      }));
-
-      for (let i = 0; i < extended.length; i++) {
-        const wall = extended[i];
-        if (wall._arcSeg) continue;
-        const origAx = walls[i].a.x, origAy = walls[i].a.y;
-        const origBx = walls[i].b.x, origBy = walls[i].b.y;
-        const wdx = origBx - origAx;
-        const wdy = origBy - origAy;
-        const wlen = Math.hypot(wdx, wdy);
-        if (wlen < 0.1) continue;
-        const ux = wdx / wlen;
-        const uy = wdy / wlen;
-
-        let extendA = 0;
-        let extendB = 0;
-
-        for (let j = 0; j < walls.length; j++) {
-          if (i === j) continue;
-          const other = walls[j];
-          const otherHalfThick = (other.thickness ?? 20) / 2;
-          const otherDx = other.b.x - other.a.x;
-          const otherDy = other.b.y - other.a.y;
-          const otherLen = Math.hypot(otherDx, otherDy);
-          if (otherLen < 0.1) continue;
-
-          const sinAngle = Math.abs(ux * (otherDy / otherLen) - uy * (otherDx / otherLen));
-          if (sinAngle < 0.1) continue;
-
-          const isDiagonal = Math.min(Math.abs(ux), Math.abs(uy)) > 0.15;
-          if (isDiagonal) wall._isDiagonal = true;
-          // For diagonal walls: no extension, just store clip plane
-          // For axis-aligned walls: extend as before
-          const ext = isDiagonal ? 0 : Math.min(otherHalfThick / sinAngle, otherHalfThick * 3);
-
-          const aShares = pointsNear(origAx, origAy, other.a.x, other.a.y) ||
-                          pointsNear(origAx, origAy, other.b.x, other.b.y);
-          const aOnInt = pointOnSegmentInterior(origAx, origAy, other.a.x, other.a.y, other.b.x, other.b.y);
-          if (aShares || aOnInt) {
-            extendA = Math.max(extendA, ext);
-            if (isDiagonal) wall._clipA = { dx: otherDx / otherLen, dy: otherDy / otherLen };
+      // For each wall, compute left/right edge lines (midline ± halfThick)
+      const wallEdges = walls.map(w => {
+        const ax = w.a.x, ay = w.a.y, bx = w.b.x, by = w.b.y;
+        const dx = bx - ax, dy = by - ay;
+        const len = Math.hypot(dx, dy);
+        if (len < 0.1) return null;
+        const ux = dx / len, uy = dy / len;
+        const nx = -uy, ny = ux; // normal (left side)
+        const ht = (w.thickness ?? 20) / 2;
+        return {
+          wall: w,
+          ux, uy, nx, ny, ht, len,
+          // Left edge: A+normal*ht → B+normal*ht
+          leftA: { x: ax + nx * ht, y: ay + ny * ht },
+          leftB: { x: bx + nx * ht, y: by + ny * ht },
+          // Right edge: A-normal*ht → B-normal*ht
+          rightA: { x: ax - nx * ht, y: ay - ny * ht },
+          rightB: { x: bx - nx * ht, y: by - ny * ht },
+          // Final corner points (will be modified at junctions)
+          corners: {
+            leftA: { x: ax + nx * ht, y: ay + ny * ht },
+            leftB: { x: bx + nx * ht, y: by + ny * ht },
+            rightA: { x: ax - nx * ht, y: ay - ny * ht },
+            rightB: { x: bx - nx * ht, y: by - ny * ht }
           }
+        };
+      });
 
-          const bShares = pointsNear(origBx, origBy, other.a.x, other.a.y) ||
-                          pointsNear(origBx, origBy, other.b.x, other.b.y);
-          const bOnInt = pointOnSegmentInterior(origBx, origBy, other.a.x, other.a.y, other.b.x, other.b.y);
-          if (bShares || bOnInt) {
-            extendB = Math.max(extendB, ext);
-            if (isDiagonal) wall._clipB = { dx: otherDx / otherLen, dy: otherDy / otherLen };
+      // Build junction map: group wall indices by shared endpoints
+      const junctions = new Map(); // key: "x,y" → array of {wallIdx, endpoint: 'a'|'b'}
+      for (let i = 0; i < walls.length; i++) {
+        if (!wallEdges[i]) continue;
+        const w = walls[i];
+        for (const ep of ['a', 'b']) {
+          const px = w[ep].x, py = w[ep].y;
+          let found = false;
+          for (const [key, members] of junctions) {
+            const [kx, ky] = key.split(',').map(Number);
+            if (Math.hypot(px - kx, py - ky) < TOLERANCE) {
+              members.push({ wallIdx: i, endpoint: ep });
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            junctions.set(`${px},${py}`, [{ wallIdx: i, endpoint: ep }]);
           }
         }
+      }
 
-        if (extendA > 0) {
-          wall.a.x -= ux * extendA;
-          wall.a.y -= uy * extendA;
-        }
-        if (extendB > 0) {
-          wall.b.x += ux * extendB;
-          wall.b.y += uy * extendB;
+      // For each junction with 2+ walls, compute edge-line intersections
+      for (const [key, members] of junctions) {
+        if (members.length < 2) continue;
+
+        // For each pair of walls at this junction, intersect their edge lines
+        for (let mi = 0; mi < members.length; mi++) {
+          for (let mj = mi + 1; mj < members.length; mj++) {
+            const a = members[mi], b = members[mj];
+            const ea = wallEdges[a.wallIdx], eb = wallEdges[b.wallIdx];
+            if (!ea || !eb) continue;
+
+            // Determine which edges to intersect based on relative angles
+            // Wall A direction (pointing away from junction)
+            const dirAx = a.endpoint === 'a' ? -ea.ux : ea.ux;
+            const dirAy = a.endpoint === 'a' ? -ea.uy : ea.uy;
+            // Wall B direction (pointing away from junction)
+            const dirBx = b.endpoint === 'a' ? -eb.ux : eb.ux;
+            const dirBy = b.endpoint === 'a' ? -eb.uy : eb.uy;
+
+            // Cross product to determine which side the other wall is on
+            const cross = dirAx * dirBy - dirAy * dirBx;
+            if (Math.abs(cross) < 0.01) continue; // Parallel walls, skip
+
+            // When cross > 0: wall B is to the left of wall A
+            //   → intersect A's left edge with B's right edge (they face each other)
+            // When cross < 0: wall B is to the right of wall A
+            //   → intersect A's right edge with B's left edge
+
+            let edgeA1, edgeA2, edgeB1, edgeB2;
+            let cornerKeyA, cornerKeyB;
+
+            if (cross > 0) {
+              // A's left edge meets B's right edge
+              if (a.endpoint === 'a') {
+                edgeA1 = ea.leftA; edgeA2 = ea.leftB; cornerKeyA = 'leftA';
+              } else {
+                edgeA1 = ea.leftB; edgeA2 = ea.leftA; cornerKeyA = 'leftB';
+              }
+              if (b.endpoint === 'a') {
+                edgeB1 = eb.rightA; edgeB2 = eb.rightB; cornerKeyB = 'rightA';
+              } else {
+                edgeB1 = eb.rightB; edgeB2 = eb.rightA; cornerKeyB = 'rightB';
+              }
+            } else {
+              // A's right edge meets B's left edge
+              if (a.endpoint === 'a') {
+                edgeA1 = ea.rightA; edgeA2 = ea.rightB; cornerKeyA = 'rightA';
+              } else {
+                edgeA1 = ea.rightB; edgeA2 = ea.rightA; cornerKeyA = 'rightB';
+              }
+              if (b.endpoint === 'a') {
+                edgeB1 = eb.leftA; edgeB2 = eb.leftB; cornerKeyB = 'leftA';
+              } else {
+                edgeB1 = eb.leftB; edgeB2 = eb.leftA; cornerKeyB = 'leftB';
+              }
+            }
+
+            // Compute line-line intersection
+            const dAx = edgeA2.x - edgeA1.x, dAy = edgeA2.y - edgeA1.y;
+            const dBx = edgeB2.x - edgeB1.x, dBy = edgeB2.y - edgeB1.y;
+            const det = dAx * dBy - dAy * dBx;
+            if (Math.abs(det) < 0.001) continue;
+
+            const t = ((edgeB1.x - edgeA1.x) * dBy - (edgeB1.y - edgeA1.y) * dBx) / det;
+            const ix = edgeA1.x + dAx * t;
+            const iy = edgeA1.y + dAy * t;
+
+            // Apply intersection point to both walls' corners
+            ea.corners[cornerKeyA] = { x: ix, y: iy };
+            eb.corners[cornerKeyB] = { x: ix, y: iy };
+          }
         }
       }
 
-      return extended;
+      return wallEdges;
     }
 
     // ============================================================
@@ -1151,10 +1191,6 @@
       });
 
       if (groups.walls) scene.add(new THREE.Mesh(groups.walls, wallMaterial));
-      if (groups.walls_diagonal) {
-        const diagMaterial = new THREE.MeshPhongMaterial({ color: 0xCC3333, flatShading: true, side: THREE.DoubleSide, shininess: 5, specular: 0x222222 });
-        scene.add(new THREE.Mesh(groups.walls_diagonal, diagMaterial));
-      }
       if (groups.floor) scene.add(new THREE.Mesh(groups.floor, floorMaterial));
 
       scene.add(new THREE.AmbientLight(0xFFF8F0, 1.0));
@@ -2674,58 +2710,14 @@
 
       // clipA/clipB: direction {dx,dy} of intersecting wall at endpoint A/B (or null)
       // When set, the end-face is angled to align with the intersecting wall
-      function createWallBox(x1, y1, x2, y2, bottomZ, topZ, halfThickness, normalX, normalY, clipA, clipB) {
+      function createWallBox(x1, y1, x2, y2, bottomZ, topZ, halfThickness, normalX, normalY) {
         if (topZ <= bottomZ) return;
-        // Default rectangular corners
-        let c0 = { x: x1 + normalX * halfThickness, y: y1 + normalY * halfThickness }; // A + normal
-        let c1 = { x: x2 + normalX * halfThickness, y: y2 + normalY * halfThickness }; // B + normal
-        let c2 = { x: x2 - normalX * halfThickness, y: y2 - normalY * halfThickness }; // B - normal
-        let c3 = { x: x1 - normalX * halfThickness, y: y1 - normalY * halfThickness }; // A - normal
-
-        // Clip endpoint A: project corners c0 and c3 onto the intersecting wall's line
-        if (clipA) {
-          const cdx = clipA.dx, cdy = clipA.dy;
-          // For each corner at A, find where the line from the corner along wall direction
-          // intersects the clip line through (x1,y1) with direction (cdx,cdy)
-          // Parametric: corner + t * wallDir = (x1,y1) + s * clipDir
-          const wdx = x2 - x1, wdy = y2 - y1;
-          const wlen = Math.hypot(wdx, wdy);
-          if (wlen > 0.001) {
-            const wux = wdx / wlen, wuy = wdy / wlen;
-            const det = wux * cdy - wuy * cdx;
-            if (Math.abs(det) > 0.01) {
-              // Corner c0 (A + normal)
-              const dx0 = x1 - c0.x, dy0 = y1 - c0.y;
-              const t0 = (dx0 * cdy - dy0 * cdx) / det;
-              c0 = { x: c0.x + wux * t0, y: c0.y + wuy * t0 };
-              // Corner c3 (A - normal)
-              const dx3 = x1 - c3.x, dy3 = y1 - c3.y;
-              const t3 = (dx3 * cdy - dy3 * cdx) / det;
-              c3 = { x: c3.x + wux * t3, y: c3.y + wuy * t3 };
-            }
-          }
-        }
-
-        // Clip endpoint B: project corners c1 and c2 onto the intersecting wall's line
-        if (clipB) {
-          const cdx = clipB.dx, cdy = clipB.dy;
-          const wdx = x2 - x1, wdy = y2 - y1;
-          const wlen = Math.hypot(wdx, wdy);
-          if (wlen > 0.001) {
-            const wux = wdx / wlen, wuy = wdy / wlen;
-            const det = wux * cdy - wuy * cdx;
-            if (Math.abs(det) > 0.01) {
-              const dx1 = x2 - c1.x, dy1 = y2 - c1.y;
-              const t1 = (dx1 * cdy - dy1 * cdx) / det;
-              c1 = { x: c1.x + wux * t1, y: c1.y + wuy * t1 };
-              const dx2 = x2 - c2.x, dy2 = y2 - c2.y;
-              const t2 = (dx2 * cdy - dy2 * cdx) / det;
-              c2 = { x: c2.x + wux * t2, y: c2.y + wuy * t2 };
-            }
-          }
-        }
-
-        const corners = [c0, c1, c2, c3];
+        const corners = [
+          { x: x1 + normalX * halfThickness, y: y1 + normalY * halfThickness }, // A + normal
+          { x: x2 + normalX * halfThickness, y: y2 + normalY * halfThickness }, // B + normal
+          { x: x2 - normalX * halfThickness, y: y2 - normalY * halfThickness }, // B - normal
+          { x: x1 - normalX * halfThickness, y: y1 - normalY * halfThickness }  // A - normal
+        ];
         for (const c of corners) vertices.push(`v ${c.x.toFixed(4)} ${bottomZ.toFixed(4)} ${c.y.toFixed(4)}`);
         for (const c of corners) vertices.push(`v ${c.x.toFixed(4)} ${topZ.toFixed(4)} ${c.y.toFixed(4)}`);
         const base = vertexIndex;
@@ -2758,33 +2750,56 @@
       const centerX = (bbox.minX + bbox.maxX) / 2;
       const centerY = (bbox.minY + bbox.maxY) / 2;
 
-      const extendedWalls = extendWalls(walls);
+      // Compute wall contours with junction-corrected corners
+      const wallContours = computeWallContours(walls);
 
-      let currentGroup = '';
+      // Helper: create extruded box from 4 corner points
+      function createContourBox(c0, c1, c2, c3, bottomZ, topZ) {
+        if (topZ <= bottomZ) return;
+        const corners = [c0, c1, c2, c3];
+        for (const c of corners) vertices.push(`v ${c.x.toFixed(4)} ${bottomZ.toFixed(4)} ${c.y.toFixed(4)}`);
+        for (const c of corners) vertices.push(`v ${c.x.toFixed(4)} ${topZ.toFixed(4)} ${c.y.toFixed(4)}`);
+        const base = vertexIndex;
+        addFace(base + 3, base + 2, base + 1, base + 0);
+        addFace(base + 4, base + 5, base + 6, base + 7);
+        addFace(base + 0, base + 1, base + 5, base + 4);
+        addFace(base + 2, base + 3, base + 7, base + 6);
+        addFace(base + 3, base + 0, base + 4, base + 7);
+        addFace(base + 1, base + 2, base + 6, base + 5);
+        vertexIndex += 8;
+      }
 
-      for (const wall of extendedWalls) {
-        // Switch OBJ group for diagonal vs normal walls (debug: different color)
-        const grp = wall._isDiagonal ? 'g walls_diagonal' : 'g walls';
-        if (grp !== currentGroup) { faces.push(grp); currentGroup = grp; }
+      faces.push('g walls');
 
-        const ax = (wall.a.x - centerX) * SCALE;
-        const ay = (wall.a.y - centerY) * SCALE;
-        const bx = (wall.b.x - centerX) * SCALE;
-        const by = (wall.b.y - centerY) * SCALE;
-        const thickness = wall.thickness * SCALE;
-        const wdx = bx - ax, wdy = by - ay;
-        const wlen = Math.hypot(wdx, wdy);
-        if (wlen < 0.001) continue;
-        const wnx = -wdy / wlen;
-        const wny = wdx / wlen;
-        const halfThick = thickness / 2;
+      for (let wi = 0; wi < walls.length; wi++) {
+        const edge = wallContours[wi];
+        if (!edge) continue;
+        const wall = walls[wi];
 
-        const openings = wall.openings;
-        const wallWorldLen = Math.hypot(wall.b.x - wall.a.x, wall.b.y - wall.a.y);
+        // Scale corners to OBJ coordinates
+        const la = { x: (edge.corners.leftA.x - centerX) * SCALE, y: (edge.corners.leftA.y - centerY) * SCALE };
+        const lb = { x: (edge.corners.leftB.x - centerX) * SCALE, y: (edge.corners.leftB.y - centerY) * SCALE };
+        const ra = { x: (edge.corners.rightA.x - centerX) * SCALE, y: (edge.corners.rightA.y - centerY) * SCALE };
+        const rb = { x: (edge.corners.rightB.x - centerX) * SCALE, y: (edge.corners.rightB.y - centerY) * SCALE };
+
+        const openings = wall.openings ?? [];
 
         if (openings.length === 0) {
-          createWallBox(ax, ay, bx, by, 0, WALL_HEIGHT, halfThick, wnx, wny, wall._clipA, wall._clipB);
+          // Full wall with junction-corrected corners: leftA, leftB, rightB, rightA
+          createContourBox(la, lb, rb, ra, 0, WALL_HEIGHT);
         } else {
+          // Wall with openings: use midline parametric positions
+          const ax = (wall.a.x - centerX) * SCALE;
+          const ay = (wall.a.y - centerY) * SCALE;
+          const bx = (wall.b.x - centerX) * SCALE;
+          const by = (wall.b.y - centerY) * SCALE;
+          const wdx = bx - ax, wdy = by - ay;
+          const wlen = Math.hypot(wdx, wdy);
+          if (wlen < 0.001) continue;
+          const wnx = -wdy / wlen, wny = wdx / wlen;
+          const halfThick = (wall.thickness ?? 20) / 2 * SCALE;
+          const wallWorldLen = Math.hypot(wall.b.x - wall.a.x, wall.b.y - wall.a.y);
+
           const sortedOpenings = openings.map(op => {
             const t = op.t ?? 0.5;
             const halfW = (op.width ?? 90) / 2 / wallWorldLen;
@@ -2799,23 +2814,31 @@
             };
           }).sort((a, b) => a.startT - b.startT);
 
+          // Helper: interpolate contour corners at parametric t along the wall
+          function cornersAtT(t) {
+            return {
+              left:  { x: la.x + (lb.x - la.x) * t, y: la.y + (lb.y - la.y) * t },
+              right: { x: ra.x + (rb.x - ra.x) * t, y: ra.y + (rb.y - ra.y) * t }
+            };
+          }
+
           let currentT = 0;
           for (const op of sortedOpenings) {
             if (op.startT > currentT) {
-              const segAx = ax + wdx * currentT, segAy = ay + wdy * currentT;
-              const segBx = ax + wdx * op.startT, segBy = ay + wdy * op.startT;
-              createWallBox(segAx, segAy, segBx, segBy, 0, WALL_HEIGHT, halfThick, wnx, wny);
+              const cA = cornersAtT(currentT), cB = cornersAtT(op.startT);
+              createContourBox(cA.left, cB.left, cB.right, cA.right, 0, WALL_HEIGHT);
             }
-            const oAx = ax + wdx * op.startT, oAy = ay + wdy * op.startT;
-            const oBx = ax + wdx * op.endT, oBy = ay + wdy * op.endT;
-
+            // Opening segments (sill below, wall above)
+            const oA = cornersAtT(op.startT), oB = cornersAtT(op.endT);
             if (op.bottomZ > 0.01) {
-              createWallBox(oAx, oAy, oBx, oBy, 0, op.bottomZ, halfThick, wnx, wny);
+              createContourBox(oA.left, oB.left, oB.right, oA.right, 0, op.bottomZ);
             }
             if (op.topZ < WALL_HEIGHT - 0.01) {
-              createWallBox(oAx, oAy, oBx, oBy, op.topZ, WALL_HEIGHT, halfThick, wnx, wny);
+              createContourBox(oA.left, oB.left, oB.right, oA.right, op.topZ, WALL_HEIGHT);
             }
-
+            // Frame
+            const oAx = ax + wdx * op.startT, oAy = ay + wdy * op.startT;
+            const oBx = ax + wdx * op.endT, oBy = ay + wdy * op.endT;
             const frameSize = 0.05;
             const frameThick = halfThick * 0.8;
             createOpeningFrame(oAx, oAy, oBx, oBy, op.bottomZ, op.topZ, frameSize, frameThick, wnx, wny);
@@ -2823,7 +2846,8 @@
             currentT = Math.max(currentT, op.endT);
           }
           if (currentT < 1) {
-            createWallBox(ax + wdx * currentT, ay + wdy * currentT, bx, by, 0, WALL_HEIGHT, halfThick, wnx, wny);
+            const cA = cornersAtT(currentT), cB = cornersAtT(1);
+            createContourBox(cA.left, cB.left, cB.right, cA.right, 0, WALL_HEIGHT);
           }
         }
       }
@@ -2894,17 +2918,14 @@
           if (tessellated.length >= 3) floorSources.push(tessellated);
         }
 
-        for (const wall of extendedWalls) {
-          const dx = wall.b.x - wall.a.x, dy = wall.b.y - wall.a.y;
-          const len = Math.hypot(dx, dy);
-          if (len < 0.1) continue;
-          const nx = -dy / len, ny = dx / len;
-          const ht = (wall.thickness ?? 20) / 2;
+        for (let wi = 0; wi < walls.length; wi++) {
+          const edge = wallContours[wi];
+          if (!edge) continue;
           floorSources.push([
-            { x: wall.a.x + nx * ht, y: wall.a.y + ny * ht },
-            { x: wall.b.x + nx * ht, y: wall.b.y + ny * ht },
-            { x: wall.b.x - nx * ht, y: wall.b.y - ny * ht },
-            { x: wall.a.x - nx * ht, y: wall.a.y - ny * ht }
+            edge.corners.leftA,
+            edge.corners.leftB,
+            edge.corners.rightB,
+            edge.corners.rightA
           ]);
         }
 
