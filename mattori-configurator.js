@@ -3051,10 +3051,11 @@
             }
           }
         }
-        // Also add individual wall rects as floor sources (bypasses union precision issues)
+        // Also add individual wall rects as floor sources — with small expansion
+        // to ensure overlap with adjacent area polygons (prevents gap at boundaries)
         for (const w of walls) {
           if ((w.thickness ?? 20) < 0.1) continue; // skip zero-thickness (handled separately below)
-          const r = wallToRect(w, 0, 0);
+          const r = wallToRect(w, 1, 1);
           if (r) {
             floorSources.push(r.slice(0, 4).map(p => ({ x: p[0], y: p[1] })));
           }
