@@ -593,9 +593,19 @@
           Math.atan2(a.y - jy, a.x - jx) - Math.atan2(b.y - jy, b.x - jx)
         );
 
+        // Expand each edge point slightly outward from junction center
+        // so the fill polygon overlaps with adjacent wall rectangles.
+        const EXPAND = 2; // 2cm expansion ensures solid overlap
+        const expanded = edgePoints.map(p => {
+          const dx = p.x - jx, dy = p.y - jy;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 0.01) return p;
+          return { x: p.x + (dx / dist) * EXPAND, y: p.y + (dy / dist) * EXPAND };
+        });
+
         // Create fill polygon (closed ring)
-        const fillRing = edgePoints.map(p => [p.x, p.y]);
-        fillRing.push([edgePoints[0].x, edgePoints[0].y]); // close
+        const fillRing = expanded.map(p => [p.x, p.y]);
+        fillRing.push([expanded[0].x, expanded[0].y]); // close
         rects.push([fillRing]);
       }
 
