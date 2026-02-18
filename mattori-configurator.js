@@ -3003,10 +3003,24 @@
           if (tessellated.length >= 3) floorSources.push(tessellated);
         }
 
-        for (const w of walls) {
+        // Use the same unioned wall polygons for floor sources
+        for (const polygon of wallUnion) {
+          for (const ring of polygon) {
+            const pts = ring.slice();
+            // Remove closing duplicate if present
+            if (pts.length > 1) {
+              const f = pts[0], l = pts[pts.length - 1];
+              if (Math.hypot(f[0] - l[0], f[1] - l[1]) < 0.01) pts.pop();
+            }
+            if (pts.length >= 3) {
+              floorSources.push(pts.map(p => ({ x: p[0], y: p[1] })));
+            }
+          }
+        }
+        // Also add opening walls (not in the union)
+        for (const w of openingWalls) {
           const r = wallToRect(w, 0, 0);
           if (r) {
-            // wallToRect returns [[x,y],...] — convert to [{x,y},...]
             const pts = r.slice(0, 4).map(p => ({ x: p[0], y: p[1] }));
             floorSources.push(pts);
           }
