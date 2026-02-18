@@ -521,10 +521,11 @@
       const ux = dx / len, uy = dy / len;
       const nx = -uy, ny = ux;
       const ht = (w.thickness ?? 20) / 2;
-      // Axis-aligned walls: extend 1cm at kopse kanten to fill 90° junction gaps.
+      // Axis-aligned walls: extend by half-thickness at kopse kanten so that
+      // at 90° junctions the wall rectangle fully overlaps the adjacent wall.
       // Diagonal walls: NO extension (would poke through crossing walls).
       const isDiagonal = Math.min(Math.abs(ux), Math.abs(uy)) > 0.15;
-      const EXT = isDiagonal ? 0 : 1;
+      const EXT = isDiagonal ? 0 : ht;
       const eax = ax - ux * EXT, eay = ay - uy * EXT;
       const ebx = bx + ux * EXT, eby = by + uy * EXT;
       // 4 corners: leftA, leftB, rightB, rightA (CCW)
