@@ -3786,10 +3786,10 @@
       // Floor labels (from step 5)
       var currentLabels = getIncludedFloorLabels();
       if (labelMode === 'single') {
-        itemProperties['Label'] = singleLabelText;
+        itemProperties['Onderschrift'] = singleLabelText;
       } else if (currentLabels.length > 0) {
         currentLabels.forEach(function(item) {
-          itemProperties['Label ' + (floors[item.index] ? floors[item.index].name : 'Verdieping')] = item.label;
+          itemProperties['Onderschrift ' + (floors[item.index] ? floors[item.index].name : 'Verdieping')] = item.label;
         });
       }
 
