@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v42.12/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v42.13/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -428,7 +428,6 @@
       height: auto;
       display: block;
       border-radius: 4px;
-      opacity: 0.92;
     }
 
     .mattori-configurator .product-example-badge {
@@ -482,13 +481,12 @@
       pointer-events: none;
       user-select: none;
       border-radius: 4px;
-      opacity: 0.92;
     }
 
     /* Address overlay — top zone of the frame (includes house icon + address text) */
     .mattori-configurator .unified-address-overlay {
       position: absolute;
-      top: calc(16% - 35px);
+      top: calc(16% - 55px);
       left: calc(15.5% + 10px);
       right: calc(14% + 20px);
       height: calc(10% + 37px);
