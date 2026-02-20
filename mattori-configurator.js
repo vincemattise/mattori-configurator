@@ -3749,22 +3749,25 @@
       if (fundaLink) itemProperties['Funda link'] = fundaLink;
       if (noFloorsMode) itemProperties['Opmerking'] = 'Geen interactieve plattegronden — handmatig opbouwen';
 
-      // Include floor review notes (small issues)
-      if (Object.keys(floorIssues).length > 0) {
-        var notes = Object.entries(floorIssues).map(function(entry) {
-          var floorName = floors[entry[0]] ? floors[entry[0]].name : 'Verdieping ' + (parseInt(entry[0]) + 1);
-          return floorName + ': ' + entry[1];
-        }).join(' | ');
-        itemProperties['Opmerkingen plattegronden'] = notes;
-      }
-      // Flag floors that need manual review (major issues)
-      var majorFloors = Object.entries(floorReviewStatus).filter(function(entry) {
-        return entry[1] === 'major';
-      }).map(function(entry) {
-        return floors[entry[0]] ? floors[entry[0]].name : 'Verdieping ' + (parseInt(entry[0]) + 1);
+      // Per-floor review status as individual order properties
+      var majorFloorNames = [];
+      floors.forEach(function(floor, i) {
+        var status = floorReviewStatus[i];
+        if (!status) return;
+        var floorName = floor.name || ('Verdieping ' + (i + 1));
+        if (status === 'confirmed') {
+          itemProperties[floorName] = 'Klopt';
+        } else if (status === 'issue') {
+          var note = floorIssues[i] || '';
+          itemProperties[floorName] = 'Klopt niet' + (note ? ': "' + note + '"' : '');
+        } else if (status === 'major') {
+          itemProperties[floorName] = 'Klopt helemaal niet';
+          majorFloorNames.push(floorName);
+        }
       });
-      if (majorFloors.length > 0) {
-        itemProperties['Handmatig controleren'] = majorFloors.join(', ');
+      // Hidden admin flag for orders needing manual review (underscore hides from cart)
+      if (majorFloorNames.length > 0) {
+        itemProperties['_Handmatig controleren'] = majorFloorNames.join(', ');
       }
 
       // Save preview screenshot to localStorage keyed by Funda link (skip in noFloorsMode)
