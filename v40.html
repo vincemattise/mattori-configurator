@@ -2,7 +2,7 @@
 <script>
 (function(){
   var sheets = [
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v40.2/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v40.3/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -23,7 +23,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel" style="display:none;">
-    <div class="admin-panel-label">Admin · v40.2</div>
+    <div class="admin-panel-label">Admin · v40.3</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon">⬆</div>
@@ -185,10 +185,10 @@
               <!-- Default panel: confirm or flag -->
               <div class="floor-review-panel" id="floorReviewDefault">
                 <div class="floor-review-actions-row">
-                  <button type="button" class="btn-floor-good" id="btnFloorGood" onclick="confirmFloorGood()">Klopt ✓</button>
                   <button type="button" class="btn-floor-flag" id="btnFloorFlag" onclick="showFloorIssuePanel()">Klopt niet</button>
+                  <button type="button" class="btn-floor-good" id="btnFloorGood" onclick="confirmFloorGood()">Klopt ✓</button>
                 </div>
-                <p class="floor-review-hint-text">Wil je een plattegrond niet meenemen? Dat kan in de volgende stap.</p>
+                <p class="floor-review-hint-text">Niet in je ontwerp? Dat stel je in bij de volgende stap.</p>
               </div>
 
               <!-- Issue panel: small difference -->
@@ -283,4 +283,4 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v40.2/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v40.3/mattori-configurator.js"></script>

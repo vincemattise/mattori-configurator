@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v40.2/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v40.3/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -1015,9 +1015,9 @@
       font-size: 0.9rem;
       font-weight: 600;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: transparent;
-      color: #1a1a1a;
-      border: none;
+      background: transparent !important;
+      color: #1a1a1a !important;
+      border: none !important;
       cursor: pointer;
       position: relative;
       transition: opacity 0.2s ease;
@@ -1088,9 +1088,9 @@
 
     /* "Klopt helemaal niet" — subtle text link */
     .mattori-configurator .btn-floor-major {
-      background: none;
-      border: none;
-      color: #bbb;
+      background: none !important;
+      border: none !important;
+      color: #bbb !important;
       font-size: 0.76rem;
       font-weight: 500;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1175,9 +1175,9 @@
     }
 
     .mattori-configurator .btn-floor-back {
-      background: none;
-      border: none;
-      color: #aaa;
+      background: none !important;
+      border: none !important;
+      color: #aaa !important;
       font-size: 0.78rem;
       font-weight: 400;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
