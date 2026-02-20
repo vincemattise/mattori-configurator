@@ -3666,22 +3666,35 @@
     // Stores per Funda link so multiple cart items each keep their own preview
     async function capturePreviewToLocalStorage(fundaLink) {
       var previewEl = document.getElementById('unifiedFramePreview');
-      if (!previewEl || typeof html2canvas === 'undefined' || !fundaLink) return;
+      if (!previewEl || typeof html2canvas === 'undefined' || !fundaLink) {
+        console.warn('[Mattori] Screenshot overgeslagen:', !previewEl ? 'geen preview element' : !fundaLink ? 'geen Funda link' : 'html2canvas niet geladen');
+        return;
+      }
       try {
         var canvas = await html2canvas(previewEl, {
           useCORS: true,
           allowTaint: false,
           backgroundColor: '#ffffff',
-          scale: 1
+          scale: 0.75
         });
-        var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.6);
         try {
+          // Clean up old single-preview key from previous versions
+          localStorage.removeItem('mattori_preview');
           var previews = JSON.parse(localStorage.getItem('mattori_previews') || '{}');
           previews[fundaLink] = dataUrl;
           localStorage.setItem('mattori_previews', JSON.stringify(previews));
-        } catch (e) { /* quota exceeded — skip */ }
+        } catch (e) {
+          console.warn('[Mattori] localStorage vol, probeer met alleen deze preview:', e);
+          // Quota exceeded — try storing just this one preview (discard older ones)
+          try {
+            var fresh = {};
+            fresh[fundaLink] = dataUrl;
+            localStorage.setItem('mattori_previews', JSON.stringify(fresh));
+          } catch (e2) { console.warn('[Mattori] localStorage opslag mislukt:', e2); }
+        }
       } catch (e) {
-        console.warn('Screenshot mislukt:', e);
+        console.warn('[Mattori] Screenshot mislukt:', e);
       }
     }
 
