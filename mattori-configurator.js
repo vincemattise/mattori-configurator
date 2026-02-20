@@ -229,6 +229,11 @@
 // ============================================================
     // STATE
     // ============================================================
+
+    // Cloudinary unsigned upload config (for cart preview screenshots)
+    const CLOUDINARY_CLOUD = 'JOUW_CLOUD_NAME';      // ← Vul in vanuit Cloudinary dashboard
+    const CLOUDINARY_PRESET = 'JOUW_UPLOAD_PRESET';   // ← Vul in: unsigned upload preset
+
     let floors = [];
     let canvases = [];
     let maxWorldW = 1;
@@ -1373,7 +1378,7 @@
       }
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
       renderer.setClearColor(0x000000, 0);
       renderer.setSize(width, height);
       renderer.setPixelRatio(dpr);
@@ -1716,7 +1721,7 @@
       camera.lookAt(center);
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
       renderer.setClearColor(0x000000, 0);
       renderer.setSize(width, height);
       renderer.setPixelRatio(dpr);
@@ -1782,7 +1787,7 @@
       camera.lookAt(center);
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
       renderer.setClearColor(0x000000, 0);
       renderer.setSize(width, height);
       renderer.setPixelRatio(dpr);
@@ -3661,7 +3666,46 @@
     }
 
     // Order button — adds product to Shopify cart via Cart API
-    function submitOrder() {
+    // Capture screenshot of unified frame preview using html2canvas
+    async function capturePreviewScreenshot() {
+      var previewEl = document.getElementById('unifiedFramePreview');
+      if (!previewEl || typeof html2canvas === 'undefined') return null;
+      try {
+        var canvas = await html2canvas(previewEl, {
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: '#ffffff',
+          scale: 1
+        });
+        return new Promise(function(resolve) {
+          canvas.toBlob(function(blob) { resolve(blob); }, 'image/jpeg', 0.85);
+        });
+      } catch (e) {
+        console.warn('Screenshot mislukt:', e);
+        return null;
+      }
+    }
+
+    // Upload image blob to Cloudinary (unsigned)
+    async function uploadToCloudinary(blob) {
+      if (!blob || CLOUDINARY_CLOUD === 'JOUW_CLOUD_NAME') return null;
+      try {
+        var formData = new FormData();
+        formData.append('file', blob, 'frame-preview.jpg');
+        formData.append('upload_preset', CLOUDINARY_PRESET);
+        var res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD + '/image/upload', {
+          method: 'POST',
+          body: formData
+        });
+        var data = await res.json();
+        return data.secure_url || null;
+      } catch (e) {
+        console.warn('Upload mislukt:', e);
+        return null;
+      }
+    }
+
+    async function submitOrder() {
       ensureDomRefs();
       // Find variant ID from Shopify's hidden input
       var variantInput = document.querySelector('form[action*="/cart/add"] input[name="id"]');
@@ -3678,23 +3722,26 @@
       var itemProperties = {};
       if (fundaLink) itemProperties['Funda link'] = fundaLink;
       if (noFloorsMode) itemProperties['Opmerking'] = 'Geen interactieve plattegronden — handmatig opbouwen';
-      fetch('/cart/add.js', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: [{ id: parseInt(variantId), quantity: 1, properties: itemProperties }] })
-      })
-      .then(function(res) {
+
+      // Screenshot + upload (skip in noFloorsMode — no meaningful preview)
+      if (!noFloorsMode) {
+        var blob = await capturePreviewScreenshot();
+        var previewUrl = await uploadToCloudinary(blob);
+        if (previewUrl) itemProperties['_preview'] = previewUrl;
+      }
+
+      try {
+        var res = await fetch('/cart/add.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: [{ id: parseInt(variantId), quantity: 1, properties: itemProperties }] })
+        });
         if (!res.ok) throw new Error('Status ' + res.status);
-        return res.json();
-      })
-      .then(function() {
-        // Redirect to cart page
         window.location.href = '/cart';
-      })
-      .catch(function(err) {
+      } catch (err) {
         showToast('Kon niet toevoegen aan winkelwagen.');
         if (orderBtn) { orderBtn.disabled = false; orderBtn.textContent = originalText; }
-      });
+      }
     }
     // submitOrder is triggered via onclick="submitOrder()" in HTML
 
