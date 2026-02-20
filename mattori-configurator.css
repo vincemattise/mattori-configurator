@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v38.18/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v38.19/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -599,7 +599,7 @@
     /* Labels overlay — bottom zone of the frame */
     .mattori-configurator .unified-labels-overlay {
       position: absolute;
-      bottom: calc(18% + 29px);
+      bottom: calc(18% + 24px);
       left: calc(15.5% + 10px);
       right: calc(14% + 20px);
       height: calc(10% - 37px);
