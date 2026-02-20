@@ -2209,7 +2209,11 @@
         if (status) {
           var dot = document.createElement('div');
           dot.className = 'floor-thumb-status status-' + status;
-          dot.innerHTML = '<svg viewBox="0 0 12 12"><polyline points="2.5,6 5,8.5 9.5,3.5"/></svg>';
+          if (status === 'confirmed') {
+            dot.innerHTML = '<svg viewBox="0 0 12 12"><polyline points="2.5,6 5,8.5 9.5,3.5"/></svg>';
+          } else {
+            dot.innerHTML = '<svg viewBox="0 0 12 12"><line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/></svg>';
+          }
           t.appendChild(dot);
         }
       });
