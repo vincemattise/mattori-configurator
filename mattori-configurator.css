@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v43.10/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v44.0/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -1441,24 +1441,72 @@
 
     /* All statuses use default black — no color override */
 
-    /* ── Step 4: Floor Layout Viewer (list) ── */
+    /* ── Step 4: Include/exclude chips ── */
+    .mattori-configurator .floor-include-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 0.8rem;
+    }
+
+    .mattori-configurator .floor-include-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0.35rem 0.7rem;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #1a1a1a;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      background: #fff;
+    }
+
+    .mattori-configurator .floor-include-chip:hover {
+      border-color: #aaa;
+    }
+
+    .mattori-configurator .floor-include-chip.excluded {
+      opacity: 0.45;
+      border-style: dashed;
+    }
+
+    .mattori-configurator .floor-include-chip input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: #1a1a1a;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    /* ── Step 4: Layout controls bar ── */
+    .mattori-configurator .layout-controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .mattori-configurator .layout-align-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .mattori-configurator .layout-align-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      min-width: 14px;
+      text-align: center;
+    }
+
+    /* ── Step 4: Floor Layout Viewer ── */
     .mattori-configurator .floor-layout-viewer {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
-    }
-
-    .mattori-configurator .floor-layout-gap-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 0 0.2rem 0.5rem;
-    }
-
-    .mattori-configurator .floor-gap-label {
-      font-size: 0.72rem;
-      color: #999;
-      flex-shrink: 0;
     }
 
     .mattori-configurator .floor-gap-btn {

@@ -1406,9 +1406,10 @@
     // LAYOUT ENGINE — computes scale + position for preview
     // ============================================================
     var currentLayout = null; // stores computed layout for admin controls
-    var layoutAlign = 'bottom'; // 'center' or 'bottom' or 'top'
+    var layoutAlignX = 'center'; // 'left', 'center', or 'right'
+    var layoutAlignY = 'bottom'; // 'top', 'center', or 'bottom'
     var layoutGapFactor = 0.08; // gap as fraction of largest floor dimension (0..0.3)
-    var floorSettings = {}; // per-floor: { align: 'center'|'top'|'bottom', rotate: 0..315 }
+    var floorSettings = {}; // per-floor: { rotate: 0|90|180|270 }
 
     // ============================================================
     // GRID SYSTEM — snap-to-grid for physical production
@@ -1533,9 +1534,8 @@
         (function(wrap, posIdx) {
           if (!currentLayout || !currentLayout.positions[posIdx]) return;
           var floorIdx = currentLayout.positions[posIdx].index;
-          var pos = currentLayout.positions[posIdx];
 
-          // Rotation button (top-right)
+          // 90° rotation button (top-right)
           var rotBtn = document.createElement('button');
           rotBtn.type = 'button';
           rotBtn.className = 'grid-rotate-btn';
@@ -1543,34 +1543,9 @@
           rotBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
           rotBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
-            var current = getFloorRotate(floorIdx);
-            floorSettings[floorIdx].rotate = (current + 90) % 360;
-            refreshGridAfterChange();
+            rotateFloor90(floorIdx);
           });
           wrap.appendChild(rotBtn);
-
-          // Center button (top-left)
-          var centerBtn = document.createElement('button');
-          centerBtn.type = 'button';
-          centerBtn.className = 'grid-center-btn';
-          centerBtn.title = 'Centreer horizontaal';
-          centerBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="21"/><polyline points="6 9 12 3 18 9"/><polyline points="6 15 12 21 18 15"/></svg>';
-          centerBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var grid = getGridDimensions();
-            var centeredX = (grid.zoneW - pos.w) / 2;
-            wrap.style.left = centeredX + 'px';
-            // Update customPositions with special 'center' marker
-            if (customPositions) {
-              var cp = customPositions.find(function(c) { return c.index === floorIdx; });
-              if (cp) {
-                cp.gridX = 'midden';
-                cp.gridY = pxToGridCoord(parseFloat(wrap.style.top) || 0, grid.cellPx);
-              }
-            }
-          });
-          wrap.appendChild(centerBtn);
         })(wraps[wi], wi);
       }
     }
@@ -1612,12 +1587,29 @@
         var dy = point.clientY - startY;
 
         var grid = getGridDimensions();
-        var newLeft = snapToGrid(origLeft + dx, grid.cellPx);
-        var newTop = snapToGrid(origTop + dy, grid.cellPx);
-
-        // Clamp within zone
         var wrapW = parseFloat(wrap.style.width) || 0;
         var wrapH = parseFloat(wrap.style.height) || 0;
+        var rawLeft = origLeft + dx;
+        var rawTop = origTop + dy;
+
+        // Snap based on alignment anchor
+        var newLeft, newTop;
+        if (layoutAlignX === 'right') {
+          newLeft = snapToGrid(rawLeft + wrapW, grid.cellPx) - wrapW;
+        } else if (layoutAlignX === 'center') {
+          newLeft = snapToGrid(rawLeft + wrapW / 2, grid.cellPx) - wrapW / 2;
+        } else {
+          newLeft = snapToGrid(rawLeft, grid.cellPx);
+        }
+        if (layoutAlignY === 'bottom') {
+          newTop = snapToGrid(rawTop + wrapH, grid.cellPx) - wrapH;
+        } else if (layoutAlignY === 'center') {
+          newTop = snapToGrid(rawTop + wrapH / 2, grid.cellPx) - wrapH / 2;
+        } else {
+          newTop = snapToGrid(rawTop, grid.cellPx);
+        }
+
+        // Clamp within zone
         newLeft = Math.max(0, Math.min(grid.zoneW - wrapW, newLeft));
         newTop = Math.max(0, Math.min(grid.zoneH - wrapH, newTop));
 
@@ -1665,6 +1657,8 @@
     // --- Grid position cart properties ---
     function getGridPositionProperties() {
       var props = {};
+      // Always include alignment settings
+      props['Uitlijning'] = 'X=' + layoutAlignX + ', Y=' + layoutAlignY;
       if (!customPositions) return props;
       for (var i = 0; i < customPositions.length; i++) {
         var cp = customPositions[i];
@@ -1776,24 +1770,43 @@
         });
       }
 
-      // Per-floor alignment: shift canvas Y within the layout bounding box
-      // Find the total scaled height of the layout zone used by all positions
-      var minResultY = Infinity, maxResultY = -Infinity;
+      // ── Grid-native snap ──
+      // Snap all positions to the 5mm physical grid so there is never a
+      // visible shift when the user starts dragging.
+      var pxPerMm = zoneW / ZONE_PHYSICAL_W_MM;
+      var cellPx  = GRID_CELL_MM * pxPerMm;
+
       for (var ri = 0; ri < result.length; ri++) {
-        minResultY = Math.min(minResultY, result[ri].y);
-        maxResultY = Math.max(maxResultY, result[ri].y + result[ri].h);
-      }
-      var layoutH = maxResultY - minResultY;
-      for (var ri = 0; ri < result.length; ri++) {
-        var floorAlign = getFloorAlign(result[ri].index);
-        if (floorAlign === 'bottom') {
-          // Push to bottom of layout bounding box
-          result[ri].y = minResultY + layoutH - result[ri].h;
-        } else if (floorAlign === 'top') {
-          // Push to top of layout bounding box
-          result[ri].y = minResultY;
+        var r = result[ri];
+
+        // Determine the anchor point per axis based on alignment
+        // X-axis
+        if (layoutAlignX === 'left') {
+          r.x = snapToGrid(r.x, cellPx);
+        } else if (layoutAlignX === 'right') {
+          // Snap right edge, then derive x
+          var rightSnapped = snapToGrid(r.x + r.w, cellPx);
+          r.x = rightSnapped - r.w;
+        } else {
+          // center — snap the center point, then derive x
+          var cx = r.x + r.w / 2;
+          var cxSnapped = snapToGrid(cx, cellPx);
+          r.x = cxSnapped - r.w / 2;
         }
-        // 'center' keeps the position from the layout strategy
+
+        // Y-axis
+        if (layoutAlignY === 'top') {
+          r.y = snapToGrid(r.y, cellPx);
+        } else if (layoutAlignY === 'bottom') {
+          // Snap bottom edge, then derive y
+          var bottomSnapped = snapToGrid(r.y + r.h, cellPx);
+          r.y = bottomSnapped - r.h;
+        } else {
+          // center — snap the center point, then derive y
+          var cy = r.y + r.h / 2;
+          var cySnapped = snapToGrid(cy, cellPx);
+          r.y = cySnapped - r.h / 2;
+        }
       }
 
       return { scale: finalScale, positions: result, type: best.type };
@@ -1807,9 +1820,8 @@
       };
     }
 
-    function getFloorAlign(floorIndex) {
-      var fs = floorSettings[floorIndex];
-      return (fs && fs.align) ? fs.align : layoutAlign;
+    function getFloorAlignY(floorIndex) {
+      return layoutAlignY;
     }
 
     function getFloorRotate(floorIndex) {
@@ -1964,17 +1976,13 @@
       // Compute layout
       currentLayout = computeFloorLayout(zoneW, zoneH, includedIndices);
 
-      // Apply custom grid positions if user has dragged floors
-      if (customPositions && gridEditMode) {
+      // Apply custom positions if user has dragged floors
+      if (customPositions) {
         var _grid = getGridDimensions();
         for (var ci = 0; ci < currentLayout.positions.length; ci++) {
           var _cp = customPositions.find(function(c) { return c.index === currentLayout.positions[ci].index; });
           if (_cp) {
-            if (_cp.gridX === 'midden') {
-              currentLayout.positions[ci].x = (_grid.zoneW - currentLayout.positions[ci].w) / 2;
-            } else {
-              currentLayout.positions[ci].x = _cp.gridX * _grid.cellPx;
-            }
+            currentLayout.positions[ci].x = _cp.gridX * _grid.cellPx;
             currentLayout.positions[ci].y = _cp.gridY * _grid.cellPx;
           }
         }
@@ -2390,13 +2398,13 @@
           renderFloorReview();
         } else if (n === 4) {
           renderLayoutView();
-          // Re-render unified preview thumbnails so they show during layout step
           renderPreviewThumbnails();
           updateFloorLabels();
-          // Restore grid edit mode if it was active
-          if (gridEditMode) {
-            setTimeout(function() { enableGridDrag(); }, 50);
-          }
+          // Always show grid overlay in step 4
+          setTimeout(function() {
+            renderGridOverlay();
+            if (gridEditMode) enableGridDrag();
+          }, 50);
         } else if (n === 5) {
           // Re-render with perspective camera (final look with depth)
           renderPreviewThumbnails();
@@ -2714,7 +2722,7 @@
     function toggleLayoutAlign() {
       ensureDomRefs();
       var cb = document.getElementById('adminAlignBottom');
-      layoutAlign = (cb && cb.checked) ? 'bottom' : 'center';
+      layoutAlignY = (cb && cb.checked) ? 'bottom' : 'center';
       // Re-render preview with new alignment
       renderPreviewThumbnails();
       updateFloorLabels();
@@ -2749,57 +2757,23 @@
       });
     }
 
-    function setGlobalAlign(align) {
-      layoutAlign = align;
-      // Clear any per-floor overrides
-      for (var key in floorSettings) {
-        if (floorSettings[key]) delete floorSettings[key].align;
-      }
-      if (gridEditMode) { customPositions = null; }
-      updatePreviewWithLoading(function() {
-        renderPreviewThumbnails();
-        updateFloorLabels();
-        if (gridEditMode) enableGridDrag();
-      });
-    }
-
-    function rotateFloor(floorIndex) {
+    function rotateFloor90(floorIndex) {
       if (!floorSettings[floorIndex]) floorSettings[floorIndex] = {};
       var current = getFloorRotate(floorIndex);
-      floorSettings[floorIndex].rotate = current === 0 ? 180 : 0;
-      if (gridEditMode) { customPositions = null; }
+      floorSettings[floorIndex].rotate = (current + 90) % 360;
+      customPositions = null;
       updatePreviewWithLoading(function() {
         renderPreviewThumbnails();
+        renderGridOverlayIfStep4();
         updateFloorLabels();
         if (gridEditMode) enableGridDrag();
       });
     }
 
     // ============================================================
-    // STEP 4: Layout View (orthographic top-down)
+    // STEP 4: Layout View (grid-native)
     // ============================================================
-    // Track custom floor order (set by drag & drop in layout step)
     var floorOrder = null; // null = default order
-
-    function moveFloorInOrder(fromIdx, toIdx) {
-      if (!floorOrder || toIdx < 0 || toIdx >= floorOrder.length) return;
-      var item = floorOrder.splice(fromIdx, 1)[0];
-      floorOrder.splice(toIdx, 0, item);
-      if (gridEditMode) { customPositions = null; }
-      updatePreviewWithLoading(function() {
-        renderPreviewThumbnails();
-        updateFloorLabels();
-        if (gridEditMode) enableGridDrag();
-        // Highlight moved card briefly after renderLayoutView rebuilds cards
-        setTimeout(function() {
-          var cards = floorLayoutViewer.querySelectorAll('.floor-layout-card');
-          if (cards[toIdx]) {
-            cards[toIdx].classList.add('just-moved');
-            setTimeout(function() { cards[toIdx].classList.remove('just-moved'); }, 600);
-          }
-        }, 20);
-      });
-    }
 
     function renderLayoutView() {
       // Cleanup old layout viewers
@@ -2809,7 +2783,111 @@
       layoutViewers = [];
       floorLayoutViewer.innerHTML = '';
 
-      // Show/hide grid toggle button (only for 2+ included floors)
+      // ── Include/exclude checkboxes bar ──
+      var includeBar = document.getElementById('floorIncludeBar');
+      if (includeBar) {
+        includeBar.innerHTML = '';
+        for (var fi = 0; fi < floors.length; fi++) {
+          (function(floorIdx) {
+            var isExcluded = excludedFloors.has(floorIdx);
+            var chip = document.createElement('label');
+            chip.className = 'floor-include-chip' + (isExcluded ? ' excluded' : '');
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = !isExcluded;
+            cb.addEventListener('change', function() {
+              toggleFloorExclusion(floorIdx);
+              customPositions = null; // reset drag positions
+              renderLayoutView();
+              renderPreviewThumbnails();
+              renderGridOverlayIfStep4();
+              updateFloorLabels();
+              buildThumbstrip();
+            });
+            var label = document.createElement('span');
+            label.textContent = floors[floorIdx].name || ('Verdieping ' + (floorIdx + 1));
+            chip.appendChild(cb);
+            chip.appendChild(label);
+            includeBar.appendChild(chip);
+          })(fi);
+        }
+      }
+
+      // ── Alignment buttons (X and Y) ──
+      var alignGroupX = document.getElementById('alignGroupX');
+      var alignGroupY = document.getElementById('alignGroupY');
+
+      if (alignGroupX) {
+        alignGroupX.innerHTML = '';
+        var xValues = ['left', 'center', 'right'];
+        var xIcons = {
+          left: '<svg width="16" height="16" viewBox="0 0 16 16"><line x1="1.5" y1="1" x2="1.5" y2="15" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="2" width="10" height="5" rx="1" fill="currentColor" opacity="0.8"/><rect x="3" y="9" width="7" height="5" rx="1" fill="currentColor" opacity="0.4"/></svg>',
+          center: '<svg width="16" height="16" viewBox="0 0 16 16"><line x1="8" y1="1" x2="8" y2="15" stroke="currentColor" stroke-width="1" stroke-dasharray="2 1.5"/><rect x="2" y="2" width="12" height="5" rx="1" fill="currentColor" opacity="0.8"/><rect x="3.5" y="9" width="9" height="5" rx="1" fill="currentColor" opacity="0.4"/></svg>',
+          right: '<svg width="16" height="16" viewBox="0 0 16 16"><line x1="14.5" y1="1" x2="14.5" y2="15" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="2" width="10" height="5" rx="1" fill="currentColor" opacity="0.8"/><rect x="6" y="9" width="7" height="5" rx="1" fill="currentColor" opacity="0.4"/></svg>'
+        };
+        var xTitles = { left: 'Links uitlijnen', center: 'Midden uitlijnen', right: 'Rechts uitlijnen' };
+        for (var xi = 0; xi < xValues.length; xi++) {
+          (function(val) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'floor-align-btn' + (val === layoutAlignX ? ' active' : '');
+            btn.innerHTML = xIcons[val];
+            btn.title = xTitles[val];
+            btn.dataset.align = val;
+            btn.addEventListener('click', function() {
+              layoutAlignX = val;
+              customPositions = null;
+              var siblings = alignGroupX.querySelectorAll('.floor-align-btn');
+              for (var s = 0; s < siblings.length; s++) siblings[s].classList.remove('active');
+              this.classList.add('active');
+              updatePreviewWithLoading(function() {
+                renderPreviewThumbnails();
+                renderGridOverlayIfStep4();
+                updateFloorLabels();
+                if (gridEditMode) enableGridDrag();
+              });
+            });
+            alignGroupX.appendChild(btn);
+          })(xValues[xi]);
+        }
+      }
+
+      if (alignGroupY) {
+        alignGroupY.innerHTML = '';
+        var yValues = ['top', 'center', 'bottom'];
+        var yIcons = {
+          top: '<svg width="16" height="16" viewBox="0 0 16 16"><line x1="1" y1="1.5" x2="15" y2="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="3" width="5" height="10" rx="1" fill="currentColor" opacity="0.8"/><rect x="9" y="3" width="5" height="7" rx="1" fill="currentColor" opacity="0.4"/></svg>',
+          center: '<svg width="16" height="16" viewBox="0 0 16 16"><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1" stroke-dasharray="2 1.5"/><rect x="2" y="1.5" width="5" height="13" rx="1" fill="currentColor" opacity="0.8"/><rect x="9" y="3.5" width="5" height="9" rx="1" fill="currentColor" opacity="0.4"/></svg>',
+          bottom: '<svg width="16" height="16" viewBox="0 0 16 16"><line x1="1" y1="14.5" x2="15" y2="14.5" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="3" width="5" height="10" rx="1" fill="currentColor" opacity="0.8"/><rect x="9" y="6" width="5" height="7" rx="1" fill="currentColor" opacity="0.4"/></svg>'
+        };
+        var yTitles = { top: 'Bovenkant uitlijnen', center: 'Midden uitlijnen', bottom: 'Onderkant uitlijnen' };
+        for (var yi = 0; yi < yValues.length; yi++) {
+          (function(val) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'floor-align-btn' + (val === layoutAlignY ? ' active' : '');
+            btn.innerHTML = yIcons[val];
+            btn.title = yTitles[val];
+            btn.dataset.align = val;
+            btn.addEventListener('click', function() {
+              layoutAlignY = val;
+              customPositions = null;
+              var siblings = alignGroupY.querySelectorAll('.floor-align-btn');
+              for (var s = 0; s < siblings.length; s++) siblings[s].classList.remove('active');
+              this.classList.add('active');
+              updatePreviewWithLoading(function() {
+                renderPreviewThumbnails();
+                renderGridOverlayIfStep4();
+                updateFloorLabels();
+                if (gridEditMode) enableGridDrag();
+              });
+            });
+            alignGroupY.appendChild(btn);
+          })(yValues[yi]);
+        }
+      }
+
+      // ── Grid toggle button ──
       var includedCount = 0;
       for (var gi = 0; gi < floors.length; gi++) {
         if (!excludedFloors.has(gi)) includedCount++;
@@ -2827,227 +2905,24 @@
             ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Terug naar automatisch'
             : '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Layout aanpassen';
           if (gridEditMode) {
-            layoutAlign = 'bottom';
-            // Update alignment buttons in UI
-            var alignBtns = floorLayoutViewer.querySelectorAll('.floor-align-btn');
-            alignBtns.forEach(function(b) {
-              b.classList.toggle('active', b.dataset.align === 'bottom');
-            });
             enableGridDrag();
           } else {
             disableGridDrag();
             customPositions = null;
             renderPreviewThumbnails();
+            renderGridOverlayIfStep4();
           }
         };
       }
 
-      // Global alignment control
-      var alignRow = document.createElement('div');
-      alignRow.className = 'floor-layout-gap-row';
-      var alignLabel = document.createElement('span');
-      alignLabel.className = 'floor-gap-label';
-      alignLabel.textContent = 'Uitlijning';
+      // Show grid overlay in step 4 (always visible, subtle)
+      renderGridOverlayIfStep4();
+    }
 
-      var alignGroup = document.createElement('div');
-      alignGroup.className = 'floor-align-group';
-
-      var alignValues = ['bottom', 'center', 'top'];
-      var alignIcons = {
-        top: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="14" rx="1.2" fill="currentColor" opacity="0.9"/><rect x="9" y="1" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.45"/></svg>',
-        center: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="14" rx="1.2" fill="currentColor" opacity="0.9"/><rect x="9" y="3.5" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.45"/></svg>',
-        bottom: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="14" rx="1.2" fill="currentColor" opacity="0.9"/><rect x="9" y="6" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.45"/></svg>'
-      };
-      var alignTitles = { top: 'Bovenkant uitlijnen', center: 'Midden uitlijnen', bottom: 'Onderkant uitlijnen' };
-
-      for (var ai = 0; ai < alignValues.length; ai++) {
-        var alignBtn = document.createElement('button');
-        alignBtn.type = 'button';
-        alignBtn.className = 'floor-align-btn' + (alignValues[ai] === layoutAlign ? ' active' : '');
-        alignBtn.innerHTML = alignIcons[alignValues[ai]];
-        alignBtn.title = alignTitles[alignValues[ai]];
-
-        (function(val) {
-          alignBtn.addEventListener('click', function() {
-            setGlobalAlign(val);
-            var siblings = this.parentElement.querySelectorAll('.floor-align-btn');
-            for (var s = 0; s < siblings.length; s++) siblings[s].classList.remove('active');
-            this.classList.add('active');
-          });
-        })(alignValues[ai]);
-
-        alignGroup.appendChild(alignBtn);
-      }
-
-      alignRow.appendChild(alignLabel);
-      alignRow.appendChild(alignGroup);
-      floorLayoutViewer.appendChild(alignRow);
-
-      // Gap control with +/- buttons
-      var gapRow = document.createElement('div');
-      gapRow.className = 'floor-layout-gap-row';
-      var gapLabel = document.createElement('span');
-      gapLabel.className = 'floor-gap-label';
-      gapLabel.textContent = 'Tussenruimte';
-
-      var gapMinus = document.createElement('button');
-      gapMinus.type = 'button';
-      gapMinus.className = 'floor-gap-btn';
-      gapMinus.textContent = '−';
-      gapMinus.addEventListener('click', function() {
-        setLayoutGap(Math.round(Math.max(0, layoutGapFactor * 100 - 2)) / 100);
-      });
-
-      var gapValue = document.createElement('span');
-      gapValue.className = 'floor-gap-value';
-      gapValue.textContent = Math.round(layoutGapFactor * 100) + '%';
-
-      var gapPlus = document.createElement('button');
-      gapPlus.type = 'button';
-      gapPlus.className = 'floor-gap-btn';
-      gapPlus.textContent = '+';
-      gapPlus.addEventListener('click', function() {
-        setLayoutGap(Math.round(Math.min(25, layoutGapFactor * 100 + 2)) / 100);
-      });
-
-      gapRow.appendChild(gapLabel);
-      gapRow.appendChild(gapMinus);
-      gapRow.appendChild(gapValue);
-      gapRow.appendChild(gapPlus);
-      floorLayoutViewer.appendChild(gapRow);
-
-      // Build ordered list: included first (in custom order), then excluded
-      var includedIndices = [];
-      var excludedIndices = [];
-      for (var i = 0; i < floors.length; i++) {
-        if (excludedFloors.has(i)) {
-          excludedIndices.push(i);
-        } else {
-          includedIndices.push(i);
-        }
-      }
-
-      // Use custom order if set for included floors
-      if (floorOrder && floorOrder.length === includedIndices.length) {
-        includedIndices = floorOrder.slice();
-      } else {
-        floorOrder = includedIndices.slice();
-      }
-
-      // Render all floors: included first, then excluded
-      var allIndices = includedIndices.concat(excludedIndices);
-      var includedCount = 0;
-
-      for (var idx = 0; idx < allIndices.length; idx++) {
-        var floorIdx = allIndices[idx];
-        var isExcluded = excludedFloors.has(floorIdx);
-        var card = document.createElement('div');
-        card.className = 'floor-layout-card' + (isExcluded ? ' excluded' : '');
-
-        // Number (only for included)
-        var numEl = document.createElement('div');
-        numEl.className = 'floor-layout-number';
-        if (!isExcluded) {
-          includedCount++;
-          numEl.textContent = includedCount;
-        } else {
-          numEl.textContent = '–';
-        }
-
-        // Canvas
-        var canvasWrap = document.createElement('div');
-        canvasWrap.className = 'floor-layout-canvas-wrap';
-
-        // Floor name label
-        var nameEl = document.createElement('div');
-        nameEl.className = 'floor-layout-name';
-        nameEl.textContent = floors[floorIdx].name || 'Verdieping ' + (idx + 1);
-
-        // Include/exclude checkbox
-        var includeWrap = document.createElement('div');
-        includeWrap.className = 'floor-layout-include';
-        var includeCb = document.createElement('input');
-        includeCb.type = 'checkbox';
-        includeCb.checked = !isExcluded;
-        var includeLabel = document.createElement('label');
-        includeLabel.textContent = 'Meenemen';
-
-        // Closure for checkbox handler
-        (function(fi) {
-          includeCb.addEventListener('change', function() {
-            // Show loading in layout viewer
-            floorLayoutViewer.innerHTML = '';
-            var loader = document.createElement('div');
-            loader.className = 'wizard-step-loading';
-            loader.innerHTML = '<div class="step-spinner"></div>';
-            floorLayoutViewer.appendChild(loader);
-            setTimeout(function() {
-              toggleFloorExclusion(fi);
-              renderLayoutView();
-              buildThumbstrip();
-            }, 80);
-          });
-        })(floorIdx);
-
-        includeWrap.appendChild(includeCb);
-        includeWrap.appendChild(includeLabel);
-
-        // Per-floor controls (rotation only) — only for included floors
-        var floorControls = document.createElement('div');
-        floorControls.className = 'floor-layout-controls';
-
-        if (!isExcluded) {
-          // 180° flip button
-          var rotBtn = document.createElement('button');
-          rotBtn.type = 'button';
-          rotBtn.className = 'floor-rotate-btn';
-          rotBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16"><path d="M3 4L8 1L13 4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12L8 15L3 12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="1" x2="8" y2="15" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 1.5"/></svg>';
-          rotBtn.title = '180° draaien';
-
-          (function(fi) {
-            rotBtn.addEventListener('click', function() {
-              rotateFloor(fi);
-            });
-          })(floorIdx);
-
-          floorControls.appendChild(rotBtn);
-        }
-
-        // Up/down arrows (only for included)
-        var arrows = document.createElement('div');
-        arrows.className = 'floor-layout-arrows';
-
-        if (!isExcluded) {
-          var orderIdx = includedIndices.indexOf(floorIdx);
-          var btnUp = document.createElement('button');
-          btnUp.type = 'button';
-          btnUp.innerHTML = '&#9650;';
-          btnUp.disabled = orderIdx === 0;
-
-          var btnDown = document.createElement('button');
-          btnDown.type = 'button';
-          btnDown.innerHTML = '&#9660;';
-          btnDown.disabled = orderIdx === includedIndices.length - 1;
-
-          (function(currentIdx) {
-            btnUp.addEventListener('click', function() { moveFloorInOrder(currentIdx, currentIdx - 1); });
-            btnDown.addEventListener('click', function() { moveFloorInOrder(currentIdx, currentIdx + 1); });
-          })(orderIdx);
-
-          arrows.appendChild(btnUp);
-          arrows.appendChild(btnDown);
-        }
-
-        card.appendChild(numEl);
-        card.appendChild(canvasWrap);
-        card.appendChild(nameEl);
-        card.appendChild(includeWrap);
-        card.appendChild(floorControls);
-        card.appendChild(arrows);
-        floorLayoutViewer.appendChild(card);
-
-        var viewer = renderOrthographicViewer(floorIdx, canvasWrap);
-        if (viewer) layoutViewers.push(viewer);
+    // Helper: show grid overlay when in step 4
+    function renderGridOverlayIfStep4() {
+      if (currentWizardStep === 4) {
+        renderGridOverlay();
       }
     }
 
