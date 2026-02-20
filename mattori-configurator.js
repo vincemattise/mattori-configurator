@@ -506,7 +506,8 @@
       { id: 'huisje2', label: 'Huisje 2', url: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_2.png?v=1771599811' },
       { id: 'huisje3', label: 'Huisje 3', url: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_3.png?v=1771599811' },
       { id: 'huisje4', label: 'Huisje 4', url: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_4.png?v=1771600168' },
-      { id: 'huisje5', label: 'Huisje 5', url: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_5.png?v=1771600772' }
+      { id: 'huisje5', label: 'Huisje 5', url: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_5.png?v=1771600772' },
+      { id: 'huisje6', label: 'Huisje 6', url: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_6.png?v=1771601081' }
     ];
     var selectedHouseIcon = 'huisje1'; // default
 
