@@ -2117,6 +2117,8 @@
         // Last step: hide next, show order
         btnWizardNext.style.display = 'none';
       } else if (currentWizardStep === 1) {
+        // Restore Funda load button when returning to step 1
+        if (btnFunda) { btnFunda.style.display = ''; btnFunda.disabled = false; }
         // Step 1: show next if data is loaded, or noFloorsMode button
         if (noFloorsMode) {
           btnWizardNext.textContent = 'Bestellen op goed vertrouwen \u2192';
@@ -2707,44 +2709,53 @@
       }
       container.innerHTML = '';
 
-      // Toggle switch
-      var toggle = document.createElement('div');
-      toggle.className = 'label-mode-toggle';
+      // Only show toggle when 2-3 floors; force single for 1 or >3
+      var includedCount = floorLabels.length;
+      var showToggle = includedCount >= 2 && includedCount <= 3;
+      if (!showToggle) {
+        labelMode = 'single';
+      }
 
-      var labelSingle = document.createElement('span');
-      labelSingle.className = 'label-mode-label' + (labelMode === 'single' ? ' active' : '');
-      labelSingle.textContent = '1 label';
+      if (showToggle) {
+        // Toggle switch
+        var toggle = document.createElement('div');
+        toggle.className = 'label-mode-toggle';
 
-      var switchWrap = document.createElement('label');
-      switchWrap.className = 'label-mode-switch';
-      var switchInput = document.createElement('input');
-      switchInput.type = 'checkbox';
-      switchInput.checked = labelMode === 'per-floor';
-      var slider = document.createElement('span');
-      slider.className = 'switch-slider';
-      switchWrap.appendChild(switchInput);
-      switchWrap.appendChild(slider);
+        var labelSingle = document.createElement('span');
+        labelSingle.className = 'label-mode-label' + (labelMode === 'single' ? ' active' : '');
+        labelSingle.textContent = '1 label';
 
-      var labelMulti = document.createElement('span');
-      labelMulti.className = 'label-mode-label' + (labelMode === 'per-floor' ? ' active' : '');
-      labelMulti.textContent = 'Per plattegrond';
+        var switchWrap = document.createElement('label');
+        switchWrap.className = 'label-mode-switch';
+        var switchInput = document.createElement('input');
+        switchInput.type = 'checkbox';
+        switchInput.checked = labelMode === 'per-floor';
+        var slider = document.createElement('span');
+        slider.className = 'switch-slider';
+        switchWrap.appendChild(switchInput);
+        switchWrap.appendChild(slider);
 
-      switchInput.addEventListener('change', function() {
-        setLabelMode(this.checked ? 'per-floor' : 'single');
-      });
-      labelSingle.addEventListener('click', function() {
-        switchInput.checked = false;
-        setLabelMode('single');
-      });
-      labelMulti.addEventListener('click', function() {
-        switchInput.checked = true;
-        setLabelMode('per-floor');
-      });
+        var labelMulti = document.createElement('span');
+        labelMulti.className = 'label-mode-label' + (labelMode === 'per-floor' ? ' active' : '');
+        labelMulti.textContent = 'Per plattegrond';
 
-      toggle.appendChild(labelSingle);
-      toggle.appendChild(switchWrap);
-      toggle.appendChild(labelMulti);
-      container.appendChild(toggle);
+        switchInput.addEventListener('change', function() {
+          setLabelMode(this.checked ? 'per-floor' : 'single');
+        });
+        labelSingle.addEventListener('click', function() {
+          switchInput.checked = false;
+          setLabelMode('single');
+        });
+        labelMulti.addEventListener('click', function() {
+          switchInput.checked = true;
+          setLabelMode('per-floor');
+        });
+
+        toggle.appendChild(labelSingle);
+        toggle.appendChild(switchWrap);
+        toggle.appendChild(labelMulti);
+        container.appendChild(toggle);
+      }
 
       // Fields container
       var fieldsDiv = document.createElement('div');
@@ -3688,6 +3699,9 @@
         setFundaStatus('success', '<strong>✓ Funda link correct</strong><strong>✓ ' + data.floors.length + ' interactieve plattegrond' + (data.floors.length === 1 ? '' : 'en') + ' gevonden</strong><span class="funda-address-line">📍 ' + addrStr + '</span>');
 
         processFloors(data);
+
+        // Hide load button after successful load
+        btnFunda.style.display = 'none';
       } catch (err) {
         if (err.message && (err.message.includes('Load failed') || err.message.includes('Failed to fetch'))) {
           setFundaStatus('error', '<strong>Verbinding mislukt</strong><span>Probeer het zo weer opnieuw.</span>');
@@ -3697,7 +3711,7 @@
         btnWizardNext.style.display = 'none';
       } finally {
         hideLoading();
-        btnFunda.disabled = false;
+        if (btnFunda.style.display !== 'none') btnFunda.disabled = false;
       }
     }
 
