@@ -3586,7 +3586,12 @@
       const url = getFundaUrl();
       clearError();
       if (!url) { setError('Voer een Funda URL in.'); return; }
-      if (!url.includes('funda.nl')) { setError('Dit is geen Funda URL.'); return; }
+      if (!url.includes('funda.nl')) {
+        setFundaStatus('error', '<strong>Geen Funda link herkend</strong><span>Dit lijkt geen Funda-link te zijn. Controleer de link of neem contact op.</span>');
+        showContactEmail(url);
+        btnWizardNext.style.display = 'none';
+        return;
+      }
 
       setFundaStatus('loading', 'Plattegrond ophalen...');
       showLoading();
