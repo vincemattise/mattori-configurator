@@ -3750,25 +3750,20 @@
       if (noFloorsMode) itemProperties['Opmerking'] = 'Geen interactieve plattegronden — handmatig opbouwen';
 
       // Per-floor review status as individual order properties
-      var majorFloorNames = [];
       floors.forEach(function(floor, i) {
         var status = floorReviewStatus[i];
         if (!status) return;
         var floorName = floor.name || ('Verdieping ' + (i + 1));
+        var key = 'Plattegrond ' + floorName;
         if (status === 'confirmed') {
-          itemProperties[floorName] = 'Klopt';
+          itemProperties[key] = '\u2705 Klopt';
         } else if (status === 'issue') {
           var note = floorIssues[i] || '';
-          itemProperties[floorName] = 'Klopt niet' + (note ? ': "' + note + '"' : '');
+          itemProperties[key] = '\u26A0\uFE0F Klopt niet' + (note ? ': \u201C' + note + '\u201D' : '');
         } else if (status === 'major') {
-          itemProperties[floorName] = 'Klopt helemaal niet';
-          majorFloorNames.push(floorName);
+          itemProperties[key] = '\u274C Klopt helemaal niet';
         }
       });
-      // Hidden admin flag for orders needing manual review (underscore hides from cart)
-      if (majorFloorNames.length > 0) {
-        itemProperties['_Handmatig controleren'] = majorFloorNames.join(', ');
-      }
 
       // Save preview screenshot to localStorage keyed by Funda link (skip in noFloorsMode)
       if (!noFloorsMode && fundaLink) {
