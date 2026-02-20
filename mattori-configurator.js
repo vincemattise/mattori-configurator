@@ -1942,6 +1942,11 @@
           }
         }
 
+        // Toggle dashed border on the active editing zone
+        if (unifiedAddressOverlay) unifiedAddressOverlay.classList.toggle('zone-editing', n === 2);
+        if (unifiedFloorsOverlay) unifiedFloorsOverlay.classList.toggle('zone-editing', n === 4);
+        if (unifiedLabelsOverlay) unifiedLabelsOverlay.classList.toggle('zone-editing', n === 5);
+
         // Step 3: show floor review viewer in left column, hide unified preview
         if (n === 3) {
           if (unifiedFramePreview) unifiedFramePreview.style.display = 'none';

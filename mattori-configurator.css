@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v38.12/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v38.13/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -486,15 +486,14 @@
     /* Address overlay — top zone of the frame */
     .mattori-configurator .unified-address-overlay {
       position: absolute;
-      top: calc(16% + 3px);
-      left: 15.5%;
-      right: 14%;
-      height: 10%;
+      top: calc(16% + 18px);
+      left: calc(15.5% + 10px);
+      right: calc(14% + 20px);
+      height: calc(10% - 30px);
       display: flex;
       align-items: center;
       justify-content: center;
       pointer-events: none;
-      border: 1px dashed rgba(255, 0, 0, 0.25);
     }
 
     .mattori-configurator .unified-address-inner {
@@ -539,7 +538,11 @@
       align-items: center;
       justify-content: center;
       pointer-events: none;
-      border: 1px dashed rgba(255, 0, 0, 0.25); /* DEBUG — verwijder later */
+    }
+
+    /* Dashed border shown on the active editing zone */
+    .mattori-configurator .zone-editing {
+      border: 1px dashed rgba(255, 0, 0, 0.25);
     }
 
     .mattori-configurator .floors-loading {
@@ -596,15 +599,14 @@
     /* Labels overlay — bottom zone of the frame */
     .mattori-configurator .unified-labels-overlay {
       position: absolute;
-      bottom: calc(18% + 5px);
-      left: 15.5%;
-      right: 14%;
-      height: 10%;
+      bottom: calc(18% - 25px);
+      left: calc(15.5% + 10px);
+      right: calc(14% + 20px);
+      height: calc(10% - 5px);
       display: flex;
       align-items: center;
       justify-content: space-evenly;
       pointer-events: none;
-      border: 1px dashed rgba(255, 0, 0, 0.25);
     }
 
     .mattori-configurator .label-item {
