@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v38.27/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v38.28/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -99,7 +99,7 @@
 
     .mattori-configurator .dropzone {
       border: 1.5px dashed #ccc;
-      border-radius: 16px;
+      border-radius: 14px;
       padding: 1.2rem 1.5rem;
       cursor: pointer;
       transition: all 0.3s ease;
