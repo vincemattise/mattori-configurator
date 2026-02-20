@@ -3562,7 +3562,7 @@
       if (existing) {
         // Update mailto and show
         var subject = encodeURIComponent('Frame³ bestelling — hulp nodig');
-        var body = encodeURIComponent('Hoi,\n\nIk wil graag een Frame³ bestellen maar het lukt niet via de configurator.\n\nFunda link: ' + (fundaUrl || '(niet ingevuld)') + '\n\nKunnen jullie me helpen?\n\nAlvast bedankt!');
+        var body = encodeURIComponent('Hoi,\n\nIk wil graag een Frame³ bestellen maar het lukt niet via de website.\n\nFunda link: ' + (fundaUrl || '(niet ingevuld)') + '\n\nKunnen jullie me helpen?\n\nAlvast bedankt!');
         existing.href = 'mailto:vince@mattori.nl?subject=' + subject + '&body=' + body;
         existing.style.display = '';
         return;
@@ -3571,7 +3571,7 @@
       var statusBox = document.getElementById('fundaStatus');
       if (!statusBox) return;
       var subject = encodeURIComponent('Frame³ bestelling — hulp nodig');
-      var body = encodeURIComponent('Hoi,\n\nIk wil graag een Frame³ bestellen maar het lukt niet via de configurator.\n\nFunda link: ' + (fundaUrl || '(niet ingevuld)') + '\n\nKunnen jullie me helpen?\n\nAlvast bedankt!');
+      var body = encodeURIComponent('Hoi,\n\nIk wil graag een Frame³ bestellen maar het lukt niet via de website.\n\nFunda link: ' + (fundaUrl || '(niet ingevuld)') + '\n\nKunnen jullie me helpen?\n\nAlvast bedankt!');
       var btn = document.createElement('a');
       btn.id = 'contactEmailBtn';
       btn.className = 'btn-contact-email';
