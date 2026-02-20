@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v40.5/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v40.6/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -1240,13 +1240,7 @@
       fill: none;
     }
 
-    .mattori-configurator .floor-thumb-status.status-issue {
-      background: #f39c12;
-    }
-
-    .mattori-configurator .floor-thumb-status.status-major {
-      background: #e74c3c;
-    }
+    /* All statuses use default black — no color override */
 
     /* ── Step 4: Floor Layout Viewer (list) ── */
     .mattori-configurator .floor-layout-viewer {
