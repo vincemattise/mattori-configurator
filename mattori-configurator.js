@@ -3621,13 +3621,30 @@
     const TEST_LINKS = {
       1: 'https://www.funda.nl/detail/koop/haarlem/appartement-prinsen-bolwerk-72/43226270/',
       2: 'https://www.funda.nl/detail/koop/amsterdam/appartement-hoofdweg-275-1/89691599/',
-      3: 'https://www.funda.nl/detail/koop/verkocht/deventer/huis-veenweg-79/43255889/'
+      3: 'https://www.funda.nl/detail/koop/verkocht/deventer/huis-veenweg-79/43255889/',
+      4: 'https://www.funda.nl/detail/koop/ursem-gem-koggenland/huis-tuinderij-43/89607983/',
+      5: 'https://www.funda.nl/detail/koop/oss/huis-baronie-21/89607977/',
+      6: 'https://www.funda.nl/detail/koop/heerlen/appartement-van-der-maesenstraat-24/43243330/',
+      7: 'https://www.funda.nl/detail/koop/rumpt/huis-raadsteeg-4/89607972/',
+      8: 'https://www.funda.nl/detail/koop/amsterdam/appartement-piet-gijzenbrugstraat-29-1/43243333/',
+      9: 'https://www.funda.nl/detail/koop/oudorp/huis-esdoornlaan-56/43243326/',
+      10: 'https://www.funda.nl/detail/koop/sint-michielsgestel/huis-de-mulder-3/43243308/',
+      11: 'https://www.funda.nl/detail/koop/rotterdam/appartement-oleanderstraat-135/89607941/',
+      12: 'https://www.funda.nl/detail/koop/purmerend/huis-olympiastraat-28/43243398/',
+      13: 'https://www.funda.nl/detail/koop/apeldoorn/huis-tienwoningenweg-39/43243394/',
+      14: 'https://www.funda.nl/detail/koop/beinsdorp/huis-venneperweg-576/43243387/',
+      15: 'https://www.funda.nl/detail/koop/nijmegen/huis-korhoenstraat-44/89607921/',
+      16: 'https://www.funda.nl/detail/koop/oostzaan/huis-dokter-rutgers-van-der-loeffstraat-15/43243370/',
+      17: 'https://www.funda.nl/detail/koop/ederveen/huis-hoofdweg-116/43243379/',
+      18: 'https://www.funda.nl/detail/koop/berlicum/huis-de-misse-1/43243248/',
+      19: 'https://www.funda.nl/detail/koop/breda/huis-oede-van-hoornestraat-12/43243210/',
+      20: 'https://www.funda.nl/detail/koop/breda/appartement-haagdijk-141/43132850/'
     };
     function pasteTestLink(n) {
       var input = document.getElementById('fundaUrl');
       if (input) input.value = TEST_LINKS[n] || TEST_LINKS[1];
     }
-    for (const n of [1, 2, 3]) {
+    for (const n of Array.from({length: 20}, (_, i) => i + 1)) {
       const btn = document.getElementById('btnTest' + n);
       if (btn) btn.addEventListener('click', () => pasteTestLink(n));
     }
