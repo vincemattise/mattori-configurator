@@ -1085,9 +1085,7 @@
         dimsEl.style.display = '';
       }
 
-      // Switch to unified preview
-      if (productHeroImage) productHeroImage.style.display = 'none';
-      unifiedFramePreview.style.display = '';
+      // Don't switch to unified preview yet — stays on hero image until step 2
 
       // Update address in preview
       updateFrameAddress();
@@ -1947,11 +1945,19 @@
         if (unifiedFloorsOverlay) unifiedFloorsOverlay.classList.toggle('zone-editing', n === 4);
         if (unifiedLabelsOverlay) unifiedLabelsOverlay.classList.toggle('zone-editing', n === 5);
 
-        // Step 3: show floor review viewer in left column, hide unified preview
-        if (n === 3) {
+        // Switch between hero image (step 1) and unified frame preview (step 2+)
+        if (n === 1) {
+          if (productHeroImage) productHeroImage.style.display = '';
+          if (unifiedFramePreview) unifiedFramePreview.style.display = 'none';
+          if (floorReviewViewerEl) floorReviewViewerEl.style.display = 'none';
+        } else if (n === 3) {
+          // Step 3: floor review viewer in left column
+          if (productHeroImage) productHeroImage.style.display = 'none';
           if (unifiedFramePreview) unifiedFramePreview.style.display = 'none';
           if (floorReviewViewerEl) floorReviewViewerEl.style.display = '';
         } else {
+          // Steps 2, 4, 5: unified frame preview
+          if (productHeroImage) productHeroImage.style.display = 'none';
           if (floorReviewViewerEl) floorReviewViewerEl.style.display = 'none';
           if (floors.length > 0 && unifiedFramePreview) unifiedFramePreview.style.display = '';
         }
