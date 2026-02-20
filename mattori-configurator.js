@@ -230,10 +230,6 @@
     // STATE
     // ============================================================
 
-    // Cloudinary unsigned upload config (for cart preview screenshots)
-    const CLOUDINARY_CLOUD = 'JOUW_CLOUD_NAME';      // ← Vul in vanuit Cloudinary dashboard
-    const CLOUDINARY_PRESET = 'JOUW_UPLOAD_PRESET';   // ← Vul in: unsigned upload preset
-
     let floors = [];
     let canvases = [];
     let maxWorldW = 1;
@@ -3666,10 +3662,10 @@
     }
 
     // Order button — adds product to Shopify cart via Cart API
-    // Capture screenshot of unified frame preview using html2canvas
-    async function capturePreviewScreenshot() {
+    // Capture screenshot of unified frame preview using html2canvas → localStorage
+    async function capturePreviewToLocalStorage() {
       var previewEl = document.getElementById('unifiedFramePreview');
-      if (!previewEl || typeof html2canvas === 'undefined') return null;
+      if (!previewEl || typeof html2canvas === 'undefined') return;
       try {
         var canvas = await html2canvas(previewEl, {
           useCORS: true,
@@ -3677,31 +3673,10 @@
           backgroundColor: '#ffffff',
           scale: 1
         });
-        return new Promise(function(resolve) {
-          canvas.toBlob(function(blob) { resolve(blob); }, 'image/jpeg', 0.85);
-        });
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        try { localStorage.setItem('mattori_preview', dataUrl); } catch (e) { /* quota exceeded — skip */ }
       } catch (e) {
         console.warn('Screenshot mislukt:', e);
-        return null;
-      }
-    }
-
-    // Upload image blob to Cloudinary (unsigned)
-    async function uploadToCloudinary(blob) {
-      if (!blob || CLOUDINARY_CLOUD === 'JOUW_CLOUD_NAME') return null;
-      try {
-        var formData = new FormData();
-        formData.append('file', blob, 'frame-preview.jpg');
-        formData.append('upload_preset', CLOUDINARY_PRESET);
-        var res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD + '/image/upload', {
-          method: 'POST',
-          body: formData
-        });
-        var data = await res.json();
-        return data.secure_url || null;
-      } catch (e) {
-        console.warn('Upload mislukt:', e);
-        return null;
       }
     }
 
@@ -3723,11 +3698,9 @@
       if (fundaLink) itemProperties['Funda link'] = fundaLink;
       if (noFloorsMode) itemProperties['Opmerking'] = 'Geen interactieve plattegronden — handmatig opbouwen';
 
-      // Screenshot + upload (skip in noFloorsMode — no meaningful preview)
+      // Save preview screenshot to localStorage (skip in noFloorsMode)
       if (!noFloorsMode) {
-        var blob = await capturePreviewScreenshot();
-        var previewUrl = await uploadToCloudinary(blob);
-        if (previewUrl) itemProperties['_preview'] = previewUrl;
+        await capturePreviewToLocalStorage();
       }
 
       try {
