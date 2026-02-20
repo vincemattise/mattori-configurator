@@ -2,7 +2,7 @@
 <script>
 (function(){
   var sheets = [
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v43.2/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v43.3/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -23,7 +23,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel" style="display:none;">
-    <div class="admin-panel-label">Admin · v43.2</div>
+    <div class="admin-panel-label">Admin · v43.3</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon">⬆</div>
@@ -244,6 +244,10 @@
           <!-- Step 4: Floor layout (orthographic top-down, all floors) -->
           <div class="wizard-step" id="wizardStep4" data-step="4" style="display:none;">
             <p class="step-description">Gebruik de pijltjes om de indeling aan te passen.</p>
+            <button type="button" class="btn-toggle-grid" id="btnToggleGrid" style="display:none;">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg>
+              Layout aanpassen
+            </button>
             <div class="floor-layout-viewer" id="floorLayoutViewer"></div>
           </div>
 
@@ -308,4 +312,4 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v43.2/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v43.3/mattori-configurator.js"></script>

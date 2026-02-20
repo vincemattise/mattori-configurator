@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v43.2/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v43.3/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -607,6 +607,66 @@
       display: block;
       background: transparent !important;
       pointer-events: none;
+    }
+
+    /* Grid edit mode — drag-to-reposition */
+    .mattori-configurator .unified-floors-overlay.drag-enabled {
+      pointer-events: auto;
+      cursor: default;
+    }
+
+    .mattori-configurator .unified-floors-overlay.drag-enabled .floor-canvas-wrap {
+      cursor: grab;
+      pointer-events: auto;
+      z-index: 2;
+      transition: box-shadow 0.15s ease;
+    }
+
+    .mattori-configurator .unified-floors-overlay.drag-enabled .floor-canvas-wrap.dragging {
+      cursor: grabbing;
+      opacity: 0.85;
+      z-index: 10;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .mattori-configurator .unified-floors-overlay.drag-enabled .floor-canvas-wrap canvas {
+      pointer-events: none;
+    }
+
+    .mattori-configurator .grid-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* "Layout aanpassen" toggle button */
+    .mattori-configurator .btn-toggle-grid {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      margin-bottom: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mattori-configurator .btn-toggle-grid:hover {
+      border-color: #bbb;
+      color: #555;
+    }
+
+    .mattori-configurator .btn-toggle-grid.active {
+      background: #1a1a1a;
+      color: #fff;
+      border-color: #1a1a1a;
     }
 
     /* Labels overlay — bottom zone of the frame */

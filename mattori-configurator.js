@@ -1410,6 +1410,222 @@
     var layoutGapFactor = 0.08; // gap as fraction of largest floor dimension (0..0.3)
     var floorSettings = {}; // per-floor: { align: 'center'|'top'|'bottom', rotate: 0..315 }
 
+    // ============================================================
+    // GRID SYSTEM — snap-to-grid for physical production
+    // ============================================================
+    var ZONE_PHYSICAL_W_MM = 170; // usable interior width in mm
+    var ZONE_PHYSICAL_H_MM = 130; // usable interior height in mm
+    var GRID_CELL_MM = 5;         // grid cell size in mm
+
+    var gridEditMode = false;     // true when user activated drag-to-reposition
+    var customPositions = null;   // null = auto-layout, or [{index, gridX, gridY}]
+    var _dragCleanups = [];       // cleanup functions for drag event listeners
+
+    function getGridDimensions() {
+      var overlay = floorsGrid ? floorsGrid.parentElement : null;
+      if (!overlay) return { cols: 34, rows: 26, cellPx: 10, pxPerMm: 2, zoneW: 340, zoneH: 260 };
+      var overlayRect = overlay.getBoundingClientRect();
+      var zoneW = overlayRect.width;
+      var zoneH = overlayRect.height;
+      var pxPerMm = zoneW / ZONE_PHYSICAL_W_MM;
+      var cellPx = GRID_CELL_MM * pxPerMm;
+      var cols = Math.floor(ZONE_PHYSICAL_W_MM / GRID_CELL_MM);
+      var rows = Math.floor(ZONE_PHYSICAL_H_MM / GRID_CELL_MM);
+      return { cols: cols, rows: rows, cellPx: cellPx, pxPerMm: pxPerMm, zoneW: zoneW, zoneH: zoneH };
+    }
+
+    function snapToGrid(px, cellPx) {
+      return Math.round(px / cellPx) * cellPx;
+    }
+
+    function pxToGridCoord(px, cellPx) {
+      return Math.round(px / cellPx);
+    }
+
+    function gridCoordToPx(gridCoord, cellPx) {
+      return gridCoord * cellPx;
+    }
+
+    // --- Grid overlay (SVG) ---
+    function renderGridOverlay() {
+      if (!floorsGrid) return;
+      var existing = floorsGrid.querySelector('.grid-overlay');
+      if (existing) existing.remove();
+      if (!gridEditMode) return;
+
+      var grid = getGridDimensions();
+      var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'grid-overlay');
+      svg.setAttribute('width', grid.zoneW);
+      svg.setAttribute('height', grid.zoneH);
+      svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:1;';
+
+      for (var x = 0; x <= grid.cols; x++) {
+        var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        var px = x * grid.cellPx;
+        line.setAttribute('x1', px); line.setAttribute('y1', 0);
+        line.setAttribute('x2', px); line.setAttribute('y2', grid.zoneH);
+        line.setAttribute('stroke', 'rgba(0,0,0,0.07)');
+        line.setAttribute('stroke-width', '0.5');
+        svg.appendChild(line);
+      }
+      for (var y = 0; y <= grid.rows; y++) {
+        var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        var py = y * grid.cellPx;
+        line.setAttribute('x1', 0); line.setAttribute('y1', py);
+        line.setAttribute('x2', grid.zoneW); line.setAttribute('y2', py);
+        line.setAttribute('stroke', 'rgba(0,0,0,0.07)');
+        line.setAttribute('stroke-width', '0.5');
+        svg.appendChild(line);
+      }
+      floorsGrid.insertBefore(svg, floorsGrid.firstChild);
+    }
+
+    // --- Drag handlers ---
+    function enableGridDrag() {
+      var overlay = document.getElementById('unifiedFloorsOverlay');
+      if (overlay) overlay.classList.add('drag-enabled');
+
+      // Snap current auto-layout positions to grid
+      if (!customPositions && currentLayout && currentLayout.positions.length > 0) {
+        var grid = getGridDimensions();
+        customPositions = currentLayout.positions.map(function(pos) {
+          return {
+            index: pos.index,
+            gridX: pxToGridCoord(pos.x, grid.cellPx),
+            gridY: pxToGridCoord(pos.y, grid.cellPx)
+          };
+        });
+      }
+
+      // Re-render with snapped positions
+      renderPreviewThumbnails();
+      renderGridOverlay();
+
+      // Attach drag handlers to each floor-canvas-wrap
+      var wraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
+      for (var wi = 0; wi < wraps.length; wi++) {
+        attachDragHandlers(wraps[wi], wi);
+      }
+    }
+
+    function disableGridDrag() {
+      var overlay = document.getElementById('unifiedFloorsOverlay');
+      if (overlay) overlay.classList.remove('drag-enabled');
+
+      var gridEl = floorsGrid ? floorsGrid.querySelector('.grid-overlay') : null;
+      if (gridEl) gridEl.remove();
+
+      _dragCleanups.forEach(function(fn) { fn(); });
+      _dragCleanups = [];
+    }
+
+    function attachDragHandlers(wrap, posIndex) {
+      var isDragging = false;
+      var startX, startY, origLeft, origTop;
+
+      function onStart(e) {
+        if (!gridEditMode) return;
+        e.preventDefault();
+        isDragging = true;
+        wrap.classList.add('dragging');
+
+        var point = e.touches ? e.touches[0] : e;
+        startX = point.clientX;
+        startY = point.clientY;
+        origLeft = parseFloat(wrap.style.left) || 0;
+        origTop = parseFloat(wrap.style.top) || 0;
+      }
+
+      function onMove(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+
+        var point = e.touches ? e.touches[0] : e;
+        var dx = point.clientX - startX;
+        var dy = point.clientY - startY;
+
+        var grid = getGridDimensions();
+        var newLeft = snapToGrid(origLeft + dx, grid.cellPx);
+        var newTop = snapToGrid(origTop + dy, grid.cellPx);
+
+        // Clamp within zone
+        var wrapW = parseFloat(wrap.style.width) || 0;
+        var wrapH = parseFloat(wrap.style.height) || 0;
+        newLeft = Math.max(0, Math.min(grid.zoneW - wrapW, newLeft));
+        newTop = Math.max(0, Math.min(grid.zoneH - wrapH, newTop));
+
+        wrap.style.left = newLeft + 'px';
+        wrap.style.top = newTop + 'px';
+      }
+
+      function onEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        wrap.classList.remove('dragging');
+
+        // Update customPositions
+        var grid = getGridDimensions();
+        var finalLeft = parseFloat(wrap.style.left) || 0;
+        var finalTop = parseFloat(wrap.style.top) || 0;
+
+        if (customPositions && currentLayout && currentLayout.positions[posIndex]) {
+          var floorIdx = currentLayout.positions[posIndex].index;
+          var cp = customPositions.find(function(c) { return c.index === floorIdx; });
+          if (cp) {
+            cp.gridX = pxToGridCoord(finalLeft, grid.cellPx);
+            cp.gridY = pxToGridCoord(finalTop, grid.cellPx);
+          }
+        }
+      }
+
+      wrap.addEventListener('mousedown', onStart);
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onEnd);
+      wrap.addEventListener('touchstart', onStart, { passive: false });
+      document.addEventListener('touchmove', onMove, { passive: false });
+      document.addEventListener('touchend', onEnd);
+
+      _dragCleanups.push(function() {
+        wrap.removeEventListener('mousedown', onStart);
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onEnd);
+        wrap.removeEventListener('touchstart', onStart);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onEnd);
+      });
+    }
+
+    // --- Grid position cart properties ---
+    function getGridPositionProperties() {
+      var props = {};
+      if (!customPositions) return props;
+      for (var i = 0; i < customPositions.length; i++) {
+        var cp = customPositions[i];
+        var floor = floors[cp.index];
+        var floorName = floor ? floor.name : ('Verdieping ' + (cp.index + 1));
+        props['Positie ' + floorName] = 'X=' + cp.gridX + ', Y=' + cp.gridY;
+      }
+      return props;
+    }
+
+    // --- Resize handler for grid mode ---
+    var _gridResizeTimer = null;
+    window.addEventListener('resize', function() {
+      if (!gridEditMode) return;
+      clearTimeout(_gridResizeTimer);
+      _gridResizeTimer = setTimeout(function() {
+        renderPreviewThumbnails();
+        renderGridOverlay();
+        _dragCleanups.forEach(function(fn) { fn(); });
+        _dragCleanups = [];
+        var wraps = floorsGrid ? floorsGrid.querySelectorAll('.floor-canvas-wrap') : [];
+        for (var wi = 0; wi < wraps.length; wi++) {
+          attachDragHandlers(wraps[wi], wi);
+        }
+      }, 200);
+    });
+
     function computeFloorLayout(zoneW, zoneH, includedIndices) {
       // Gather floor dimensions in cm
       var items = includedIndices.map(function(i) {
@@ -1682,6 +1898,18 @@
       // Compute layout
       currentLayout = computeFloorLayout(zoneW, zoneH, includedIndices);
 
+      // Apply custom grid positions if user has dragged floors
+      if (customPositions && gridEditMode) {
+        var _grid = getGridDimensions();
+        for (var ci = 0; ci < currentLayout.positions.length; ci++) {
+          var _cp = customPositions.find(function(c) { return c.index === currentLayout.positions[ci].index; });
+          if (_cp) {
+            currentLayout.positions[ci].x = _cp.gridX * _grid.cellPx;
+            currentLayout.positions[ci].y = _cp.gridY * _grid.cellPx;
+          }
+        }
+      }
+
       // Always use ortho (flat 2D top-down) for unified preview
       var useOrtho = true;
 
@@ -1939,6 +2167,8 @@
       } else {
         excludedFloors.add(index);
       }
+      // Reset custom grid positions when layout changes
+      if (gridEditMode) { customPositions = null; }
       // Refresh unified preview thumbnails + labels
       renderPreviewThumbnails();
       updateFloorLabels();
@@ -2093,6 +2323,10 @@
           // Re-render unified preview thumbnails so they show during layout step
           renderPreviewThumbnails();
           updateFloorLabels();
+          // Restore grid edit mode if it was active
+          if (gridEditMode) {
+            setTimeout(function() { enableGridDrag(); }, 50);
+          }
         } else if (n === 5) {
           // Re-render with perspective camera (final look with depth)
           renderPreviewThumbnails();
@@ -2437,9 +2671,11 @@
 
     function setLayoutGap(value) {
       layoutGapFactor = parseFloat(value);
+      if (gridEditMode) { customPositions = null; }
       updatePreviewWithLoading(function() {
         renderPreviewThumbnails();
         updateFloorLabels();
+        if (gridEditMode) enableGridDrag();
       });
     }
 
@@ -2449,9 +2685,11 @@
       for (var key in floorSettings) {
         if (floorSettings[key]) delete floorSettings[key].align;
       }
+      if (gridEditMode) { customPositions = null; }
       updatePreviewWithLoading(function() {
         renderPreviewThumbnails();
         updateFloorLabels();
+        if (gridEditMode) enableGridDrag();
       });
     }
 
@@ -2459,9 +2697,11 @@
       if (!floorSettings[floorIndex]) floorSettings[floorIndex] = {};
       var current = getFloorRotate(floorIndex);
       floorSettings[floorIndex].rotate = current === 0 ? 180 : 0;
+      if (gridEditMode) { customPositions = null; }
       updatePreviewWithLoading(function() {
         renderPreviewThumbnails();
         updateFloorLabels();
+        if (gridEditMode) enableGridDrag();
       });
     }
 
@@ -2475,9 +2715,11 @@
       if (!floorOrder || toIdx < 0 || toIdx >= floorOrder.length) return;
       var item = floorOrder.splice(fromIdx, 1)[0];
       floorOrder.splice(toIdx, 0, item);
+      if (gridEditMode) { customPositions = null; }
       updatePreviewWithLoading(function() {
         renderPreviewThumbnails();
         updateFloorLabels();
+        if (gridEditMode) enableGridDrag();
         // Highlight moved card briefly after renderLayoutView rebuilds cards
         setTimeout(function() {
           var cards = floorLayoutViewer.querySelectorAll('.floor-layout-card');
@@ -2496,6 +2738,31 @@
       }
       layoutViewers = [];
       floorLayoutViewer.innerHTML = '';
+
+      // Show/hide grid toggle button (only for 2+ included floors)
+      var includedCount = 0;
+      for (var gi = 0; gi < floors.length; gi++) {
+        if (!excludedFloors.has(gi)) includedCount++;
+      }
+      var btnToggleGrid = document.getElementById('btnToggleGrid');
+      if (btnToggleGrid) {
+        btnToggleGrid.style.display = includedCount >= 2 ? '' : 'none';
+        btnToggleGrid.classList.toggle('active', gridEditMode);
+        btnToggleGrid.onclick = function() {
+          gridEditMode = !gridEditMode;
+          this.classList.toggle('active', gridEditMode);
+          this.innerHTML = gridEditMode
+            ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Terug naar automatisch'
+            : '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Layout aanpassen';
+          if (gridEditMode) {
+            enableGridDrag();
+          } else {
+            disableGridDrag();
+            customPositions = null;
+            renderPreviewThumbnails();
+          }
+        };
+      }
 
       // Global alignment control
       var alignRow = document.createElement('div');
@@ -3877,10 +4144,23 @@
         });
       }
 
+      // Grid positions (from manual layout adjustment in step 4)
+      var gridProps = getGridPositionProperties();
+      for (var gk in gridProps) {
+        if (gridProps.hasOwnProperty(gk)) itemProperties[gk] = gridProps[gk];
+      }
+
+      // Hide grid overlay before screenshot
+      var _gridOverlayEl = floorsGrid ? floorsGrid.querySelector('.grid-overlay') : null;
+      if (_gridOverlayEl) _gridOverlayEl.style.display = 'none';
+
       // Save preview screenshot to localStorage keyed by Funda link (skip in noFloorsMode)
       if (!noFloorsMode && fundaLink) {
         await capturePreviewToLocalStorage(fundaLink);
       }
+
+      // Restore grid overlay
+      if (_gridOverlayEl) _gridOverlayEl.style.display = '';
 
       try {
         var res = await fetch('/cart/add.js', {
