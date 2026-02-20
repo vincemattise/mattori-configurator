@@ -3538,6 +3538,9 @@
       var icon = document.getElementById('fundaStatusIcon');
       var text = document.getElementById('fundaStatusText');
       if (!box) return;
+      // Hide contact email from previous attempt
+      var prevEmail = document.getElementById('contactEmailBtn');
+      if (prevEmail) prevEmail.style.display = 'none';
       box.className = 'funda-status visible ' + state;
       if (state === 'loading') {
         icon.innerHTML = '<div class="mini-spinner"></div>';
