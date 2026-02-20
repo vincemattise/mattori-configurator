@@ -2117,8 +2117,15 @@
         // Last step: hide next, show order
         btnWizardNext.style.display = 'none';
       } else if (currentWizardStep === 1) {
-        // Restore Funda load button when returning to step 1
-        if (btnFunda) { btnFunda.style.display = ''; btnFunda.disabled = false; }
+        // Show Funda load button only when no floors loaded yet
+        if (btnFunda) {
+          if (floors.length > 0 || noFloorsMode) {
+            btnFunda.style.display = 'none';
+          } else {
+            btnFunda.style.display = '';
+            btnFunda.disabled = false;
+          }
+        }
         // Step 1: show next if data is loaded, or noFloorsMode button
         if (noFloorsMode) {
           btnWizardNext.textContent = 'Bestellen op goed vertrouwen \u2192';
@@ -2723,7 +2730,7 @@
 
         var labelSingle = document.createElement('span');
         labelSingle.className = 'label-mode-label' + (labelMode === 'single' ? ' active' : '');
-        labelSingle.textContent = '1 label';
+        labelSingle.textContent = '1 onderschrift';
 
         var switchWrap = document.createElement('label');
         switchWrap.className = 'label-mode-switch';
@@ -2778,7 +2785,7 @@
         row.className = 'label-field-row';
 
         var span = document.createElement('span');
-        span.textContent = 'Label';
+        span.textContent = 'Onderschrift';
 
         var inp = document.createElement('input');
         inp.type = 'text';
