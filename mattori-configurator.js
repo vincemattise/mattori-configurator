@@ -1851,7 +1851,7 @@
       1: 'Voer je Funda-link in',
       2: 'Controleer het adres',
       3: 'Bekijk de plattegronden',
-      4: 'Pas de volgorde aan',
+      4: 'Ontwerp je indeling',
       5: 'Pas de labels aan'
     };
 
