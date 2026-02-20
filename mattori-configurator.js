@@ -2348,7 +2348,7 @@
         var floorName = floors[currentFloorReviewIndex] ? floors[currentFloorReviewIndex].name : 'Onbekend';
         var subject = encodeURIComponent('Frame³ — plattegrond klopt niet');
         var body = encodeURIComponent('Hoi,\n\nDe plattegrond "' + floorName + '" klopt niet.\n\nFunda link: ' + (fundaUrl || '(niet ingevuld)') + '\n\nKunnen jullie me helpen?\n\nAlvast bedankt!');
-        contactBtn.href = 'mailto:info@mattori.nl?subject=' + subject + '&body=' + body;
+        contactBtn.href = 'mailto:vince@mattori.nl?subject=' + subject + '&body=' + body;
       }
     }
 
