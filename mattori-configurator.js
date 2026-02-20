@@ -2145,6 +2145,12 @@
     }
 
     function prevWizardStep() {
+      // In step 3: go to previous floor first, then back to step 2
+      if (currentWizardStep === 3 && currentFloorReviewIndex > 0) {
+        currentFloorReviewIndex--;
+        renderFloorReview();
+        return;
+      }
       if (currentWizardStep > 1) {
         showWizardStep(currentWizardStep - 1);
       }
@@ -2203,6 +2209,7 @@
         if (status) {
           var dot = document.createElement('div');
           dot.className = 'floor-thumb-status status-' + status;
+          dot.innerHTML = '<svg viewBox="0 0 12 12"><polyline points="2.5,6 5,8.5 9.5,3.5"/></svg>';
           t.appendChild(dot);
         }
       });

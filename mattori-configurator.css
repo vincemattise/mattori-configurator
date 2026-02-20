@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v40/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v40.1/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -910,13 +910,14 @@
 
     /* ── Step 3: Floor Review Viewer ── */
     .mattori-configurator .floor-review-viewer {
-      width: 85%;
+      width: 80%;
       margin: 0 auto;
       aspect-ratio: 3 / 4;
-      border-radius: 14px;
+      border-radius: 12px;
       overflow: hidden;
-      background: #f8f8f6;
+      background: #ffffff;
       position: relative;
+      box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1);
     }
 
     .mattori-configurator .floor-review-hint {
@@ -1001,22 +1002,26 @@
       transform: translateY(-1px);
     }
 
-    /* Subtle text-link: "Er klopt iets niet" */
+    /* Secondary: "Er klopt iets niet" */
     .mattori-configurator .btn-floor-flag {
-      background: none;
-      border: none;
-      color: #aaa;
-      font-size: 0.8rem;
-      font-weight: 400;
+      width: 100%;
+      height: 40px;
+      font-size: 0.82rem;
+      font-weight: 500;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: transparent;
+      color: #999;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 12px;
       cursor: pointer;
-      padding: 0.2rem 0;
-      transition: color 0.2s ease;
+      transition: border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
       text-align: center;
     }
 
     .mattori-configurator .btn-floor-flag:hover {
+      border-color: #aaa;
       color: #666;
+      transform: translateY(-1px);
     }
 
     /* Issue box (small difference) */
@@ -1057,22 +1062,26 @@
       transform: translateY(-1px);
     }
 
-    /* "Klopt helemaal niet →" text link */
+    /* "Klopt helemaal niet →" outlined button */
     .mattori-configurator .btn-floor-major {
-      background: none;
-      border: none;
-      color: #ccc;
-      font-size: 0.75rem;
-      font-weight: 400;
+      width: 100%;
+      height: 38px;
+      font-size: 0.78rem;
+      font-weight: 500;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: transparent;
+      color: #bbb;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 12px;
       cursor: pointer;
-      padding: 0.3rem 0;
-      transition: color 0.2s ease;
+      transition: border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
       text-align: center;
     }
 
     .mattori-configurator .btn-floor-major:hover {
-      color: #999;
+      border-color: #aaa;
+      color: #888;
+      transform: translateY(-1px);
     }
 
     /* Major panel */
@@ -1184,17 +1193,24 @@
     /* Thumbstrip status indicators */
     .mattori-configurator .floor-thumb-status {
       position: absolute;
-      bottom: 3px;
-      right: 3px;
-      width: 10px;
-      height: 10px;
+      bottom: 2px;
+      right: 2px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
-      border: 1.5px solid #fff;
+      background: #1a1a1a;
       z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .mattori-configurator .floor-thumb-status.status-confirmed {
-      background: #2ecc71;
+    .mattori-configurator .floor-thumb-status svg {
+      width: 8px;
+      height: 8px;
+      stroke: #fff;
+      stroke-width: 3;
+      fill: none;
     }
 
     .mattori-configurator .floor-thumb-status.status-issue {
