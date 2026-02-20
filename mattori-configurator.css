@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v43.5/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v43.6/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -643,6 +643,33 @@
       z-index: 1;
     }
 
+    .mattori-configurator .grid-rotate-btn {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1.5px solid #1a1a1a;
+      background: #fff;
+      color: #1a1a1a;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      pointer-events: auto;
+      z-index: 20;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    }
+
+    .mattori-configurator .grid-rotate-btn:hover {
+      background: #1a1a1a;
+      color: #fff;
+      transform: scale(1.1);
+    }
+
     /* "Layout aanpassen" toggle button */
     .mattori-configurator .btn-toggle-grid {
       display: inline-flex;
@@ -663,12 +690,19 @@
     .mattori-configurator .btn-toggle-grid:hover {
       border-color: #1a1a1a;
       color: #1a1a1a;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
 
     .mattori-configurator .btn-toggle-grid.active {
       background: #1a1a1a;
-      color: #fff;
+      color: #fff !important;
       border-color: #1a1a1a;
+    }
+
+    .mattori-configurator .btn-toggle-grid.active:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
 
     /* Layout note section */
@@ -694,9 +728,32 @@
       font-size: 0.82rem;
       font-family: inherit;
       color: #1a1a1a;
+      background: #fff;
       resize: vertical;
       transition: border-color 0.2s ease;
       box-sizing: border-box;
+    }
+
+    .mattori-configurator .btn-toggle-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0.4rem 0.8rem;
+      border: 1.5px solid #ddd;
+      border-radius: 10px;
+      background: transparent;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #777;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mattori-configurator .btn-toggle-note:hover {
+      border-color: #1a1a1a;
+      color: #1a1a1a;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
 
     .mattori-configurator .layout-note-input:focus {

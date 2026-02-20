@@ -1504,12 +1504,71 @@
       renderPreviewThumbnails();
       renderGridOverlay();
 
-      // Attach drag handlers to each floor-canvas-wrap
+      // Attach drag handlers + rotation buttons to each floor-canvas-wrap
       var wraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
       for (var wi = 0; wi < wraps.length; wi++) {
         attachDragHandlers(wraps[wi], wi);
+        // Add rotation button
+        (function(wrap, posIdx) {
+          if (!currentLayout || !currentLayout.positions[posIdx]) return;
+          var floorIdx = currentLayout.positions[posIdx].index;
+          var rotBtn = document.createElement('button');
+          rotBtn.type = 'button';
+          rotBtn.className = 'grid-rotate-btn';
+          rotBtn.title = '90° draaien';
+          rotBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
+          rotBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
+            var current = getFloorRotate(floorIdx);
+            floorSettings[floorIdx].rotate = (current + 90) % 360;
+            renderPreviewThumbnails();
+            renderGridOverlay();
+            // Re-attach handlers after re-render
+            var newWraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
+            _dragCleanups.forEach(function(fn) { fn(); });
+            _dragCleanups = [];
+            for (var nw = 0; nw < newWraps.length; nw++) {
+              attachDragHandlers(newWraps[nw], nw);
+            }
+            // Re-add rotation buttons
+            addGridRotationButtons();
+          });
+          wrap.appendChild(rotBtn);
+        })(wraps[wi], wi);
       }
     }
+
+    function addGridRotationButtons() {
+      if (!gridEditMode || !floorsGrid) return;
+      var wraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
+      for (var wi = 0; wi < wraps.length; wi++) {
+        (function(wrap, posIdx) {
+          if (!currentLayout || !currentLayout.positions[posIdx]) return;
+          var floorIdx = currentLayout.positions[posIdx].index;
+          var rotBtn = document.createElement('button');
+          rotBtn.type = 'button';
+          rotBtn.className = 'grid-rotate-btn';
+          rotBtn.title = '90° draaien';
+          rotBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
+          rotBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
+            var current = getFloorRotate(floorIdx);
+            floorSettings[floorIdx].rotate = (current + 90) % 360;
+            renderPreviewThumbnails();
+            renderGridOverlay();
+            _dragCleanups.forEach(function(fn) { fn(); });
+            _dragCleanups = [];
+            var newWraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
+            for (var nw = 0; nw < newWraps.length; nw++) {
+              attachDragHandlers(newWraps[nw], nw);
+            }
+            addGridRotationButtons();
+          });
+          wrap.appendChild(rotBtn);
+        })(wraps[wi], wi);
+      }
 
     function disableGridDrag() {
       var overlay = document.getElementById('unifiedFloorsOverlay');
