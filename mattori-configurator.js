@@ -3641,11 +3641,10 @@
         processFloors(data);
       } catch (err) {
         if (err.message && (err.message.includes('Load failed') || err.message.includes('Failed to fetch'))) {
-          setFundaStatus('error', '<strong>Verbinding mislukt</strong><span>Controleer de link en probeer het opnieuw, of neem contact op.</span>');
+          setFundaStatus('error', '<strong>Verbinding mislukt</strong><span>Probeer het zo weer opnieuw.</span>');
         } else {
-          setFundaStatus('error', `<strong>Fout</strong><span>Controleer de link en probeer het opnieuw, of neem contact op.</span>`);
+          setFundaStatus('error', `<strong>Fout</strong><span>Probeer het zo weer opnieuw.</span>`);
         }
-        showContactEmail(url);
         btnWizardNext.style.display = 'none';
       } finally {
         hideLoading();
