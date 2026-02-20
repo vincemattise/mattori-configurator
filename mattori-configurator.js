@@ -1,4 +1,6 @@
 // Minimal OrbitControls implementation (rotate + zoom + pan)
+  // Pan: right/middle-click, Shift+drag (Apple mouse), or two-finger touch
+  // Pinch-to-zoom on touch devices
   THREE.OrbitControls = class {
     constructor(camera, domElement) {
       this.camera = camera;
@@ -23,6 +25,11 @@
       this._panStart = new THREE.Vector2();
       this._pointerType = null; // 'rotate' | 'pan'
 
+      // Multi-touch state
+      this._pointers = new Map();       // pointerId → {x, y}
+      this._prevTouchCenter = null;     // {x, y}
+      this._prevPinchDist = null;       // number
+
       // Initialize spherical from current camera position
       const offset = new THREE.Vector3().subVectors(camera.position, this.target);
       this._spherical.setFromVector3(offset);
@@ -33,15 +40,56 @@
       this._onWheel = this._onWheel.bind(this);
       this._onContextMenu = e => e.preventDefault();
 
+      domElement.style.touchAction = 'none'; // prevent browser gestures
       domElement.addEventListener('pointerdown', this._onPointerDown);
       domElement.addEventListener('wheel', this._onWheel, { passive: false });
       domElement.addEventListener('contextmenu', this._onContextMenu);
     }
 
+    _applyPan(dx, dy) {
+      const el = this.domElement;
+      const offset = new THREE.Vector3().subVectors(this.camera.position, this.target);
+      let targetDist = offset.length();
+      targetDist *= Math.tan((this.camera.fov / 2) * Math.PI / 180);
+      const panX = 2 * dx * targetDist / el.clientHeight * this.panSpeed;
+      const panY = 2 * dy * targetDist / el.clientHeight * this.panSpeed;
+      const camLeft = new THREE.Vector3().setFromMatrixColumn(this.camera.matrix, 0);
+      const camUp = new THREE.Vector3().setFromMatrixColumn(this.camera.matrix, 1);
+      this._panOffset.addScaledVector(camLeft, -panX);
+      this._panOffset.addScaledVector(camUp, panY);
+    }
+
+    _getTouchCenter() {
+      const pts = Array.from(this._pointers.values());
+      return {
+        x: (pts[0].x + pts[1].x) / 2,
+        y: (pts[0].y + pts[1].y) / 2
+      };
+    }
+
+    _getPinchDist() {
+      const pts = Array.from(this._pointers.values());
+      const dx = pts[0].x - pts[1].x;
+      const dy = pts[0].y - pts[1].y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
     _onPointerDown(e) {
       this.domElement.setPointerCapture(e.pointerId);
-      // Left button = rotate, Right/Middle = pan
-      if (e.button === 0) {
+      this._pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (this._pointers.size === 2) {
+        // Second finger down → switch to pan+pinch
+        this._pointerType = 'touch-pan';
+        this._prevTouchCenter = this._getTouchCenter();
+        this._prevPinchDist = this._getPinchDist();
+        return;
+      }
+
+      if (this._pointers.size > 2) return; // ignore 3+ fingers
+
+      // Single pointer: Shift+left = pan (Apple mouse), right/middle = pan, left = rotate
+      if (e.button === 0 && !e.shiftKey) {
         this._pointerType = 'rotate';
         this._rotateStart.set(e.clientX, e.clientY);
       } else {
@@ -53,6 +101,34 @@
     }
 
     _onPointerMove(e) {
+      // Update tracked pointer position
+      if (this._pointers.has(e.pointerId)) {
+        this._pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      }
+
+      // Two-finger touch: pan + pinch zoom
+      if (this._pointerType === 'touch-pan' && this._pointers.size === 2) {
+        const center = this._getTouchCenter();
+        const dist = this._getPinchDist();
+
+        // Pan from center movement
+        if (this._prevTouchCenter) {
+          const dx = center.x - this._prevTouchCenter.x;
+          const dy = center.y - this._prevTouchCenter.y;
+          this._applyPan(dx, dy);
+        }
+
+        // Pinch zoom from distance change
+        if (this._prevPinchDist && this._prevPinchDist > 0) {
+          const scale = this._prevPinchDist / dist;
+          this._zoomScale *= scale;
+        }
+
+        this._prevTouchCenter = center;
+        this._prevPinchDist = dist;
+        return;
+      }
+
       if (this._pointerType === 'rotate') {
         const dx = e.clientX - this._rotateStart.x;
         const dy = e.clientY - this._rotateStart.y;
@@ -63,25 +139,35 @@
       } else if (this._pointerType === 'pan') {
         const dx = e.clientX - this._panStart.x;
         const dy = e.clientY - this._panStart.y;
-        const el = this.domElement;
-        const offset = new THREE.Vector3().subVectors(this.camera.position, this.target);
-        let targetDist = offset.length();
-        targetDist *= Math.tan((this.camera.fov / 2) * Math.PI / 180);
-        const panX = 2 * dx * targetDist / el.clientHeight * this.panSpeed;
-        const panY = 2 * dy * targetDist / el.clientHeight * this.panSpeed;
-        const camLeft = new THREE.Vector3().setFromMatrixColumn(this.camera.matrix, 0);
-        const camUp = new THREE.Vector3().setFromMatrixColumn(this.camera.matrix, 1);
-        this._panOffset.addScaledVector(camLeft, -panX);
-        this._panOffset.addScaledVector(camUp, panY);
+        this._applyPan(dx, dy);
         this._panStart.set(e.clientX, e.clientY);
       }
     }
 
     _onPointerUp(e) {
       this.domElement.releasePointerCapture(e.pointerId);
-      this.domElement.removeEventListener('pointermove', this._onPointerMove);
-      this.domElement.removeEventListener('pointerup', this._onPointerUp);
-      this._pointerType = null;
+      this._pointers.delete(e.pointerId);
+
+      // If we were in two-finger mode and one finger lifts, reset
+      if (this._pointerType === 'touch-pan') {
+        this._prevTouchCenter = null;
+        this._prevPinchDist = null;
+        // If one finger remains, switch to rotate
+        if (this._pointers.size === 1) {
+          this._pointerType = 'rotate';
+          const remaining = Array.from(this._pointers.values())[0];
+          this._rotateStart.set(remaining.x, remaining.y);
+        } else if (this._pointers.size === 0) {
+          this._pointerType = null;
+        }
+        return;
+      }
+
+      if (this._pointers.size === 0) {
+        this.domElement.removeEventListener('pointermove', this._onPointerMove);
+        this.domElement.removeEventListener('pointerup', this._onPointerUp);
+        this._pointerType = null;
+      }
     }
 
     _onWheel(e) {
