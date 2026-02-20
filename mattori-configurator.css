@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v42.23/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v42.24/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -491,7 +491,7 @@
       top: calc(16% - 20px);
       left: calc(15.5% + 10px);
       right: calc(14% + 20px);
-      height: calc(10% + 37px);
+      height: calc(10% + 17px);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -506,7 +506,7 @@
       display: block;
       margin-bottom: -15px;
       position: relative;
-      top: -48px;
+      top: -28px;
     }
 
     .mattori-configurator .unified-address-inner {
@@ -514,7 +514,7 @@
       white-space: nowrap;
       width: 100%;
       position: relative;
-      top: -25px;
+      top: -5px;
     }
 
     .mattori-configurator .frame-street {
