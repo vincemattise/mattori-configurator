@@ -3693,6 +3693,10 @@
       var orderBtn = noFloorsMode ? btnWizardNext : document.getElementById('btnOrder');
       var originalText = orderBtn ? orderBtn.textContent : '';
       if (orderBtn) { orderBtn.disabled = true; orderBtn.innerHTML = '<span class="btn-spinner"></span> Toevoegen…'; }
+
+      // Force browser repaint so spinner is visible before heavy html2canvas work
+      await new Promise(function(r) { requestAnimationFrame(function() { requestAnimationFrame(r); }); });
+
       var fundaLink = fundaUrlInput ? fundaUrlInput.value.trim() : '';
       var itemProperties = {};
       if (fundaLink) itemProperties['Funda link'] = fundaLink;
