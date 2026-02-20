@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v42.11/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v42.12/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -488,10 +488,10 @@
     /* Address overlay — top zone of the frame (includes house icon + address text) */
     .mattori-configurator .unified-address-overlay {
       position: absolute;
-      top: calc(16% - 15px);
+      top: calc(16% - 35px);
       left: calc(15.5% + 10px);
       right: calc(14% + 20px);
-      height: calc(10% + 17px);
+      height: calc(10% + 37px);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -506,7 +506,7 @@
       display: block;
       margin-bottom: -15px;
       position: relative;
-      top: -30px;
+      top: -33px;
     }
 
     .mattori-configurator .unified-address-inner {
