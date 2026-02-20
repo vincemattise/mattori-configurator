@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v40.1/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v40.2/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -982,9 +982,15 @@
       gap: 0.6rem;
     }
 
-    /* Primary CTA: "Ziet er goed uit →" */
+    /* Actions row: two buttons side by side */
+    .mattori-configurator .floor-review-actions-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    /* Primary CTA: "Klopt ✓" */
     .mattori-configurator .btn-floor-good {
-      width: 100%;
+      flex: 1;
       height: 44px;
       font-size: 0.9rem;
       font-weight: 600;
@@ -1002,26 +1008,44 @@
       transform: translateY(-1px);
     }
 
-    /* Secondary: "Er klopt iets niet" */
+    /* Secondary: "Klopt niet" — text with animated underline like homepage */
     .mattori-configurator .btn-floor-flag {
-      width: 100%;
-      height: 40px;
-      font-size: 0.82rem;
-      font-weight: 500;
+      flex: 1;
+      height: 44px;
+      font-size: 0.9rem;
+      font-weight: 600;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: transparent;
-      color: #999;
-      border: 1.5px solid #e0e0e0;
-      border-radius: 12px;
+      color: #1a1a1a;
+      border: none;
       cursor: pointer;
-      transition: border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
-      text-align: center;
+      position: relative;
+      transition: opacity 0.2s ease;
     }
 
-    .mattori-configurator .btn-floor-flag:hover {
-      border-color: #aaa;
-      color: #666;
-      transform: translateY(-1px);
+    .mattori-configurator .btn-floor-flag::after {
+      content: '';
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 1.5px;
+      background: #1a1a1a;
+      transition: width 0.3s ease;
+    }
+
+    .mattori-configurator .btn-floor-flag:hover::after {
+      width: 60%;
+    }
+
+    /* Hint about excluding in step 4 */
+    .mattori-configurator .floor-review-hint-text {
+      font-size: 0.72rem;
+      color: #bbb;
+      text-align: center;
+      line-height: 1.4;
+      margin: 0;
     }
 
     /* Issue box (small difference) */
@@ -1062,26 +1086,39 @@
       transform: translateY(-1px);
     }
 
-    /* "Klopt helemaal niet →" outlined button */
+    /* "Klopt helemaal niet" — subtle text link */
     .mattori-configurator .btn-floor-major {
-      width: 100%;
-      height: 38px;
-      font-size: 0.78rem;
+      background: none;
+      border: none;
+      color: #bbb;
+      font-size: 0.76rem;
       font-weight: 500;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: transparent;
-      color: #bbb;
-      border: 1.5px solid #e8e8e8;
-      border-radius: 12px;
       cursor: pointer;
-      transition: border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+      padding: 0.3rem 0;
+      position: relative;
+      transition: color 0.2s ease;
       text-align: center;
     }
 
+    .mattori-configurator .btn-floor-major::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 1px;
+      background: #999;
+      transition: width 0.3s ease;
+    }
+
     .mattori-configurator .btn-floor-major:hover {
-      border-color: #aaa;
       color: #888;
-      transform: translateY(-1px);
+    }
+
+    .mattori-configurator .btn-floor-major:hover::after {
+      width: 70%;
     }
 
     /* Major panel */
