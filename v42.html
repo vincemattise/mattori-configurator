@@ -2,7 +2,7 @@
 <script>
 (function(){
   var sheets = [
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v42.3/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v42.4/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -23,7 +23,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel" style="display:none;">
-    <div class="admin-panel-label">Admin · v42.3</div>
+    <div class="admin-panel-label">Admin · v42.4</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon">⬆</div>
@@ -85,7 +85,7 @@
           <!-- Address overlay (top zone) — hidden until step 2 -->
           <div class="unified-address-overlay" id="unifiedAddressOverlay" style="display:none;">
             <img class="frame-house-icon" id="frameHouseIcon"
-                 src="https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_1.png?v=1771599165"
+                 src="https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_1.png?v=1771599717"
                  alt="" crossorigin="anonymous" />
             <div class="unified-address-inner">
               <div class="frame-street" id="frameStreet"></div>
@@ -160,9 +160,13 @@
             </div>
           </div>
 
-          <!-- Step 2: Address (street + city combined) + house icon -->
+          <!-- Step 2: House icon + Address -->
           <div class="wizard-step" id="wizardStep2" data-step="2" style="display:none;">
-            <p class="step-description">Vul het adres in dat op de lijst komt te staan.</p>
+            <div class="house-icon-picker" id="houseIconPicker">
+              <p class="step-description">Kies een huisje.</p>
+              <div class="house-icon-options" id="houseIconOptions"></div>
+            </div>
+            <p class="step-description" style="margin-top:24px;">Vul het adres in dat op de lijst komt te staan.</p>
             <div class="labels-fields">
               <div class="label-field-row">
                 <span>Straat en huisnummer</span>
@@ -172,10 +176,6 @@
                 <span>Plaats en land</span>
                 <input type="text" id="addressCity" placeholder="Amsterdam, The Netherlands" maxlength="35" />
               </div>
-            </div>
-            <div class="house-icon-picker" id="houseIconPicker">
-              <p class="step-description" style="margin-top:24px;">Kies een huisje.</p>
-              <div class="house-icon-options" id="houseIconOptions"></div>
             </div>
           </div>
 
@@ -291,4 +291,4 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v42.3/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v42.4/mattori-configurator.js"></script>
