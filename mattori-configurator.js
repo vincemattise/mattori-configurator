@@ -2241,8 +2241,15 @@
         nameEl.textContent = floors[currentFloorReviewIndex].name || 'Verdieping ' + (currentFloorReviewIndex + 1);
       }
 
-      // Reset to default panel
-      showFloorDefaultPanel();
+      // Show appropriate panel based on existing review status
+      var existingStatus = floorReviewStatus[currentFloorReviewIndex];
+      if (existingStatus === 'issue') {
+        showFloorIssuePanel();
+      } else if (existingStatus === 'major') {
+        showFloorMajorPanel();
+      } else {
+        showFloorDefaultPanel();
+      }
 
       // Show loading spinner overlay
       var loadingOverlayEl = document.createElement('div');
@@ -3756,12 +3763,12 @@
         var floorName = floor.name || ('Verdieping ' + (i + 1));
         var key = 'Plattegrond ' + floorName;
         if (status === 'confirmed') {
-          itemProperties[key] = '\u2705 Klopt';
+          itemProperties[key] = '\u2713 Klopt';
         } else if (status === 'issue') {
           var note = floorIssues[i] || '';
-          itemProperties[key] = '\u26A0\uFE0F Klopt niet' + (note ? ': \u201C' + note + '\u201D' : '');
+          itemProperties[key] = '\u2717 Klopt niet' + (note ? ': \u201C' + note + '\u201D' : '');
         } else if (status === 'major') {
-          itemProperties[key] = '\u274C Klopt helemaal niet';
+          itemProperties[key] = '\u2717 Klopt helemaal niet';
         }
       });
 
