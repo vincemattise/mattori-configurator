@@ -1406,7 +1406,7 @@
     // LAYOUT ENGINE — computes scale + position for preview
     // ============================================================
     var currentLayout = null; // stores computed layout for admin controls
-    var layoutAlign = 'center'; // 'center' or 'bottom' or 'top'
+    var layoutAlign = 'bottom'; // 'center' or 'bottom' or 'top'
     var layoutGapFactor = 0.08; // gap as fraction of largest floor dimension (0..0.3)
     var floorSettings = {}; // per-floor: { align: 'center'|'top'|'bottom', rotate: 0..315 }
 
@@ -1462,13 +1462,15 @@
 
       var actualCols = Math.ceil(grid.zoneW / grid.cellPx);
       var actualRows = Math.ceil(grid.zoneH / grid.cellPx);
+      var midCol = Math.floor(actualCols / 2);
       for (var x = 0; x <= actualCols; x++) {
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         var px = x * grid.cellPx;
         line.setAttribute('x1', px); line.setAttribute('y1', 0);
         line.setAttribute('x2', px); line.setAttribute('y2', grid.zoneH);
-        line.setAttribute('stroke', 'rgba(0,0,0,0.07)');
-        line.setAttribute('stroke-width', '0.5');
+        var isMid = (x === midCol);
+        line.setAttribute('stroke', isMid ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.07)');
+        line.setAttribute('stroke-width', isMid ? '1.5' : '0.5');
         svg.appendChild(line);
       }
       for (var y = 0; y <= actualRows; y++) {
@@ -1504,48 +1506,36 @@
       renderPreviewThumbnails();
       renderGridOverlay();
 
-      // Attach drag handlers + rotation buttons to each floor-canvas-wrap
+      // Attach drag handlers + floor buttons to each floor-canvas-wrap
       var wraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
       for (var wi = 0; wi < wraps.length; wi++) {
         attachDragHandlers(wraps[wi], wi);
-        // Add rotation button
-        (function(wrap, posIdx) {
-          if (!currentLayout || !currentLayout.positions[posIdx]) return;
-          var floorIdx = currentLayout.positions[posIdx].index;
-          var rotBtn = document.createElement('button');
-          rotBtn.type = 'button';
-          rotBtn.className = 'grid-rotate-btn';
-          rotBtn.title = '90° draaien';
-          rotBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
-          rotBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
-            var current = getFloorRotate(floorIdx);
-            floorSettings[floorIdx].rotate = (current + 90) % 360;
-            renderPreviewThumbnails();
-            renderGridOverlay();
-            // Re-attach handlers after re-render
-            var newWraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
-            _dragCleanups.forEach(function(fn) { fn(); });
-            _dragCleanups = [];
-            for (var nw = 0; nw < newWraps.length; nw++) {
-              attachDragHandlers(newWraps[nw], nw);
-            }
-            // Re-add rotation buttons
-            addGridRotationButtons();
-          });
-          wrap.appendChild(rotBtn);
-        })(wraps[wi], wi);
       }
+      addGridFloorButtons();
     }
 
-    function addGridRotationButtons() {
+    function refreshGridAfterChange() {
+      renderPreviewThumbnails();
+      renderGridOverlay();
+      _dragCleanups.forEach(function(fn) { fn(); });
+      _dragCleanups = [];
+      var newWraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
+      for (var nw = 0; nw < newWraps.length; nw++) {
+        attachDragHandlers(newWraps[nw], nw);
+      }
+      addGridFloorButtons();
+    }
+
+    function addGridFloorButtons() {
       if (!gridEditMode || !floorsGrid) return;
       var wraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
       for (var wi = 0; wi < wraps.length; wi++) {
         (function(wrap, posIdx) {
           if (!currentLayout || !currentLayout.positions[posIdx]) return;
           var floorIdx = currentLayout.positions[posIdx].index;
+          var pos = currentLayout.positions[posIdx];
+
+          // Rotation button (top-right)
           var rotBtn = document.createElement('button');
           rotBtn.type = 'button';
           rotBtn.className = 'grid-rotate-btn';
@@ -1556,17 +1546,31 @@
             if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
             var current = getFloorRotate(floorIdx);
             floorSettings[floorIdx].rotate = (current + 90) % 360;
-            renderPreviewThumbnails();
-            renderGridOverlay();
-            _dragCleanups.forEach(function(fn) { fn(); });
-            _dragCleanups = [];
-            var newWraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
-            for (var nw = 0; nw < newWraps.length; nw++) {
-              attachDragHandlers(newWraps[nw], nw);
-            }
-            addGridRotationButtons();
+            refreshGridAfterChange();
           });
           wrap.appendChild(rotBtn);
+
+          // Center button (top-left)
+          var centerBtn = document.createElement('button');
+          centerBtn.type = 'button';
+          centerBtn.className = 'grid-center-btn';
+          centerBtn.title = 'Centreer horizontaal';
+          centerBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="21"/><polyline points="6 9 12 3 18 9"/><polyline points="6 15 12 21 18 15"/></svg>';
+          centerBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var grid = getGridDimensions();
+            var centeredX = (grid.zoneW - pos.w) / 2;
+            wrap.style.left = centeredX + 'px';
+            // Update customPositions with special 'center' marker
+            if (customPositions) {
+              var cp = customPositions.find(function(c) { return c.index === floorIdx; });
+              if (cp) {
+                cp.gridX = 'midden';
+                cp.gridY = pxToGridCoord(parseFloat(wrap.style.top) || 0, grid.cellPx);
+              }
+            }
+          });
+          wrap.appendChild(centerBtn);
         })(wraps[wi], wi);
       }
 
@@ -1965,7 +1969,11 @@
         for (var ci = 0; ci < currentLayout.positions.length; ci++) {
           var _cp = customPositions.find(function(c) { return c.index === currentLayout.positions[ci].index; });
           if (_cp) {
-            currentLayout.positions[ci].x = _cp.gridX * _grid.cellPx;
+            if (_cp.gridX === 'midden') {
+              currentLayout.positions[ci].x = (_grid.zoneW - currentLayout.positions[ci].w) / 2;
+            } else {
+              currentLayout.positions[ci].x = _cp.gridX * _grid.cellPx;
+            }
             currentLayout.positions[ci].y = _cp.gridY * _grid.cellPx;
           }
         }
@@ -2816,6 +2824,12 @@
             ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Terug naar automatisch'
             : '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Layout aanpassen';
           if (gridEditMode) {
+            layoutAlign = 'bottom';
+            // Update alignment buttons in UI
+            var alignBtns = floorLayoutViewer.querySelectorAll('.floor-align-btn');
+            alignBtns.forEach(function(b) {
+              b.classList.toggle('active', b.dataset.align === 'bottom');
+            });
             enableGridDrag();
           } else {
             disableGridDrag();
