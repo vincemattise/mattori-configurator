@@ -3758,6 +3758,13 @@
       var fundaLink = fundaUrlInput ? fundaUrlInput.value.trim() : '';
       var itemProperties = {};
       if (fundaLink) itemProperties['Funda link'] = fundaLink;
+
+      // Address fields
+      var street = addressStreet ? addressStreet.value.trim() : '';
+      var city = addressCity ? addressCity.value.trim() : '';
+      if (street) itemProperties['Adres regel 1'] = street;
+      if (city) itemProperties['Adres regel 2'] = city;
+
       if (noFloorsMode) itemProperties['Opmerking'] = 'Geen interactieve plattegronden — handmatig opbouwen';
 
       // Per-floor review status as individual order properties
@@ -3775,6 +3782,16 @@
           itemProperties[key] = '\u2717 Klopt helemaal niet';
         }
       });
+
+      // Floor labels (from step 5)
+      var currentLabels = getIncludedFloorLabels();
+      if (labelMode === 'single') {
+        itemProperties['Label'] = singleLabelText;
+      } else if (currentLabels.length > 0) {
+        currentLabels.forEach(function(item) {
+          itemProperties['Label ' + (floors[item.index] ? floors[item.index].name : 'Verdieping')] = item.label;
+        });
+      }
 
       // Save preview screenshot to localStorage keyed by Funda link (skip in noFloorsMode)
       if (!noFloorsMode && fundaLink) {
