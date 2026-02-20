@@ -2396,8 +2396,8 @@
     // ============================================================
     // ADMIN: Toggle frame image (One.png ↔ Two.png)
     // ============================================================
-    var FRAME_IMG_ONE = 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Two_zonder_huisje.png?v=1771600990';
-    var FRAME_IMG_TWO = 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Two_1a0d36a8-e861-4cec-8417-f251458bb134.png?v=1771340362';
+    var FRAME_IMG_ONE = 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Two_zonder_huisje_56d68527-71ff-4333-bfcf-6f2e6eca7d95.png?v=1771605516';
+    var FRAME_IMG_TWO = 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/One_2ef26725-1a92-4673-9c0b-3699a5be8e0a.png?v=1771605517';
 
     function toggleAdminFrame() {
       ensureDomRefs();
