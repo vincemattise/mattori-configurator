@@ -248,6 +248,8 @@
     const TOTAL_WIZARD_STEPS = 5;
     let currentFloorReviewIndex = 0;
     var viewedFloors = new Set();
+    var floorReviewStatus = {};   // { floorIndex: 'confirmed' | 'issue' | 'major' }
+    var floorIssues = {};         // { floorIndex: 'text describing issue' }
     let noFloorsMode = false;
 
     // Active viewers for cleanup
@@ -1946,7 +1948,7 @@
     var WIZARD_STEP_TITLES = {
       1: 'Voer je Funda-link in',
       2: 'Controleer het adres',
-      3: 'Bekijk de plattegronden',
+      3: 'Controleer de plattegronden',
       4: 'Ontwerp je indeling',
       5: 'Pas de labels aan'
     };
@@ -2162,12 +2164,18 @@
       thumbstripRenderers = [];
       strip.innerHTML = '';
 
+      // Hide thumbstrip when only 1 floor
+      if (floors.length <= 1) {
+        strip.style.display = 'none';
+        return;
+      }
+      strip.style.display = '';
+
       // Build thumbnails
       for (let i = 0; i < floors.length; i++) {
         const thumb = document.createElement('div');
         thumb.className = 'floor-thumb';
         if (i === currentFloorReviewIndex) thumb.classList.add('active');
-        if (excludedFloors.has(i)) thumb.classList.add('excluded');
         thumb.addEventListener('click', () => {
           currentFloorReviewIndex = i;
           renderFloorReview();
@@ -2187,7 +2195,16 @@
       const thumbs = strip.querySelectorAll('.floor-thumb');
       thumbs.forEach((t, i) => {
         t.classList.toggle('active', i === currentFloorReviewIndex);
-        t.classList.toggle('excluded', excludedFloors.has(i));
+        // Remove old status indicator
+        var oldDot = t.querySelector('.floor-thumb-status');
+        if (oldDot) oldDot.remove();
+        // Add status indicator based on review result
+        var status = floorReviewStatus[i];
+        if (status) {
+          var dot = document.createElement('div');
+          dot.className = 'floor-thumb-status status-' + status;
+          t.appendChild(dot);
+        }
       });
     }
 
@@ -2207,6 +2224,19 @@
       if (currentFloorReviewIndex >= floors.length) currentFloorReviewIndex = floors.length - 1;
       if (currentFloorReviewIndex < 0) currentFloorReviewIndex = 0;
 
+      // Update header: counter + floor name
+      var counterEl = document.getElementById('floorReviewCounter');
+      var nameEl = document.getElementById('floorReviewName');
+      if (counterEl) {
+        counterEl.textContent = floors.length > 1 ? 'Plattegrond ' + (currentFloorReviewIndex + 1) + ' van ' + floors.length : '';
+      }
+      if (nameEl) {
+        nameEl.textContent = floors[currentFloorReviewIndex].name || 'Verdieping ' + (currentFloorReviewIndex + 1);
+      }
+
+      // Reset to default panel
+      showFloorDefaultPanel();
+
       // Show loading spinner overlay
       var loadingOverlayEl = document.createElement('div');
       loadingOverlayEl.className = 'floor-review-loading-overlay';
@@ -2222,50 +2252,19 @@
         // Render interactive viewer
         floorReviewViewer = renderInteractiveViewer(currentFloorReviewIndex, floorReviewViewerEl);
 
-        // Add zoom/rotate hint label
+        // Add subtle interaction hint
         var hint = document.createElement('div');
         hint.className = 'floor-review-hint';
-        hint.textContent = 'Klik en sleep om te draaien \u00B7 scroll om te zoomen';
+        hint.textContent = 'Sleep om te draaien \u00B7 scroll om te zoomen';
         floorReviewViewerEl.appendChild(hint);
-
-        // Show/hide excluded overlay
-        updateFloorReviewExcludedOverlay();
       }, 60);
 
       // Track viewed floors and update wizard UI
       viewedFloors.add(currentFloorReviewIndex);
       updateWizardUI();
 
-      // Update thumbstrip state (highlight active, don't rebuild)
+      // Update thumbstrip state (highlight active + status indicators)
       updateThumbstripState();
-
-      // Reset issue panel
-      var issueDetails = document.getElementById('floorIssueDetails');
-      if (issueDetails) issueDetails.style.display = 'none';
-      var issueBtn = document.getElementById('btnFloorIssue');
-      if (issueBtn) issueBtn.classList.remove('active');
-
-      // Update button texts and exclude highlight
-      var confirmBtn = document.getElementById('btnFloorConfirm');
-      if (confirmBtn) {
-        confirmBtn.textContent = 'Wel meenemen ✓';
-      }
-      var excludeBtn = document.getElementById('btnFloorExclude');
-      if (excludeBtn) {
-        excludeBtn.classList.toggle('active', excludedFloors.has(currentFloorReviewIndex));
-      }
-    }
-
-    function updateFloorReviewExcludedOverlay() {
-      if (!floorReviewViewerEl) return;
-      var existing = floorReviewViewerEl.querySelector('.floor-review-excluded');
-      if (existing) existing.remove();
-      if (excludedFloors.has(currentFloorReviewIndex)) {
-        var overlay = document.createElement('div');
-        overlay.className = 'floor-review-excluded';
-        overlay.innerHTML = '<span>Uitgezet</span>';
-        floorReviewViewerEl.appendChild(overlay);
-      }
     }
 
     function navigateFloorReview(direction) {
@@ -2275,59 +2274,82 @@
       renderFloorReview();
     }
 
-    // "Wel meenemen" — include current floor, navigate to next or advance to step 4
-    function confirmFloor() {
-      ensureDomRefs();
-      excludedFloors.delete(currentFloorReviewIndex); // Re-include if previously excluded
-      viewedFloors.add(currentFloorReviewIndex);
-      // Close any open issue panel
-      var details = document.getElementById('floorIssueDetails');
-      if (details) details.style.display = 'none';
-      var issueBtn = document.getElementById('btnFloorIssue');
-      if (issueBtn) issueBtn.classList.remove('active');
-      // Update preview thumbnails
+    // ── Step 3: New review handlers ──
+
+    // Helper: advance to next floor or step 4
+    function advanceFloorReview() {
       renderPreviewThumbnails();
       updateFloorLabels();
-      // Navigate to next floor, or auto-advance to step 4
-      if (currentFloorReviewIndex < floors.length - 1) {
-        currentFloorReviewIndex++;
-        renderFloorReview();
-      } else {
-        // Last floor — go to step 4 automatically
-        showWizardStep(4);
-      }
-    }
-
-    // "Klopt niet" toggle — show/hide issue textarea
-    function toggleFloorIssue() {
-      var details = document.getElementById('floorIssueDetails');
-      var issueBtn = document.getElementById('btnFloorIssue');
-      if (!details) return;
-      var isOpen = details.style.display !== 'none';
-      details.style.display = isOpen ? 'none' : '';
-      if (issueBtn) issueBtn.classList.toggle('active', !isOpen);
-    }
-
-    // "Niet meenemen" — exclude floor and advance
-    function excludeFloor() {
-      ensureDomRefs();
-      excludedFloors.add(currentFloorReviewIndex);
-      viewedFloors.add(currentFloorReviewIndex);
-      // Close any open issue panel
-      var details = document.getElementById('floorIssueDetails');
-      if (details) details.style.display = 'none';
-      var issueBtn = document.getElementById('btnFloorIssue');
-      if (issueBtn) issueBtn.classList.remove('active');
-      // Update preview thumbnails to show excluded state
-      renderPreviewThumbnails();
-      updateFloorLabels();
-      // Navigate to next floor or advance to step 4
       if (currentFloorReviewIndex < floors.length - 1) {
         currentFloorReviewIndex++;
         renderFloorReview();
       } else {
         showWizardStep(4);
       }
+    }
+
+    // "Ziet er goed uit →"
+    function confirmFloorGood() {
+      ensureDomRefs();
+      viewedFloors.add(currentFloorReviewIndex);
+      floorReviewStatus[currentFloorReviewIndex] = 'confirmed';
+      advanceFloorReview();
+    }
+
+    // Show issue panel (small difference)
+    function showFloorIssuePanel() {
+      document.getElementById('floorReviewDefault').style.display = 'none';
+      document.getElementById('floorReviewIssue').style.display = '';
+      document.getElementById('floorReviewMajor').style.display = 'none';
+      // Restore previous note if one was saved for this floor
+      var textarea = document.getElementById('floorIssueText');
+      if (textarea) textarea.value = floorIssues[currentFloorReviewIndex] || '';
+    }
+
+    // "Opslaan & door →"
+    function saveFloorIssue() {
+      var textarea = document.getElementById('floorIssueText');
+      var text = textarea ? textarea.value.trim() : '';
+      if (text) {
+        floorIssues[currentFloorReviewIndex] = text;
+        floorReviewStatus[currentFloorReviewIndex] = 'issue';
+      } else {
+        // Empty note = treat as confirmed
+        delete floorIssues[currentFloorReviewIndex];
+        floorReviewStatus[currentFloorReviewIndex] = 'confirmed';
+      }
+      viewedFloors.add(currentFloorReviewIndex);
+      advanceFloorReview();
+    }
+
+    // Show major panel (floor is very wrong)
+    function showFloorMajorPanel() {
+      document.getElementById('floorReviewDefault').style.display = 'none';
+      document.getElementById('floorReviewIssue').style.display = 'none';
+      document.getElementById('floorReviewMajor').style.display = '';
+      // Set up contact email link
+      var contactBtn = document.getElementById('btnFloorContact');
+      if (contactBtn) {
+        var fundaUrl = fundaUrlInput ? fundaUrlInput.value.trim() : '';
+        var floorName = floors[currentFloorReviewIndex] ? floors[currentFloorReviewIndex].name : 'Onbekend';
+        var subject = encodeURIComponent('Frame³ — plattegrond klopt niet');
+        var body = encodeURIComponent('Hoi,\n\nDe plattegrond "' + floorName + '" klopt niet.\n\nFunda link: ' + (fundaUrl || '(niet ingevuld)') + '\n\nKunnen jullie me helpen?\n\nAlvast bedankt!');
+        contactBtn.href = 'mailto:info@mattori.nl?subject=' + subject + '&body=' + body;
+      }
+    }
+
+    // "Doorgaan →" (major issue, proceed on trust)
+    function confirmFloorMajor() {
+      viewedFloors.add(currentFloorReviewIndex);
+      floorReviewStatus[currentFloorReviewIndex] = 'major';
+      advanceFloorReview();
+    }
+
+    // "← Terug" from major panel
+    function showFloorDefaultPanel() {
+      document.getElementById('floorReviewDefault').style.display = '';
+      document.getElementById('floorReviewIssue').style.display = 'none';
+      document.getElementById('floorReviewMajor').style.display = 'none';
     }
 
     // ============================================================
@@ -3719,6 +3741,24 @@
       var itemProperties = {};
       if (fundaLink) itemProperties['Funda link'] = fundaLink;
       if (noFloorsMode) itemProperties['Opmerking'] = 'Geen interactieve plattegronden — handmatig opbouwen';
+
+      // Include floor review notes (small issues)
+      if (Object.keys(floorIssues).length > 0) {
+        var notes = Object.entries(floorIssues).map(function(entry) {
+          var floorName = floors[entry[0]] ? floors[entry[0]].name : 'Verdieping ' + (parseInt(entry[0]) + 1);
+          return floorName + ': ' + entry[1];
+        }).join(' | ');
+        itemProperties['Opmerkingen plattegronden'] = notes;
+      }
+      // Flag floors that need manual review (major issues)
+      var majorFloors = Object.entries(floorReviewStatus).filter(function(entry) {
+        return entry[1] === 'major';
+      }).map(function(entry) {
+        return floors[entry[0]] ? floors[entry[0]].name : 'Verdieping ' + (parseInt(entry[0]) + 1);
+      });
+      if (majorFloors.length > 0) {
+        itemProperties['Handmatig controleren'] = majorFloors.join(', ');
+      }
 
       // Save preview screenshot to localStorage keyed by Funda link (skip in noFloorsMode)
       if (!noFloorsMode && fundaLink) {

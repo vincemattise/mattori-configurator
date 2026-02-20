@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v39.6/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v40/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -910,32 +910,28 @@
 
     /* ── Step 3: Floor Review Viewer ── */
     .mattori-configurator .floor-review-viewer {
-      width: 80%;
+      width: 85%;
       margin: 0 auto;
       aspect-ratio: 3 / 4;
-      border-radius: 12px;
+      border-radius: 14px;
       overflow: hidden;
-      background: #ffffff;
+      background: #f8f8f6;
       position: relative;
-      box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1);
     }
 
     .mattori-configurator .floor-review-hint {
       position: absolute;
-      top: 12px;
-      left: 12px;
-      background: rgba(255,255,255,0.88);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      color: #888;
-      font-size: 0.68rem;
-      font-weight: 500;
-      padding: 0.3rem 0.65rem;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #bbb;
+      font-size: 0.65rem;
+      font-weight: 400;
+      padding: 0.25rem 0.6rem;
       border-radius: 50px;
-      letter-spacing: 0.2px;
       z-index: 2;
       pointer-events: none;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      white-space: nowrap;
     }
 
     .mattori-configurator .floor-review-viewer canvas {
@@ -951,18 +947,202 @@
       cursor: grabbing;
     }
 
+    /* ── Step 3: Controls panel ── */
     .mattori-configurator .floor-review-controls {
-      background: #fff;
-      border-radius: 14px;
-      padding: 1rem 1.2rem;
-      margin-top: 0.6rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      padding: 0;
     }
 
-    .mattori-configurator .floor-review-divider {
-      height: 1px;
-      background: #eee;
-      margin: 0.7rem 0;
+    /* Header: counter + floor name */
+    .mattori-configurator .floor-review-header {
+      margin-bottom: 1rem;
+    }
+
+    .mattori-configurator .floor-review-counter {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: #aaa;
+      letter-spacing: 0.3px;
+      margin-bottom: 0.15rem;
+    }
+
+    .mattori-configurator .floor-review-name {
+      display: block;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      line-height: 1.3;
+    }
+
+    /* Panels (default / issue / major) */
+    .mattori-configurator .floor-review-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    /* Primary CTA: "Ziet er goed uit →" */
+    .mattori-configurator .btn-floor-good {
+      width: 100%;
+      height: 44px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease;
+    }
+
+    .mattori-configurator .btn-floor-good:hover {
+      background: #333;
+      transform: translateY(-1px);
+    }
+
+    /* Subtle text-link: "Er klopt iets niet" */
+    .mattori-configurator .btn-floor-flag {
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 0.8rem;
+      font-weight: 400;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      cursor: pointer;
+      padding: 0.2rem 0;
+      transition: color 0.2s ease;
+      text-align: center;
+    }
+
+    .mattori-configurator .btn-floor-flag:hover {
+      color: #666;
+    }
+
+    /* Issue box (small difference) */
+    .mattori-configurator .floor-issue-box {
+      background: #f8f8f6;
+      border-radius: 10px;
+      padding: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .mattori-configurator .floor-issue-box textarea.wizard-input {
+      resize: none;
+      min-height: 48px;
+      height: auto;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.82rem;
+      border-radius: 8px;
+    }
+
+    .mattori-configurator .btn-floor-save {
+      width: 100%;
+      height: 38px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease;
+    }
+
+    .mattori-configurator .btn-floor-save:hover {
+      background: #333;
+      transform: translateY(-1px);
+    }
+
+    /* "Klopt helemaal niet →" text link */
+    .mattori-configurator .btn-floor-major {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 0.75rem;
+      font-weight: 400;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      cursor: pointer;
+      padding: 0.3rem 0;
+      transition: color 0.2s ease;
+      text-align: center;
+    }
+
+    .mattori-configurator .btn-floor-major:hover {
+      color: #999;
+    }
+
+    /* Major panel */
+    .mattori-configurator .floor-major-text {
+      font-size: 0.85rem;
+      color: #666;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .mattori-configurator .floor-major-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .mattori-configurator .btn-floor-contact {
+      flex: 1;
+      height: 40px;
+      line-height: 40px;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      background: transparent;
+      color: #1a1a1a;
+      border: 1.5px solid #ddd;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .mattori-configurator .btn-floor-contact:hover {
+      border-color: #1a1a1a;
+      transform: translateY(-1px);
+    }
+
+    .mattori-configurator .btn-floor-trust {
+      flex: 1;
+      height: 40px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease;
+    }
+
+    .mattori-configurator .btn-floor-trust:hover {
+      background: #333;
+      transform: translateY(-1px);
+    }
+
+    .mattori-configurator .btn-floor-back {
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 0.78rem;
+      font-weight: 400;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      cursor: pointer;
+      padding: 0.2rem 0;
+      transition: color 0.2s ease;
+      text-align: center;
+    }
+
+    .mattori-configurator .btn-floor-back:hover {
+      color: #666;
     }
 
     /* Thumbstrip: mini thumbnails for floor navigation */
@@ -971,19 +1151,21 @@
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      margin-bottom: 0.8rem;
+      margin-top: 1.2rem;
+      padding-top: 0.8rem;
+      border-top: 1px solid rgba(0,0,0,0.06);
     }
 
     .mattori-configurator .floor-thumb {
-      width: 52px;
-      height: 52px;
+      width: 48px;
+      height: 48px;
       border-radius: 8px;
       overflow: hidden;
       background: transparent;
       cursor: pointer;
       position: relative;
       transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-      opacity: 0.35;
+      opacity: 0.3;
       flex-shrink: 0;
     }
 
@@ -993,216 +1175,34 @@
       transform: scale(1.08);
     }
 
-    .mattori-configurator .floor-thumb.excluded {
-      opacity: 0.15;
-    }
-
     .mattori-configurator .floor-thumb canvas {
       width: 100%;
       height: 100%;
       display: block;
     }
 
-    .mattori-configurator .floor-thumb-dots {
-      display: flex;
-      justify-content: center;
-      gap: 5px;
-      margin-top: 0.5rem;
-    }
-
-    .mattori-configurator .floor-thumb-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #ccc;
-      transition: background 0.2s ease;
-    }
-
-    .mattori-configurator .floor-thumb-dot.active {
-      background: #1a1a1a;
-    }
-
-    .mattori-configurator .floor-review-nav {
-      display: none;
-    }
-
-    .mattori-configurator .btn-floor-nav {
-      height: 40px;
-      padding: 0 1.2rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #e0ddd8;
-      border: none;
-      border-radius: 12px;
-      font-size: 0.88rem;
-      font-weight: 600;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      color: #1a1a1a;
-      cursor: pointer;
-      transition: background 0.2s ease, transform 0.2s ease;
-      gap: 0.3rem;
-    }
-
-    .mattori-configurator .btn-floor-nav:hover {
-      background: #d0cdc8;
-      transform: translateY(-1px);
-    }
-
-    .mattori-configurator .btn-floor-nav.btn-floor-nav-next {
-      background: #1a1a1a;
-      color: #fff;
-    }
-
-    .mattori-configurator .btn-floor-nav.btn-floor-nav-next:hover {
-      background: #333;
-    }
-
-    .mattori-configurator .floor-review-label {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: #1a1a1a;
-      min-width: 120px;
-      text-align: center;
-    }
-
-    .mattori-configurator .floor-review-checkbox {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 0;
-    }
-
-    .mattori-configurator .floor-review-checkbox input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: #1a1a1a;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .mattori-configurator .floor-review-checkbox label {
-      font-size: 0.88rem;
-      color: #555;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .mattori-configurator .floor-review-excluded {
+    /* Thumbstrip status indicators */
+    .mattori-configurator .floor-thumb-status {
       position: absolute;
-      inset: 0;
-      background: rgba(250,250,248,0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
+      bottom: 3px;
+      right: 3px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid #fff;
+      z-index: 2;
     }
 
-    .mattori-configurator .floor-review-excluded span {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: #aaa;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
+    .mattori-configurator .floor-thumb-status.status-confirmed {
+      background: #2ecc71;
     }
 
-    /* Floor review action buttons */
-    .mattori-configurator .floor-review-actions {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
+    .mattori-configurator .floor-thumb-status.status-issue {
+      background: #f39c12;
     }
 
-    .mattori-configurator .btn-floor-confirm {
-      flex: 1;
-      height: 40px;
-      font-size: 0.88rem;
-      font-weight: 600;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #1a1a1a;
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: background 0.2s ease, transform 0.2s ease;
-    }
-
-    .mattori-configurator .btn-floor-confirm:hover {
-      background: #333;
-      transform: translateY(-1px);
-    }
-
-    .mattori-configurator .btn-floor-issue {
-      height: 40px;
-      padding: 0 1rem;
-      font-size: 0.88rem;
-      font-weight: 600;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #888;
-      color: #fff;
-      border: 1.5px solid #888;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: border-color 0.2s ease, color 0.2s ease;
-      flex-shrink: 0;
-    }
-
-    .mattori-configurator .btn-floor-issue:hover {
-      background: #777;
-      border-color: #777;
-      color: #fff;
-    }
-
-    .mattori-configurator .btn-floor-issue.active {
-      background: #c0392b;
-      border-color: #c0392b;
-      color: #fff;
-    }
-
-    .mattori-configurator .btn-floor-exclude {
-      height: 40px;
-      padding: 0 1rem;
-      font-size: 0.88rem;
-      font-weight: 600;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #888;
-      color: #fff;
-      border: 1.5px solid #888;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: background 0.2s ease, border-color 0.2s ease;
-      flex-shrink: 0;
-    }
-
-    .mattori-configurator .btn-floor-exclude:hover {
-      background: #777;
-      border-color: #777;
-    }
-
-    .mattori-configurator .btn-floor-exclude.active {
-      background: #c0392b;
-      border-color: #c0392b;
-      color: #fff;
-    }
-
-    .mattori-configurator .floor-issue-details {
-      margin-top: 0.4rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .mattori-configurator .floor-issue-details textarea.wizard-input {
-      resize: vertical;
-      min-height: 60px;
-      height: auto;
-      padding: 0.6rem 1rem;
-    }
-
-    .mattori-configurator .floor-issue-notice {
-      margin-top: 0.5rem;
-      font-size: 0.78rem;
-      color: #999;
-      line-height: 1.4;
+    .mattori-configurator .floor-thumb-status.status-major {
+      background: #e74c3c;
     }
 
     /* ── Step 4: Floor Layout Viewer (list) ── */
