@@ -1666,8 +1666,8 @@
       // Compute layout
       currentLayout = computeFloorLayout(zoneW, zoneH, includedIndices);
 
-      // Use ortho + colored floors during editing (steps 2-4), perspective for final (step 5)
-      var useOrtho = currentWizardStep < 5;
+      // Always use ortho (flat 2D top-down) for unified preview
+      var useOrtho = true;
 
       // Render each floor at its computed position
       for (var pi = 0; pi < currentLayout.positions.length; pi++) {
@@ -3692,7 +3692,7 @@
       // Disable the correct button (btnOrder for normal flow, btnWizardNext for noFloorsMode)
       var orderBtn = noFloorsMode ? btnWizardNext : document.getElementById('btnOrder');
       var originalText = orderBtn ? orderBtn.textContent : '';
-      if (orderBtn) { orderBtn.disabled = true; orderBtn.textContent = 'Toevoegen…'; }
+      if (orderBtn) { orderBtn.disabled = true; orderBtn.innerHTML = '<span class="btn-spinner"></span> Toevoegen…'; }
       var fundaLink = fundaUrlInput ? fundaUrlInput.value.trim() : '';
       var itemProperties = {};
       if (fundaLink) itemProperties['Funda link'] = fundaLink;
