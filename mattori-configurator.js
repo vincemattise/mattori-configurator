@@ -3696,7 +3696,8 @@
         }
 
         var addrStr = addr ? addr.street + ', ' + addr.city : 'Adres niet gevonden';
-        setFundaStatus('success', '<strong>✓ Funda link correct</strong><strong>✓ ' + data.floors.length + ' interactieve plattegrond' + (data.floors.length === 1 ? '' : 'en') + ' gevonden</strong><span class="funda-address-line">📍 ' + addrStr + '</span>');
+        var saleStatusLine = data.sale_status ? '<span class="funda-address-line">🏷️ ' + data.sale_status + '</span>' : '';
+        setFundaStatus('success', '<strong>✓ Funda link correct</strong><strong>✓ ' + data.floors.length + ' interactieve plattegrond' + (data.floors.length === 1 ? '' : 'en') + ' gevonden</strong><span class="funda-address-line">📍 ' + addrStr + '</span>' + saleStatusLine);
 
         processFloors(data);
 
