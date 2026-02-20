@@ -1573,6 +1573,7 @@
           wrap.appendChild(centerBtn);
         })(wraps[wi], wi);
       }
+    }
 
     function disableGridDrag() {
       var overlay = document.getElementById('unifiedFloorsOverlay');
