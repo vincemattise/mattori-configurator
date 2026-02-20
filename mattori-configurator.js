@@ -343,8 +343,17 @@
           }
         }
 
+        // Rejoin house number + suffix with hyphen (e.g. "275-1" stays "275-1")
         const parts = streetSlug.split('-');
-        const titleCased = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+        const merged = [];
+        for (let i = 0; i < parts.length; i++) {
+          if (i > 0 && /^\d+$/.test(parts[i - 1]) && /^\d+[a-z]?$/.test(parts[i]) && parts[i].length <= 3) {
+            merged[merged.length - 1] += '-' + parts[i];
+          } else {
+            merged.push(parts[i]);
+          }
+        }
+        const titleCased = merged.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
         const cityTitle = city.charAt(0).toUpperCase() + city.slice(1);
 
         return {
