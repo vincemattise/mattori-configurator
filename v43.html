@@ -2,7 +2,7 @@
 <script>
 (function(){
   var sheets = [
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v43.4/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v43.5/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -23,7 +23,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel" style="display:none;">
-    <div class="admin-panel-label">Admin · v43.4</div>
+    <div class="admin-panel-label">Admin · v43.5</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon">⬆</div>
@@ -249,6 +249,10 @@
               Layout aanpassen
             </button>
             <div class="floor-layout-viewer" id="floorLayoutViewer"></div>
+            <div class="layout-note-section">
+              <label class="layout-note-label" for="layoutNote">Opmerking over de indeling <span style="font-weight:400;color:#999;">(optioneel)</span></label>
+              <textarea class="layout-note-input" id="layoutNote" rows="2" placeholder="Bijv. 'Voorgevels graag uitgelijnd' of 'Plattegronden iets compacter'"></textarea>
+            </div>
           </div>
 
           <!-- Step 5: Edit label texts -->
@@ -312,4 +316,4 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v43.4/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v43.5/mattori-configurator.js"></script>

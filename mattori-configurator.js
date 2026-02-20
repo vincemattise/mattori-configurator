@@ -1460,7 +1460,9 @@
       svg.setAttribute('height', grid.zoneH);
       svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:1;';
 
-      for (var x = 0; x <= grid.cols; x++) {
+      var actualCols = Math.ceil(grid.zoneW / grid.cellPx);
+      var actualRows = Math.ceil(grid.zoneH / grid.cellPx);
+      for (var x = 0; x <= actualCols; x++) {
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         var px = x * grid.cellPx;
         line.setAttribute('x1', px); line.setAttribute('y1', 0);
@@ -1469,7 +1471,7 @@
         line.setAttribute('stroke-width', '0.5');
         svg.appendChild(line);
       }
-      for (var y = 0; y <= grid.rows; y++) {
+      for (var y = 0; y <= actualRows; y++) {
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         var py = y * grid.cellPx;
         line.setAttribute('x1', 0); line.setAttribute('y1', py);
@@ -4149,6 +4151,11 @@
       for (var gk in gridProps) {
         if (gridProps.hasOwnProperty(gk)) itemProperties[gk] = gridProps[gk];
       }
+
+      // Layout note (from step 4)
+      var layoutNoteEl = document.getElementById('layoutNote');
+      var layoutNoteText = layoutNoteEl ? layoutNoteEl.value.trim() : '';
+      if (layoutNoteText) itemProperties['Opmerking indeling'] = layoutNoteText;
 
       // Hide grid overlay before screenshot
       var _gridOverlayEl = floorsGrid ? floorsGrid.querySelector('.grid-overlay') : null;
