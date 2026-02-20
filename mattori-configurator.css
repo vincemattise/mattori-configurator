@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v42.5/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v42.6/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -500,8 +500,8 @@
     }
 
     .mattori-configurator .frame-house-icon {
-      width: 25px;
-      height: 25px;
+      width: 22px;
+      height: 22px;
       object-fit: contain;
       display: block;
       margin-bottom: -15px;
