@@ -3615,13 +3615,14 @@
     // Function declaration so it hoists (Shopify addEventListener issue)
     const TEST_LINKS = {
       1: 'https://www.funda.nl/detail/koop/haarlem/appartement-prinsen-bolwerk-72/43226270/',
-      2: 'https://www.funda.nl/detail/koop/amsterdam/appartement-hoofdweg-275-1/89691599/'
+      2: 'https://www.funda.nl/detail/koop/amsterdam/appartement-hoofdweg-275-1/89691599/',
+      3: 'https://www.funda.nl/detail/koop/verkocht/deventer/huis-veenweg-79/43255889/'
     };
     function pasteTestLink(n) {
       var input = document.getElementById('fundaUrl');
       if (input) input.value = TEST_LINKS[n] || TEST_LINKS[1];
     }
-    for (const n of [1, 2]) {
+    for (const n of [1, 2, 3]) {
       const btn = document.getElementById('btnTest' + n);
       if (btn) btn.addEventListener('click', () => pasteTestLink(n));
     }
