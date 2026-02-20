@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v42.0/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v42.1/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -485,17 +485,25 @@
       /* shadow is baked into the PNG — no CSS filter needed */
     }
 
-    /* Address overlay — top zone of the frame */
+    /* Address overlay — top zone of the frame (includes house icon + address text) */
     .mattori-configurator .unified-address-overlay {
       position: absolute;
-      top: calc(16% + 13px);
+      top: calc(16% - 8px);
       left: calc(15.5% + 10px);
       right: calc(14% + 20px);
-      height: calc(10% - 22px);
+      height: calc(10% + 10px);
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-end;
       pointer-events: none;
+    }
+
+    .mattori-configurator .frame-house-icon {
+      width: 15px;
+      height: auto;
+      display: block;
+      margin-bottom: 4px;
     }
 
     .mattori-configurator .unified-address-inner {
@@ -1609,6 +1617,42 @@
 
     .mattori-configurator .labels-fields input:focus {
       border-color: #1a1a1a;
+    }
+
+    /* ── House icon picker (step 2) ── */
+    .mattori-configurator .house-icon-options {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .mattori-configurator .house-icon-option {
+      width: 56px;
+      height: 56px;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      background: #fff;
+      padding: 8px;
+    }
+
+    .mattori-configurator .house-icon-option:hover {
+      border-color: #aaa;
+    }
+
+    .mattori-configurator .house-icon-option.active {
+      border-color: #1a1a1a;
+      box-shadow: 0 0 0 1px #1a1a1a;
+    }
+
+    .mattori-configurator .house-icon-option img {
+      width: 24px;
+      height: auto;
+      display: block;
     }
 
     /* ── Order button (in wizard-nav) ── */

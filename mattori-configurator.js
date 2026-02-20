@@ -268,7 +268,7 @@
         wizard, wizardDots, wizardStepIndicator, btnWizardPrev, btnWizardNext,
         addressStreet, addressCity, labelsFields,
         floorReviewViewerEl, floorReviewLabel, floorIncludeCb, floorLayoutViewer,
-        fundaUrlInput, btnFunda;
+        fundaUrlInput, btnFunda, frameHouseIcon;
 
     var _domRefsReady = false;
     function ensureDomRefs() {
@@ -305,6 +305,7 @@
       floorLayoutViewer = document.getElementById('floorLayoutViewer');
       fundaUrlInput = document.getElementById('fundaUrl');
       btnFunda = document.getElementById('btnFunda');
+      frameHouseIcon = document.getElementById('frameHouseIcon');
 
       // Show admin panel only when ?admin=true is in the URL
       var adminPanel = document.getElementById('adminPanel');
@@ -498,6 +499,13 @@
 
     let currentAddress = { street: '', city: '' };
     let lastFundaUrl = '';
+
+    // House icon options
+    var houseIconOptions = [
+      { id: 'huisje1', label: 'Huisje 1', url: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_1.png?v=1771599165' },
+      { id: 'huisje2', label: 'Huisje 2', url: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_2.png?v=1771599166' }
+    ];
+    var selectedHouseIcon = 'huisje1'; // default
 
     // ============================================================
     // BOUNDING BOX
@@ -3562,6 +3570,32 @@
     addressStreet.addEventListener('input', () => updateFrameAddress());
     addressCity.addEventListener('input', () => updateFrameAddress());
 
+    // House icon picker — render options
+    (function renderHouseIconPicker() {
+      var container = document.getElementById('houseIconOptions');
+      if (!container) return;
+      container.innerHTML = '';
+      houseIconOptions.forEach(function(opt) {
+        var btn = document.createElement('div');
+        btn.className = 'house-icon-option' + (opt.id === selectedHouseIcon ? ' active' : '');
+        btn.dataset.iconId = opt.id;
+        var img = document.createElement('img');
+        img.src = opt.url;
+        img.alt = opt.label;
+        btn.appendChild(img);
+        btn.addEventListener('click', function() {
+          selectedHouseIcon = opt.id;
+          // Update active state
+          container.querySelectorAll('.house-icon-option').forEach(function(el) {
+            el.classList.toggle('active', el.dataset.iconId === opt.id);
+          });
+          // Update preview
+          if (frameHouseIcon) frameHouseIcon.src = opt.url;
+        });
+        container.appendChild(btn);
+      });
+    })();
+
     // Wizard navigation
     btnWizardPrev.addEventListener('click', () => prevWizardStep());
     btnWizardNext.addEventListener('click', () => nextWizardStep());
@@ -3786,6 +3820,10 @@
       var city = addressCity ? addressCity.value.trim() : '';
       if (street) itemProperties['Adres regel 1'] = street;
       if (city) itemProperties['Adres regel 2'] = city;
+
+      // House icon
+      var houseOpt = houseIconOptions.find(function(o) { return o.id === selectedHouseIcon; });
+      if (houseOpt) itemProperties['Huisje'] = houseOpt.label;
 
       if (noFloorsMode) itemProperties['Opmerking'] = 'Geen interactieve plattegronden — handmatig opbouwen';
 
