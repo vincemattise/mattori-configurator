@@ -504,7 +504,8 @@
     var houseIconOptions = [
       { id: 'huisje1', label: 'Huisje 1', url: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_1.png?v=1771599717' },
       { id: 'huisje2', label: 'Huisje 2', url: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_2.png?v=1771599811' },
-      { id: 'huisje3', label: 'Huisje 3', url: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_3.png?v=1771599811' }
+      { id: 'huisje3', label: 'Huisje 3', url: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_3.png?v=1771599811' },
+      { id: 'huisje4', label: 'Huisje 4', url: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Huisje_4.png?v=1771600168' }
     ];
     var selectedHouseIcon = 'huisje1'; // default
 
