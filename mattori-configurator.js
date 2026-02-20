@@ -3663,9 +3663,10 @@
 
     // Order button — adds product to Shopify cart via Cart API
     // Capture screenshot of unified frame preview using html2canvas → localStorage
-    async function capturePreviewToLocalStorage() {
+    // Stores per Funda link so multiple cart items each keep their own preview
+    async function capturePreviewToLocalStorage(fundaLink) {
       var previewEl = document.getElementById('unifiedFramePreview');
-      if (!previewEl || typeof html2canvas === 'undefined') return;
+      if (!previewEl || typeof html2canvas === 'undefined' || !fundaLink) return;
       try {
         var canvas = await html2canvas(previewEl, {
           useCORS: true,
@@ -3674,7 +3675,11 @@
           scale: 1
         });
         var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        try { localStorage.setItem('mattori_preview', dataUrl); } catch (e) { /* quota exceeded — skip */ }
+        try {
+          var previews = JSON.parse(localStorage.getItem('mattori_previews') || '{}');
+          previews[fundaLink] = dataUrl;
+          localStorage.setItem('mattori_previews', JSON.stringify(previews));
+        } catch (e) { /* quota exceeded — skip */ }
       } catch (e) {
         console.warn('Screenshot mislukt:', e);
       }
@@ -3702,9 +3707,9 @@
       if (fundaLink) itemProperties['Funda link'] = fundaLink;
       if (noFloorsMode) itemProperties['Opmerking'] = 'Geen interactieve plattegronden — handmatig opbouwen';
 
-      // Save preview screenshot to localStorage (skip in noFloorsMode)
-      if (!noFloorsMode) {
-        await capturePreviewToLocalStorage();
+      // Save preview screenshot to localStorage keyed by Funda link (skip in noFloorsMode)
+      if (!noFloorsMode && fundaLink) {
+        await capturePreviewToLocalStorage(fundaLink);
       }
 
       try {
