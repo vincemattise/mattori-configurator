@@ -1365,7 +1365,7 @@
         // Fine-tune alignment: push OBJ to edge of frustum so model
         // visually touches the canvas edge (compensates for OBJ bounding
         // box being slightly larger than worldW/worldH due to wall thickness)
-        var align = getFloorAlign(floorIndex);
+        var align = getFloorAlignY(floorIndex);
         if (align === 'top' || align === 'bottom') {
           var shiftZ = halfFrustumH - size.z / 2;
           // Camera up=(0,0,-1) means screen-up = world -Z
@@ -1420,6 +1420,7 @@
 
     var gridEditMode = false;     // true when user activated drag-to-reposition
     var customPositions = null;   // null = auto-layout, or [{index, gridX, gridY}]
+    var layoutCalculated = false; // true after user clicks "Bereken indeling" in step 4
     var _dragCleanups = [];       // cleanup functions for drag event listeners
 
     function getGridDimensions() {
@@ -2398,19 +2399,35 @@
           buildThumbstrip();
           renderFloorReview();
         } else if (n === 4) {
+          // Start with all floors unchecked — user must explicitly select
+          excludedFloors = new Set();
+          for (var ei = 0; ei < floors.length; ei++) excludedFloors.add(ei);
+          layoutCalculated = false;
+          customPositions = null;
+          gridEditMode = false;
+
           renderLayoutView();
-          // Hide result section until user clicks "Bereken indeling"
+
+          // Hide result section + note section until "Bereken indeling"
           var resultSection = document.getElementById('layoutResultSection');
           if (resultSection) resultSection.style.display = 'none';
+          var noteSection = document.querySelector('.layout-note-section');
+          if (noteSection) noteSection.style.display = 'none';
+
           // Wire up the "Bereken indeling" button
           var btnCalc = document.getElementById('btnCalcLayout');
           if (btnCalc) {
+            btnCalc.style.display = '';
+            btnCalc.disabled = true; // disabled until at least one floor is checked
             btnCalc.onclick = function() {
+              layoutCalculated = true;
               this.style.display = 'none';
               if (resultSection) resultSection.style.display = '';
+              if (noteSection) noteSection.style.display = '';
               customPositions = null;
               renderPreviewThumbnails();
               updateFloorLabels();
+              updateWizardUI(); // show "Volgende" now
               setTimeout(function() { renderGridOverlay(); }, 50);
             };
           }
@@ -2472,6 +2489,9 @@
       } else if (currentWizardStep === 3) {
         // Step 3: hide wizard next — "Klopt, volgende" button handles navigation
         btnWizardNext.style.display = 'none';
+      } else if (currentWizardStep === 4) {
+        // Step 4: hide "Volgende" until layout is calculated
+        btnWizardNext.style.display = layoutCalculated ? '' : 'none';
       } else {
         btnWizardNext.style.display = '';
       }
@@ -2807,11 +2827,28 @@
             cb.addEventListener('change', function() {
               toggleFloorExclusion(floorIdx);
               customPositions = null; // reset drag positions
-              renderLayoutView();
-              renderPreviewThumbnails();
-              renderGridOverlayIfStep4();
-              updateFloorLabels();
-              buildThumbstrip();
+
+              if (layoutCalculated) {
+                // After calculation: immediately update preview
+                renderLayoutView();
+                renderPreviewThumbnails();
+                renderGridOverlayIfStep4();
+                updateFloorLabels();
+                buildThumbstrip();
+              } else {
+                // Before calculation: only update checkbox UI + button state
+                var chip2 = this.parentElement;
+                if (chip2) chip2.className = 'floor-include-chip' + (excludedFloors.has(floorIdx) ? ' excluded' : '');
+                // Enable/disable "Bereken indeling" based on whether any floor is checked
+                var btnCalc2 = document.getElementById('btnCalcLayout');
+                if (btnCalc2) {
+                  var anyIncluded = false;
+                  for (var ci = 0; ci < floors.length; ci++) {
+                    if (!excludedFloors.has(ci)) { anyIncluded = true; break; }
+                  }
+                  btnCalc2.disabled = !anyIncluded;
+                }
+              }
             });
             var label = document.createElement('span');
             label.textContent = floors[floorIdx].name || ('Verdieping ' + (floorIdx + 1));
