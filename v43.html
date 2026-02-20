@@ -243,32 +243,40 @@
 
           <!-- Step 4: Floor layout (grid-native) -->
           <div class="wizard-step" id="wizardStep4" data-step="4" style="display:none;">
+            <p class="step-description">Kies welke verdiepingen je wilt meenemen.</p>
+
             <!-- Include/exclude checkboxes (rendered by JS) -->
             <div class="floor-include-bar" id="floorIncludeBar"></div>
 
-            <!-- Alignment controls -->
-            <div class="layout-controls-bar" id="layoutControlsBar">
-              <div class="layout-align-group">
-                <span class="layout-align-label" style="color:#777;">X</span>
-                <div class="floor-align-group" id="alignGroupX"></div>
+            <!-- "Bereken indeling" button — triggers auto-placement -->
+            <button type="button" class="btn-wizard-next" id="btnCalcLayout" style="margin-top:0.5rem;margin-bottom:0.8rem;">Bereken indeling →</button>
+
+            <!-- Post-calculation controls (hidden until calculated) -->
+            <div id="layoutResultSection" style="display:none;">
+              <!-- Alignment controls -->
+              <div class="layout-controls-bar" id="layoutControlsBar">
+                <div class="layout-align-group">
+                  <span class="layout-align-label" style="color:#777;">X</span>
+                  <div class="floor-align-group" id="alignGroupX"></div>
+                </div>
+                <div class="layout-align-group">
+                  <span class="layout-align-label" style="color:#777;">Y</span>
+                  <div class="floor-align-group" id="alignGroupY"></div>
+                </div>
               </div>
-              <div class="layout-align-group">
-                <span class="layout-align-label" style="color:#777;">Y</span>
-                <div class="floor-align-group" id="alignGroupY"></div>
-              </div>
+
+              <!-- "Layout aanpassen" toggle for drag mode -->
+              <button type="button" class="btn-toggle-grid" id="btnToggleGrid">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg>
+                Layout aanpassen
+              </button>
+
+              <div class="floor-layout-viewer" id="floorLayoutViewer"></div>
             </div>
-
-            <!-- "Layout aanpassen" toggle for drag mode -->
-            <button type="button" class="btn-toggle-grid" id="btnToggleGrid" style="display:none;">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg>
-              Layout aanpassen
-            </button>
-
-            <div class="floor-layout-viewer" id="floorLayoutViewer"></div>
 
             <!-- Note -->
             <div class="layout-note-section">
-              <button type="button" class="btn-toggle-note" id="btnToggleNote" style="color:#777;" onclick="var w=document.getElementById('layoutNoteWrap');var b=this;if(w.style.display==='none'){w.style.display='';b.textContent='Opmerking verbergen';}else{w.style.display='none';b.textContent='Opmerking toevoegen';}">Opmerking toevoegen</button>
+              <button type="button" class="btn-toggle-note" id="btnToggleNote" style="color:#fff;" onclick="var w=document.getElementById('layoutNoteWrap');var b=this;if(w.style.display==='none'){w.style.display='';b.textContent='Opmerking verbergen';}else{w.style.display='none';b.textContent='Opmerking toevoegen';}">Opmerking toevoegen</button>
               <div id="layoutNoteWrap" style="display:none;margin-top:0.5rem;">
                 <textarea class="layout-note-input" id="layoutNote" rows="2" placeholder="Bijv. 'Voorgevels graag uitgelijnd' of 'Plattegronden iets compacter'"></textarea>
               </div>

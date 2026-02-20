@@ -1452,7 +1452,8 @@
       if (!floorsGrid) return;
       var existing = floorsGrid.querySelector('.grid-overlay');
       if (existing) existing.remove();
-      if (!gridEditMode) return;
+      // Show grid in step 4 always, or when gridEditMode is on
+      if (!gridEditMode && currentWizardStep !== 4) return;
 
       var grid = getGridDimensions();
       var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -2398,13 +2399,21 @@
           renderFloorReview();
         } else if (n === 4) {
           renderLayoutView();
-          renderPreviewThumbnails();
-          updateFloorLabels();
-          // Always show grid overlay in step 4
-          setTimeout(function() {
-            renderGridOverlay();
-            if (gridEditMode) enableGridDrag();
-          }, 50);
+          // Hide result section until user clicks "Bereken indeling"
+          var resultSection = document.getElementById('layoutResultSection');
+          if (resultSection) resultSection.style.display = 'none';
+          // Wire up the "Bereken indeling" button
+          var btnCalc = document.getElementById('btnCalcLayout');
+          if (btnCalc) {
+            btnCalc.onclick = function() {
+              this.style.display = 'none';
+              if (resultSection) resultSection.style.display = '';
+              customPositions = null;
+              renderPreviewThumbnails();
+              updateFloorLabels();
+              setTimeout(function() { renderGridOverlay(); }, 50);
+            };
+          }
         } else if (n === 5) {
           // Re-render with perspective camera (final look with depth)
           renderPreviewThumbnails();
@@ -2896,11 +2905,11 @@
       if (btnToggleGrid) {
         btnToggleGrid.style.display = includedCount >= 2 ? '' : 'none';
         btnToggleGrid.classList.toggle('active', gridEditMode);
-        btnToggleGrid.style.color = gridEditMode ? '#fff' : '';
+        // color handled by CSS primary button
         btnToggleGrid.onclick = function() {
           gridEditMode = !gridEditMode;
           this.classList.toggle('active', gridEditMode);
-          this.style.color = gridEditMode ? '#fff' : '';
+          // color handled by CSS primary button
           this.innerHTML = gridEditMode
             ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Terug naar automatisch'
             : '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Layout aanpassen';
