@@ -1037,52 +1037,17 @@
     // STAIR VOID DETECTION
     // ============================================================
     function detectStairVoids(allFloorDesigns) {
-      const POSITION_TOL = 5;
       const voidsByFloor = allFloorDesigns.map(() => []);
 
       for (let fi = 0; fi < allFloorDesigns.length; fi++) {
         const design = allFloorDesigns[fi];
 
+        // Only use explicit isCutout surfaces and role=14 (stair void markers)
         for (const surface of design.surfaces ?? []) {
           if ((surface.role ?? -1) !== 14 && !surface.isCutout) continue;
           const poly = tessellateSurfacePoly(surface.poly ?? []);
           if (poly.length >= 3) {
             voidsByFloor[fi].push(poly.map(p => ({ x: p.x, y: p.y })));
-          }
-        }
-
-        if (fi > 0) {
-          const prevDesign = allFloorDesigns[fi - 1];
-          const prevItems = prevDesign.items ?? [];
-          const currItems = design.items ?? [];
-
-          for (const curr of currItems) {
-            if (!curr.refid) continue;
-            for (const prev of prevItems) {
-              if (prev.refid !== curr.refid) continue;
-              if (Math.abs((prev.x ?? 0) - (curr.x ?? 0)) > POSITION_TOL) continue;
-              if (Math.abs((prev.y ?? 0) - (curr.y ?? 0)) > POSITION_TOL) continue;
-
-              const VOID_MARGIN = 10;
-              const w = Math.max(0, (curr.width ?? 0) - VOID_MARGIN * 2);
-              const h = Math.max(0, (curr.height ?? 0) - VOID_MARGIN * 2);
-              if (w < 30 || h < 30) continue;
-              const cx = curr.x ?? 0;
-              const cy = curr.y ?? 0;
-              const rot = (curr.rotation ?? 0) * Math.PI / 180;
-              const cosR = Math.cos(rot);
-              const sinR = Math.sin(rot);
-              const hw = w / 2, hh = h / 2;
-
-              const corners = [
-                { x: cx + cosR * (-hw) - sinR * (-hh), y: cy + sinR * (-hw) + cosR * (-hh) },
-                { x: cx + cosR * ( hw) - sinR * (-hh), y: cy + sinR * ( hw) + cosR * (-hh) },
-                { x: cx + cosR * ( hw) - sinR * ( hh), y: cy + sinR * ( hw) + cosR * ( hh) },
-                { x: cx + cosR * (-hw) - sinR * ( hh), y: cy + sinR * (-hw) + cosR * ( hh) }
-              ];
-              voidsByFloor[fi].push(corners);
-              break;
-            }
           }
         }
       }
