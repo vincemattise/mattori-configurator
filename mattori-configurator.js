@@ -3281,6 +3281,87 @@
         return tris;
       }
 
+      // Merge hole polygons into outer ring via bridge edges
+      // so ear-clipping can triangulate a polygon-with-holes as one simple polygon.
+      // outerPts: [{x,y}...] CCW, holePtsList: [ [{x,y}...], ... ] each CW
+      function mergeHolesIntoPoly(outerPts, holePtsList) {
+        if (!holePtsList || holePtsList.length === 0) return outerPts;
+        // Sort holes by rightmost x (descending) — standard for bridge algorithm
+        const sorted = holePtsList.slice().sort((a, b) => {
+          let maxA = -Infinity, maxB = -Infinity;
+          for (const p of a) if (p.x > maxA) maxA = p.x;
+          for (const p of b) if (p.x > maxB) maxB = p.x;
+          return maxB - maxA;
+        });
+        let merged = outerPts.slice();
+        for (const hole of sorted) {
+          if (hole.length < 3) continue;
+          // Find rightmost vertex of hole
+          let hrIdx = 0;
+          for (let i = 1; i < hole.length; i++) {
+            if (hole[i].x > hole[hrIdx].x) hrIdx = i;
+          }
+          const M = hole[hrIdx];
+          // Cast ray from M in +x direction, find closest intersecting edge of merged
+          let closestDist = Infinity, closestEdgeIdx = -1, closestIntX = 0;
+          for (let i = 0; i < merged.length; i++) {
+            const j = (i + 1) % merged.length;
+            const y1 = merged[i].y, y2 = merged[j].y;
+            if ((y1 - M.y) * (y2 - M.y) > 0) continue; // both on same side
+            if (Math.abs(y1 - y2) < 1e-10) continue; // horizontal edge
+            const t = (M.y - y1) / (y2 - y1);
+            if (t < -1e-10 || t > 1 + 1e-10) continue;
+            const xi = merged[i].x + t * (merged[j].x - merged[i].x);
+            if (xi < M.x - 1e-10) continue; // to the left
+            const dist = xi - M.x;
+            if (dist < closestDist) {
+              closestDist = dist;
+              closestEdgeIdx = i;
+              closestIntX = xi;
+            }
+          }
+          // Determine bridge vertex on the outer polygon
+          let bridgeIdx;
+          if (closestEdgeIdx >= 0) {
+            const ei = closestEdgeIdx;
+            const ej = (ei + 1) % merged.length;
+            // If intersection is very close to a vertex, use that vertex
+            if (Math.abs(closestIntX - merged[ei].x) < 0.01 &&
+                Math.abs(M.y - merged[ei].y) < 0.01) {
+              bridgeIdx = ei;
+            } else if (Math.abs(closestIntX - merged[ej].x) < 0.01 &&
+                       Math.abs(M.y - merged[ej].y) < 0.01) {
+              bridgeIdx = ej;
+            } else {
+              // Use the vertex with larger x as the visible bridge candidate
+              bridgeIdx = merged[ei].x >= merged[ej].x ? ei : ej;
+            }
+          } else {
+            // Fallback: closest vertex by distance
+            let bestDist = Infinity;
+            bridgeIdx = 0;
+            for (let i = 0; i < merged.length; i++) {
+              const d = Math.hypot(merged[i].x - M.x, merged[i].y - M.y);
+              if (d < bestDist) { bestDist = d; bridgeIdx = i; }
+            }
+          }
+          // Build hole path starting from hrIdx (complete loop back to start)
+          const holeSeq = [];
+          for (let i = 0; i <= hole.length; i++) {
+            const src = hole[(hrIdx + i) % hole.length];
+            holeSeq.push({ x: src.x, y: src.y });
+          }
+          // Splice: merged[0..bridgeIdx] → holeSeq → bridge back → merged[bridgeIdx+1..end]
+          merged = [
+            ...merged.slice(0, bridgeIdx + 1),
+            ...holeSeq,
+            { x: merged[bridgeIdx].x, y: merged[bridgeIdx].y },
+            ...merged.slice(bridgeIdx + 1)
+          ];
+        }
+        return merged;
+      }
+
       // Helper: extrude a 2D polygon ring to 3D wall geometry
       function extrudeWallPoly(ring, bottomZ, topZ) {
         if (ring.length < 3) return;
@@ -3672,17 +3753,38 @@
 
             if (ri === 0) {
               // Outer ring → top and bottom face triangulation
-              const tris = earClipTriangulate(objPts);
+              // If polygon has holes, merge them into outer ring for proper triangulation
+              let triPts = objPts;
+              if (polygon.length > 1) {
+                const holePtsArrays = [];
+                for (let hi = 1; hi < polygon.length; hi++) {
+                  const hRing = polygon[hi].slice();
+                  if (hRing.length > 1) {
+                    const hf = hRing[0], hl = hRing[hRing.length - 1];
+                    if (Math.hypot(hf[0] - hl[0], hf[1] - hl[1]) < 0.01) hRing.pop();
+                  }
+                  if (hRing.length >= 3) {
+                    holePtsArrays.push(hRing.map(p => ({
+                      x: (p[0] - centerX) * SCALE,
+                      y: (p[1] - centerY) * SCALE
+                    })));
+                  }
+                }
+                if (holePtsArrays.length > 0) {
+                  triPts = mergeHolesIntoPoly(objPts, holePtsArrays);
+                }
+              }
+              const tris = earClipTriangulate(triPts);
               const baseBot = vertexIndex;
-              for (const pt of objPts) {
+              for (const pt of triPts) {
                 vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
               }
-              vertexIndex += objPts.length;
+              vertexIndex += triPts.length;
               const baseTop = vertexIndex;
-              for (const pt of objPts) {
+              for (const pt of triPts) {
                 vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
               }
-              vertexIndex += objPts.length;
+              vertexIndex += triPts.length;
               for (const [a, b, c] of tris) {
                 addTriFace(baseBot + a, baseBot + c, baseBot + b); // bottom (flipped winding)
                 addTriFace(baseTop + a, baseTop + b, baseTop + c); // top
