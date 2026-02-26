@@ -443,7 +443,8 @@
             merged.push(parts[i]);
           }
         }
-        const titleCased = merged.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+        const titleCased = merged.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
+          .replace(/-([a-z])/g, (_, c) => '-' + c.toUpperCase());
         const cityTitle = city.charAt(0).toUpperCase() + city.slice(1);
 
         return {
@@ -1511,25 +1512,26 @@
 
           var lineColor = 'rgba(220, 60, 60, 0.7)';
           var lineWidth = '2';
+          var edgeOffset = 3; // offset from edge so line is visible
 
           // Vertical line based on X alignment
-          var vx = layoutAlignX === 'left' ? 0 : layoutAlignX === 'right' ? w : w / 2;
+          var vx = layoutAlignX === 'left' ? edgeOffset : layoutAlignX === 'right' ? w - edgeOffset : w / 2;
           var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           vLine.setAttribute('x1', vx); vLine.setAttribute('y1', 0);
           vLine.setAttribute('x2', vx); vLine.setAttribute('y2', h);
           vLine.setAttribute('stroke', lineColor);
-          vLine.setAttribute('stroke-width', layoutAlignX === 'center' ? '1.5' : lineWidth);
-          if (layoutAlignX === 'center') vLine.setAttribute('stroke-dasharray', '6 4');
+          vLine.setAttribute('stroke-width', lineWidth);
+          vLine.setAttribute('stroke-dasharray', '6 4');
           svg.appendChild(vLine);
 
           // Horizontal line based on Y alignment
-          var hy = layoutAlignY === 'top' ? 0 : layoutAlignY === 'bottom' ? h : h / 2;
+          var hy = layoutAlignY === 'top' ? edgeOffset : layoutAlignY === 'bottom' ? h - edgeOffset : h / 2;
           var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           hLine.setAttribute('x1', 0); hLine.setAttribute('y1', hy);
           hLine.setAttribute('x2', w); hLine.setAttribute('y2', hy);
           hLine.setAttribute('stroke', lineColor);
-          hLine.setAttribute('stroke-width', layoutAlignY === 'center' ? '1.5' : lineWidth);
-          if (layoutAlignY === 'center') hLine.setAttribute('stroke-dasharray', '6 4');
+          hLine.setAttribute('stroke-width', lineWidth);
+          hLine.setAttribute('stroke-dasharray', '6 4');
           svg.appendChild(hLine);
 
           wrap.appendChild(svg);
@@ -2393,11 +2395,16 @@
 
           renderLayoutView();
 
-          // Hide result section + note section until "Bereken indeling"
+          // Hide result section + note section + Layout aanpassen until "Bereken indeling"
           var resultSection = document.getElementById('layoutResultSection');
           if (resultSection) resultSection.style.display = 'none';
           var noteSection = document.querySelector('.layout-note-section');
           if (noteSection) noteSection.style.display = 'none';
+          var btnToggleGridInit = document.getElementById('btnToggleGrid');
+          if (btnToggleGridInit) btnToggleGridInit.style.display = 'none';
+
+          // Clear preview until calculation (show empty frame)
+          if (floorsGrid) floorsGrid.innerHTML = '';
 
           // Wire up the "Bereken indeling" button
           var btnCalc = document.getElementById('btnCalcLayout');
@@ -2409,6 +2416,15 @@
               this.style.display = 'none';
               if (resultSection) resultSection.style.display = '';
               if (noteSection) noteSection.style.display = '';
+              // Show "Layout aanpassen" button now
+              var btnTG = document.getElementById('btnToggleGrid');
+              if (btnTG) {
+                var inclCount = 0;
+                for (var _i = 0; _i < floors.length; _i++) {
+                  if (!excludedFloors.has(_i)) inclCount++;
+                }
+                btnTG.style.display = inclCount >= 2 ? '' : 'none';
+              }
               customPositions = null;
               renderPreviewThumbnails();
               updateFloorLabels();
