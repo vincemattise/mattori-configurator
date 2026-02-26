@@ -4925,6 +4925,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               message: msg,
+              step: currentWizardStep,
               page: window.location.href,
               ua: navigator.userAgent
             })
