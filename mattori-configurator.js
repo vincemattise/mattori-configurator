@@ -1316,9 +1316,13 @@
       var camera;
       if (opts.ortho) {
         // Orthographic camera — uniform scale, flat top-down (for editing)
-        var floorData = floors[floorIndex];
-        var padding = 1.0; // no padding — floor fills canvas edge-to-edge for alignment
-        var pxPerUnit = width / (floorData.worldW * 0.01 * padding);
+        // Use actual bounding box to prevent clipping (size.x may > worldW*0.01
+        // due to wall thickness), with tiny padding for anti-aliasing safety
+        var effectiveW = size.x;
+        var effectiveH = size.z;
+        var pxPerUnitW = width / effectiveW;
+        var pxPerUnitH = height / effectiveH;
+        var pxPerUnit = Math.min(pxPerUnitW, pxPerUnitH);
         var halfFrustumW = (width / 2) / pxPerUnit;
         var halfFrustumH = (height / 2) / pxPerUnit;
         camera = new THREE.OrthographicCamera(
@@ -1328,21 +1332,17 @@
         camera.position.set(0, 50, 0);
         camera.lookAt(0, 0, 0);
 
-        // Fine-tune alignment: push OBJ to edge of frustum so model
-        // visually touches the canvas edge (compensates for OBJ bounding
-        // box being slightly larger than worldW/worldH due to wall thickness)
+        // Fine-tune alignment: push model to canvas edge so it touches
+        // the alignment line at that edge
 
         // Y-axis: push to top or bottom edge
         var alignY = getFloorAlignY(floorIndex);
         if (alignY === 'top' || alignY === 'bottom') {
           var shiftZ = halfFrustumH - size.z / 2;
-          // Camera up=(0,0,-1) means screen-up = world -Z
-          // 'top' on screen → shift scene -Z, 'bottom' → shift scene +Z
           scene.position.z += (alignY === 'bottom') ? shiftZ : -shiftZ;
         }
 
         // X-axis: push to left or right edge
-        // Camera right = world +X, so 'left' on screen → shift scene -X
         if (layoutAlignX === 'left' || layoutAlignX === 'right') {
           var shiftX = halfFrustumW - size.x / 2;
           scene.position.x += (layoutAlignX === 'right') ? shiftX : -shiftX;
@@ -3130,6 +3130,9 @@
       if (chkShowGrid) {
         chkShowGrid.onchange = function() {
           showGridOverlay = this.checked;
+          // Also toggle the zone-editing dashed border
+          var overlay = document.getElementById('unifiedFloorsOverlay');
+          if (overlay) overlay.classList.toggle('zone-editing', showGridOverlay);
           if (showGridOverlay) {
             renderGridOverlay();
             addGridFloorButtons();

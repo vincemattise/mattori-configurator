@@ -2,7 +2,7 @@
 <script>
 (function(){
   var sheets = [
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.9/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.10/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -23,7 +23,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel" style="display:none;">
-    <div class="admin-panel-label">Admin &middot; v45.9</div>
+    <div class="admin-panel-label">Admin &middot; v45.10</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
@@ -259,22 +259,25 @@
 
               <!-- Layout tools box with edit checkbox at top -->
               <div class="layout-tools-box" id="layoutControlsBar">
-                <label class="layout-edit-toggle" id="lblToggleGrid">
-                  <input type="checkbox" id="chkEditMode" />
-                  <span>Handmatig aanpassen</span>
-                </label>
+                <div class="layout-tools-header">
+                  <label class="layout-edit-toggle" id="lblToggleGrid">
+                    <input type="checkbox" id="chkEditMode" />
+                    <span>Handmatig aanpassen</span>
+                  </label>
+                  <span class="info-tooltip info-tooltip-lg" data-tooltip="X: horizontale uitlijning (links, midden, rechts). Y: verticale uitlijning (boven, midden, onder). Schaal: vergroot of verklein alle plattegronden. Sleep de plattegronden naar de gewenste positie op het grid.">i</span>
+                </div>
                 <div class="layout-controls-inner" id="layoutControlsInner">
                   <div class="layout-controls-bar">
                     <div class="layout-align-group">
-                      <span class="layout-align-label">X <span class="info-tooltip" data-tooltip="Horizontale uitlijning van de plattegronden ten opzichte van elkaar">i</span></span>
+                      <span class="layout-align-label">X</span>
                       <div class="floor-align-group" id="alignGroupX"></div>
                     </div>
                     <div class="layout-align-group">
-                      <span class="layout-align-label">Y <span class="info-tooltip" data-tooltip="Verticale uitlijning van de plattegronden ten opzichte van elkaar">i</span></span>
+                      <span class="layout-align-label">Y</span>
                       <div class="floor-align-group" id="alignGroupY"></div>
                     </div>
                     <div class="layout-align-group">
-                      <span class="layout-align-label">Schaal <span class="info-tooltip" data-tooltip="Vergroot of verklein alle plattegronden">i</span></span>
+                      <span class="layout-align-label">Schaal</span>
                       <div class="floor-align-group" id="scaleGroup"></div>
                     </div>
                   </div>
@@ -355,4 +358,4 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.9/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.10/mattori-configurator.js"></script>

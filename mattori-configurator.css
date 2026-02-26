@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.9/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.10/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -553,9 +553,10 @@
       pointer-events: none;
     }
 
-    /* Dashed border shown on the active editing zone */
+    /* Dashed border shown on the active editing zone (outline doesn't affect layout) */
     .mattori-configurator .zone-editing {
-      border: 1px dashed rgba(255, 0, 0, 0.25);
+      outline: 1px dashed rgba(255, 0, 0, 0.25);
+      outline-offset: -1px;
     }
 
     .mattori-configurator .floors-loading {
@@ -693,6 +694,14 @@
       transform: scale(1.1);
     }
 
+    /* Tools header: checkbox left, info icon right */
+    .mattori-configurator .layout-tools-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
     /* "Handmatig aanpassen" edit mode checkbox */
     .mattori-configurator .layout-edit-toggle {
       display: flex;
@@ -702,7 +711,6 @@
       font-weight: 600;
       color: #333;
       cursor: pointer;
-      margin-bottom: 0.5rem;
     }
 
     .mattori-configurator .layout-edit-toggle input[type="checkbox"] {
@@ -714,14 +722,14 @@
 
     /* Gray out controls when edit mode is off */
     .mattori-configurator .layout-controls-inner.disabled {
-      opacity: 0.35;
+      opacity: 0.22;
       pointer-events: none;
       user-select: none;
     }
 
     /* Layout note section */
     .mattori-configurator .layout-note-section {
-      margin-top: 0.6rem;
+      margin-top: 0.8rem;
     }
 
     .mattori-configurator .layout-note-label {
@@ -1468,7 +1476,8 @@
       background: #f8f8f6;
       border-radius: 10px;
       padding: 0.8rem;
-      margin-bottom: 0.6rem;
+      margin-top: 0.7rem;
+      margin-bottom: 0.8rem;
     }
 
     .mattori-configurator .layout-controls-bar {
@@ -1509,12 +1518,19 @@
       position: relative;
     }
 
+    .mattori-configurator .info-tooltip-lg {
+      width: 18px;
+      height: 18px;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
     .mattori-configurator .info-tooltip[data-tooltip]:hover::after {
       content: attr(data-tooltip);
       position: absolute;
-      left: 50%;
+      right: 0;
       bottom: calc(100% + 6px);
-      transform: translateX(-50%);
+      transform: none;
       background: #333;
       color: #fff;
       font-size: 11px;
@@ -1525,7 +1541,7 @@
       border-radius: 6px;
       white-space: normal;
       width: max-content;
-      max-width: 200px;
+      max-width: 220px;
       z-index: 100;
       pointer-events: none;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
