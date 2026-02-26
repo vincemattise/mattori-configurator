@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v44.10/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v44.11/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -909,6 +909,12 @@
 
     .mattori-configurator .btn-start-configurator svg {
       flex-shrink: 0;
+    }
+
+    .mattori-configurator sup {
+      font-size: 0.6em;
+      vertical-align: super;
+      line-height: 0;
     }
 
     /* ── Wizard ── */
