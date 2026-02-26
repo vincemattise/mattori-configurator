@@ -3537,7 +3537,7 @@
       const floorVoids = floor.voids ?? [];
 
       {
-        let floorSources = [];
+        const floorSources = [];
 
         for (const area of design.areas ?? []) {
           const tessellated = tessellateSurfacePoly(area.poly ?? []);
@@ -3628,40 +3628,6 @@
 
         // --- Polygon-based floor: union all sources, subtract voids, extrude ---
 
-        // Pre-clip floor sources against voids BEFORE union.
-        // Each source is a simple polygon (4–20 pts) vs a simple rectangle → reliable.
-        for (const v of floorVoids) {
-          if (v.length < 3) continue;
-          const vRing = v.map(p => [p.x, p.y]);
-          const vf = vRing[0], vl = vRing[vRing.length - 1];
-          if (Math.hypot(vf[0] - vl[0], vf[1] - vl[1]) > 0.01) vRing.push([vf[0], vf[1]]);
-          const clipped = [];
-          for (const src of floorSources) {
-            if (src.length < 3) continue;
-            const srcRing = src.map(p => [p.x, p.y]);
-            const sf = srcRing[0], sl = srcRing[srcRing.length - 1];
-            if (Math.hypot(sf[0] - sl[0], sf[1] - sl[1]) > 0.01) srcRing.push([sf[0], sf[1]]);
-            try {
-              const diff = polygonClipping.difference([[srcRing]], [[vRing]]);
-              for (const poly of diff) {
-                for (const ring of poly) {
-                  const pts = ring.slice();
-                  if (pts.length > 1) {
-                    const pf = pts[0], pl = pts[pts.length - 1];
-                    if (Math.hypot(pf[0] - pl[0], pf[1] - pl[1]) < 0.01) pts.pop();
-                  }
-                  if (pts.length >= 3) {
-                    clipped.push(pts.map(p => ({ x: p[0], y: p[1] })));
-                  }
-                }
-              }
-            } catch (e) {
-              clipped.push(src); // keep original if clip fails
-            }
-          }
-          floorSources = clipped;
-        }
-
         // Expand each floor source slightly so adjacent polygons overlap,
         // guaranteeing the union merges them into one continuous shape.
         const FLOOR_EXPAND = 2;
@@ -3717,57 +3683,136 @@
         }
 
 
+        // Subtract voids (stair openings) — per-polygon to avoid SweepLine crash
+        for (const v of floorVoids) {
+          if (v.length < 3) continue;
+          const vRing = v.map(p => [p.x, p.y]);
+          const vf = vRing[0], vl = vRing[vRing.length - 1];
+          if (Math.hypot(vf[0] - vl[0], vf[1] - vl[1]) > 0.01) vRing.push([vf[0], vf[1]]);
+          const newFloorResult = [];
+          for (const poly of floorResult) {
+            try {
+              const diff = polygonClipping.difference([poly], [[vRing]]);
+              for (const d of diff) newFloorResult.push(d);
+            } catch (e) {
+              newFloorResult.push(poly);
+            }
+          }
+          floorResult = newFloorResult;
+        }
+
         // Extrude each result polygon
         const botY = (-FLOOR_THICKNESS).toFixed(4);
         const topY = (0).toFixed(4);
 
         for (const polygon of floorResult) {
-          // polygon = [outerRing, ...holeRings]
-          for (let ri = 0; ri < polygon.length; ri++) {
-            const ring = polygon[ri];
-            // Remove closing duplicate for triangulation
-            const pts = ring.slice();
-            if (pts.length > 1) {
-              const ff = pts[0], ll = pts[pts.length - 1];
-              if (Math.hypot(ff[0] - ll[0], ff[1] - ll[1]) < 0.01) pts.pop();
+          // Collect outer ring
+          const ring0 = polygon[0].slice();
+          if (ring0.length > 1) {
+            const ff = ring0[0], ll = ring0[ring0.length - 1];
+            if (Math.hypot(ff[0] - ll[0], ff[1] - ll[1]) < 0.01) ring0.pop();
+          }
+          if (ring0.length < 3) continue;
+
+          const outerObjPts = ring0.map(p => ({
+            x: (p[0] - centerX) * SCALE,
+            y: (p[1] - centerY) * SCALE
+          }));
+
+          // Collect hole rings
+          const holeObjPtsArr = [];
+          for (let hi = 1; hi < polygon.length; hi++) {
+            const hRing = polygon[hi].slice();
+            if (hRing.length > 1) {
+              const hf = hRing[0], hl = hRing[hRing.length - 1];
+              if (Math.hypot(hf[0] - hl[0], hf[1] - hl[1]) < 0.01) hRing.pop();
             }
-            if (pts.length < 3) continue;
-
-            const objPts = pts.map(p => ({
-              x: (p[0] - centerX) * SCALE,
-              y: (p[1] - centerY) * SCALE
-            }));
-
-            if (ri === 0) {
-              // Outer ring → top and bottom face triangulation
-              const tris = earClipTriangulate(objPts);
-              const baseBot = vertexIndex;
-              for (const pt of objPts) {
-                vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
-              }
-              vertexIndex += objPts.length;
-              const baseTop = vertexIndex;
-              for (const pt of objPts) {
-                vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
-              }
-              vertexIndex += objPts.length;
-              for (const [a, b, c] of tris) {
-                addTriFace(baseBot + a, baseBot + c, baseBot + b); // bottom (flipped winding)
-                addTriFace(baseTop + a, baseTop + b, baseTop + c); // top
-              }
+            if (hRing.length >= 3) {
+              holeObjPtsArr.push(hRing.map(p => ({
+                x: (p[0] - centerX) * SCALE,
+                y: (p[1] - centerY) * SCALE
+              })));
             }
+          }
 
-            // Side faces for every ring (outer + holes)
-            const nPts = objPts.length;
-            const sideBaseBot = vertexIndex;
-            for (const pt of objPts) {
+          if (holeObjPtsArr.length > 0 && typeof THREE !== 'undefined' && THREE.ShapeUtils) {
+            // Polygon WITH holes — use Three.js ShapeUtils for robust triangulation
+            const contour = outerObjPts.map(p => new THREE.Vector2(p.x, p.y));
+            const holes = holeObjPtsArr.map(h => h.map(p => new THREE.Vector2(p.x, p.y)));
+            const tris = THREE.ShapeUtils.triangulateShape(contour, holes);
+
+            // Combined vertex array: outer + all hole vertices
+            const allPts = [...outerObjPts];
+            for (const hole of holeObjPtsArr) allPts.push(...hole);
+
+            const baseBot = vertexIndex;
+            for (const pt of allPts) {
               vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
             }
-            vertexIndex += nPts;
-            const sideBaseTop = vertexIndex;
-            for (const pt of objPts) {
+            vertexIndex += allPts.length;
+            const baseTop = vertexIndex;
+            for (const pt of allPts) {
               vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
             }
+            vertexIndex += allPts.length;
+            for (const [a, b, c] of tris) {
+              addTriFace(baseBot + a, baseBot + c, baseBot + b);
+              addTriFace(baseTop + a, baseTop + b, baseTop + c);
+            }
+
+            // Side faces — outer ring
+            const nOuter = outerObjPts.length;
+            const sideBaseBotO = vertexIndex;
+            for (const pt of outerObjPts) vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
+            vertexIndex += nOuter;
+            const sideBaseTopO = vertexIndex;
+            for (const pt of outerObjPts) vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
+            vertexIndex += nOuter;
+            for (let i = 0; i < nOuter; i++) {
+              const j = (i + 1) % nOuter;
+              addFace(sideBaseBotO + i, sideBaseBotO + j, sideBaseTopO + j, sideBaseTopO + i);
+            }
+
+            // Side faces — each hole ring (inner walls of void)
+            for (const holePts of holeObjPtsArr) {
+              const nH = holePts.length;
+              const sideBaseBotH = vertexIndex;
+              for (const pt of holePts) vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
+              vertexIndex += nH;
+              const sideBaseTopH = vertexIndex;
+              for (const pt of holePts) vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
+              vertexIndex += nH;
+              for (let i = 0; i < nH; i++) {
+                const j = (i + 1) % nH;
+                // Reverse winding for inner walls
+                addFace(sideBaseBotH + j, sideBaseBotH + i, sideBaseTopH + i, sideBaseTopH + j);
+              }
+            }
+          } else {
+            // Simple polygon without holes — ear-clip triangulation
+            const tris = earClipTriangulate(outerObjPts);
+            const baseBot = vertexIndex;
+            for (const pt of outerObjPts) {
+              vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
+            }
+            vertexIndex += outerObjPts.length;
+            const baseTop = vertexIndex;
+            for (const pt of outerObjPts) {
+              vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
+            }
+            vertexIndex += outerObjPts.length;
+            for (const [a, b, c] of tris) {
+              addTriFace(baseBot + a, baseBot + c, baseBot + b);
+              addTriFace(baseTop + a, baseTop + b, baseTop + c);
+            }
+
+            // Side faces
+            const nPts = outerObjPts.length;
+            const sideBaseBot = vertexIndex;
+            for (const pt of outerObjPts) vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
+            vertexIndex += nPts;
+            const sideBaseTop = vertexIndex;
+            for (const pt of outerObjPts) vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
             vertexIndex += nPts;
             for (let i = 0; i < nPts; i++) {
               const j = (i + 1) % nPts;
