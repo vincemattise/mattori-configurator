@@ -1376,6 +1376,7 @@
     var layoutAlignY = 'bottom'; // 'top', 'center', or 'bottom'
     var layoutGapFactor = 0.08; // gap as fraction of largest floor dimension (0..0.3)
     var layoutScaleFactor = 1.0; // user scale: 0.7 (klein), 1.0 (normaal), 1.15 (groot)
+    var showGridOverlay = true; // user toggle for grid + alignment lines
     var floorSettings = {}; // per-floor: { rotate: 0|90|180|270 }
 
     // ============================================================
@@ -1420,6 +1421,8 @@
       if (!floorsGrid) return;
       var existing = floorsGrid.querySelector('.grid-overlay');
       if (existing) existing.remove();
+      // Respect user toggle
+      if (!showGridOverlay) return;
       // Show grid in step 4 always, or when gridEditMode is on
       if (!gridEditMode && currentWizardStep !== 4) return;
 
@@ -1499,7 +1502,7 @@
     }
 
     function addGridFloorButtons() {
-      if (!gridEditMode || !floorsGrid) return;
+      if (!gridEditMode || !floorsGrid || !showGridOverlay) return;
       // Add alignment border lines to each floor thumbnail (only on alignment edges)
       var wraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
       for (var wi = 0; wi < wraps.length; wi++) {
@@ -1514,7 +1517,7 @@
           svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
           svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:15;overflow:visible;';
 
-          var lineColor = 'rgba(220, 60, 60, 0.65)';
+          var lineColor = 'rgba(0, 120, 255, 0.6)';
           var lineWidth = '2';
 
           // X alignment — dashed line at alignment position
@@ -2413,9 +2416,15 @@
             updateFloorLabels();
             setTimeout(function() { renderGridOverlay(); }, 50);
           } else {
-            // ── First visit — start fresh ──
+            // ── First visit — smart pre-check based on floor names ──
             excludedFloors = new Set();
-            for (var ei = 0; ei < floors.length; ei++) excludedFloors.add(ei);
+            for (var ei = 0; ei < floors.length; ei++) {
+              var fn = (floors[ei].name || '').toLowerCase();
+              var skipKeywords = ['situatie', 'site', 'tuin', 'garden', 'buitenruimte', 'omgeving',
+                'terrein', 'perceel', 'berging', 'garage', 'schuur', 'storage', 'dakterras', 'balkon', 'parkeer'];
+              var shouldExclude = skipKeywords.some(function(kw) { return fn.includes(kw); });
+              if (shouldExclude) excludedFloors.add(ei);
+            }
             layoutCalculated = false;
             customPositions = null;
             gridEditMode = false;
@@ -2436,7 +2445,12 @@
             var btnCalc = document.getElementById('btnCalcLayout');
             if (btnCalc) {
               btnCalc.style.display = '';
-              btnCalc.disabled = true; // disabled until at least one floor is checked
+              // Enable if any floor is already pre-checked
+              var anyPreChecked = false;
+              for (var _pc = 0; _pc < floors.length; _pc++) {
+                if (!excludedFloors.has(_pc)) { anyPreChecked = true; break; }
+              }
+              btnCalc.disabled = !anyPreChecked;
               btnCalc.onclick = function() {
                 layoutCalculated = true;
                 this.style.display = 'none';
@@ -3064,6 +3078,25 @@
             customPositions = null;
             renderPreviewThumbnails();
             renderGridOverlayIfStep4();
+          }
+        };
+      }
+
+      // ── Grid visibility checkbox ──
+      var chkShowGrid = document.getElementById('chkShowGrid');
+      if (chkShowGrid) {
+        chkShowGrid.onchange = function() {
+          showGridOverlay = this.checked;
+          if (showGridOverlay) {
+            renderGridOverlay();
+            addGridFloorButtons();
+          } else {
+            // Remove grid overlay
+            var gridEl = floorsGrid ? floorsGrid.querySelector('.grid-overlay') : null;
+            if (gridEl) gridEl.remove();
+            // Remove alignment line SVGs from floor wraps
+            var wraps = floorsGrid ? floorsGrid.querySelectorAll('.floor-canvas-wrap svg') : [];
+            for (var _sv = 0; _sv < wraps.length; _sv++) wraps[_sv].remove();
           }
         };
       }

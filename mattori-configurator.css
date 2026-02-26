@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.7/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.8/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -729,10 +729,7 @@
 
     /* Layout note section */
     .mattori-configurator .layout-note-section {
-      margin-top: 1rem;
-      padding-top: 0.75rem;
-      border-top: 1px solid #eee;
-      text-align: center;
+      margin-top: 0.6rem;
     }
 
     .mattori-configurator .layout-note-label {
@@ -1474,18 +1471,66 @@
       margin: 0;
     }
 
-    /* ── Step 4: Layout controls bar ── */
+    /* ── Step 4: Layout tools box ── */
+    .mattori-configurator .layout-tools-box {
+      background: #f8f8f6;
+      border-radius: 10px;
+      padding: 0.8rem;
+      margin-bottom: 0.6rem;
+    }
+
     .mattori-configurator .layout-controls-bar {
       display: flex;
       align-items: center;
       gap: 1rem;
-      margin-bottom: 0.8rem;
+      flex-wrap: wrap;
     }
 
     .mattori-configurator .layout-align-group {
       display: flex;
       align-items: center;
       gap: 4px;
+    }
+
+    .mattori-configurator .layout-align-label {
+      color: #777;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .mattori-configurator .info-tooltip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #ddd;
+      color: #888;
+      font-size: 9px;
+      font-weight: 700;
+      font-style: italic;
+      cursor: help;
+      margin-left: 2px;
+      vertical-align: middle;
+      line-height: 1;
+    }
+
+    .mattori-configurator .layout-grid-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 0.6rem;
+      font-size: 0.78rem;
+      color: #777;
+      cursor: pointer;
+    }
+
+    .mattori-configurator .layout-grid-toggle input[type="checkbox"] {
+      accent-color: #1a1a1a;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
     }
 
     .mattori-configurator .layout-align-label {
