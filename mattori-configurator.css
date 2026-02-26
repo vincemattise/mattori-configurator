@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v46.3/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v46.4/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -2481,7 +2481,7 @@
     }
     .mattori-configurator .feedback-sent {
       text-align: center;
-      color: #4a4;
+      color: #1a1a1a;
       font-size: 13px;
       padding: 16px 0;
     }
