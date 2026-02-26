@@ -4871,8 +4871,8 @@
 
     /* ── Feedback corner ── */
     (function initFeedbackCorner() {
-      var wrap = document.querySelector('.mattori-configurator');
-      if (!wrap) return;
+      var wizard = document.getElementById('wizard');
+      if (!wizard) return;
 
       var corner = document.createElement('div');
       corner.className = 'feedback-corner';
@@ -4884,15 +4884,20 @@
 
       var popup = document.createElement('div');
       popup.className = 'feedback-popup';
-      popup.innerHTML =
-        '<textarea placeholder="Feedback of bug melden..." id="feedbackMsg"></textarea>' +
-        '<button class="feedback-send" id="feedbackSend">Verstuur</button>';
 
-      wrap.appendChild(corner);
-      wrap.appendChild(popup);
+      wizard.appendChild(corner);
+      wizard.appendChild(popup);
+
+      function resetPopup() {
+        popup.innerHTML =
+          '<textarea placeholder="Feedback of bug melden..." id="feedbackMsg"></textarea>' +
+          '<button class="feedback-send" id="feedbackSend">Verstuur</button>';
+      }
+      resetPopup();
 
       var open = false;
-      corner.addEventListener('click', function() {
+      corner.addEventListener('click', function(e) {
+        e.stopPropagation();
         open = !open;
         popup.classList.toggle('active', open);
         if (open) document.getElementById('feedbackMsg').focus();
@@ -4905,45 +4910,11 @@
         }
       });
 
-      document.getElementById('feedbackSend').addEventListener('click', function() {
-        var msg = document.getElementById('feedbackMsg').value.trim();
-        if (!msg) return;
-        var btn = this;
-        btn.disabled = true;
-        btn.textContent = 'Verzenden...';
-
-        fetch('https://web-production-89353.up.railway.app/api/feedback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: msg,
-            page: window.location.href,
-            ua: navigator.userAgent
-          })
-        })
-        .then(function(r) { return r.json(); })
-        .then(function() {
-          popup.innerHTML = '<div class="feedback-sent">Bedankt voor je feedback!</div>';
-          setTimeout(function() {
-            open = false;
-            popup.classList.remove('active');
-            popup.innerHTML =
-              '<textarea placeholder="Feedback of bug melden..." id="feedbackMsg"></textarea>' +
-              '<button class="feedback-send" id="feedbackSend">Verstuur</button>';
-            attachSendHandler();
-          }, 2000);
-        })
-        .catch(function() {
-          btn.disabled = false;
-          btn.textContent = 'Verstuur';
-        });
-      });
-
-      function attachSendHandler() {
-        document.getElementById('feedbackSend').addEventListener('click', function() {
+      popup.addEventListener('click', function(e) {
+        if (e.target.id === 'feedbackSend' || e.target.closest('.feedback-send')) {
           var msg = document.getElementById('feedbackMsg').value.trim();
           if (!msg) return;
-          var btn = this;
+          var btn = document.getElementById('feedbackSend');
           btn.disabled = true;
           btn.textContent = 'Verzenden...';
 
@@ -4962,16 +4933,13 @@
             setTimeout(function() {
               open = false;
               popup.classList.remove('active');
-              popup.innerHTML =
-                '<textarea placeholder="Feedback of bug melden..." id="feedbackMsg"></textarea>' +
-                '<button class="feedback-send" id="feedbackSend">Verstuur</button>';
-              attachSendHandler();
+              resetPopup();
             }, 2000);
           })
           .catch(function() {
             btn.disabled = false;
             btn.textContent = 'Verstuur';
           });
-        });
-      }
+        }
+      });
     })();
