@@ -1517,55 +1517,25 @@
           var lineColor = 'rgba(220, 60, 60, 0.65)';
           var lineWidth = '2';
 
-          // X alignment — edge border or center dashed line
-          if (layoutAlignX === 'left') {
-            var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            vLine.setAttribute('x1', 0); vLine.setAttribute('y1', 0);
-            vLine.setAttribute('x2', 0); vLine.setAttribute('y2', h);
-            vLine.setAttribute('stroke', lineColor);
-            vLine.setAttribute('stroke-width', lineWidth);
-            svg.appendChild(vLine);
-          } else if (layoutAlignX === 'right') {
-            var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            vLine.setAttribute('x1', w); vLine.setAttribute('y1', 0);
-            vLine.setAttribute('x2', w); vLine.setAttribute('y2', h);
-            vLine.setAttribute('stroke', lineColor);
-            vLine.setAttribute('stroke-width', lineWidth);
-            svg.appendChild(vLine);
-          } else {
-            var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            vLine.setAttribute('x1', w / 2); vLine.setAttribute('y1', 0);
-            vLine.setAttribute('x2', w / 2); vLine.setAttribute('y2', h);
-            vLine.setAttribute('stroke', lineColor);
-            vLine.setAttribute('stroke-width', lineWidth);
-            vLine.setAttribute('stroke-dasharray', '6 4');
-            svg.appendChild(vLine);
-          }
+          // X alignment — dashed line at alignment position
+          var vx = layoutAlignX === 'left' ? 0 : layoutAlignX === 'right' ? w : w / 2;
+          var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          vLine.setAttribute('x1', vx); vLine.setAttribute('y1', 0);
+          vLine.setAttribute('x2', vx); vLine.setAttribute('y2', h);
+          vLine.setAttribute('stroke', lineColor);
+          vLine.setAttribute('stroke-width', lineWidth);
+          vLine.setAttribute('stroke-dasharray', '6 4');
+          svg.appendChild(vLine);
 
-          // Y alignment — edge border or center dashed line
-          if (layoutAlignY === 'top') {
-            var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            hLine.setAttribute('x1', 0); hLine.setAttribute('y1', 0);
-            hLine.setAttribute('x2', w); hLine.setAttribute('y2', 0);
-            hLine.setAttribute('stroke', lineColor);
-            hLine.setAttribute('stroke-width', lineWidth);
-            svg.appendChild(hLine);
-          } else if (layoutAlignY === 'bottom') {
-            var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            hLine.setAttribute('x1', 0); hLine.setAttribute('y1', h);
-            hLine.setAttribute('x2', w); hLine.setAttribute('y2', h);
-            hLine.setAttribute('stroke', lineColor);
-            hLine.setAttribute('stroke-width', lineWidth);
-            svg.appendChild(hLine);
-          } else {
-            var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            hLine.setAttribute('x1', 0); hLine.setAttribute('y1', h / 2);
-            hLine.setAttribute('x2', w); hLine.setAttribute('y2', h / 2);
-            hLine.setAttribute('stroke', lineColor);
-            hLine.setAttribute('stroke-width', lineWidth);
-            hLine.setAttribute('stroke-dasharray', '6 4');
-            svg.appendChild(hLine);
-          }
+          // Y alignment — dashed line at alignment position
+          var hy = layoutAlignY === 'top' ? 0 : layoutAlignY === 'bottom' ? h : h / 2;
+          var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          hLine.setAttribute('x1', 0); hLine.setAttribute('y1', hy);
+          hLine.setAttribute('x2', w); hLine.setAttribute('y2', hy);
+          hLine.setAttribute('stroke', lineColor);
+          hLine.setAttribute('stroke-width', lineWidth);
+          hLine.setAttribute('stroke-dasharray', '6 4');
+          svg.appendChild(hLine);
 
           wrap.appendChild(svg);
         })(wraps[wi], wi);
@@ -2718,15 +2688,21 @@
 
     // ── Step 3: New review handlers ──
 
-    // Helper: advance to next floor or step 4
+    // Helper: advance to next unreviewed floor, or step 4 if all reviewed
     function advanceFloorReview() {
       renderPreviewThumbnails();
       updateFloorLabels();
-      if (currentFloorReviewIndex < floors.length - 1) {
-        currentFloorReviewIndex++;
-        renderFloorReview();
-      } else {
+      // Find next unreviewed floor
+      var nextUnreviewed = -1;
+      for (var _ur = 0; _ur < floors.length; _ur++) {
+        if (!floorReviewStatus[_ur]) { nextUnreviewed = _ur; break; }
+      }
+      if (nextUnreviewed === -1) {
+        // All floors reviewed — proceed to step 4
         showWizardStep(4);
+      } else {
+        currentFloorReviewIndex = nextUnreviewed;
+        renderFloorReview();
       }
     }
 
@@ -3076,7 +3052,7 @@
           this.classList.toggle('active', gridEditMode);
           // color handled by CSS primary button
           this.innerHTML = gridEditMode
-            ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Terug naar automatisch'
+            ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Reset layout'
             : '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Layout aanpassen';
           // Show/hide alignment controls with grid edit mode
           var ctrlBar = document.getElementById('layoutControlsBar');

@@ -2,7 +2,7 @@
 <script>
 (function(){
   var sheets = [
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.6/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.7/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -23,7 +23,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel" style="display:none;">
-    <div class="admin-panel-label">Admin &middot; v45.6</div>
+    <div class="admin-panel-label">Admin &middot; v45.7</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
@@ -282,12 +282,9 @@
               <div class="floor-layout-viewer" id="floorLayoutViewer"></div>
             </div>
 
-            <!-- Note -->
-            <div class="layout-note-section">
-              <button type="button" class="btn-toggle-note" id="btnToggleNote" onclick="var w=document.getElementById('layoutNoteWrap');var b=this;if(w.style.display==='none'){w.style.display='';b.textContent='Opmerking verbergen';}else{w.style.display='none';b.textContent='Opmerking toevoegen';}">Opmerking toevoegen</button>
-              <div id="layoutNoteWrap" style="display:none;margin-top:0.5rem;">
-                <textarea class="layout-note-input" id="layoutNote" rows="2" placeholder="Bijv. 'Voorgevels graag uitgelijnd' of 'Plattegronden iets compacter'"></textarea>
-              </div>
+            <!-- Note (visible after Bereken indeling) -->
+            <div class="layout-note-section" style="display:none;">
+              <textarea class="layout-note-input" id="layoutNote" rows="2" placeholder="Opmerking (optioneel): bijv. 'Voorgevels graag uitgelijnd'"></textarea>
             </div>
           </div>
 
@@ -352,4 +349,4 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.6/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.7/mattori-configurator.js"></script>
