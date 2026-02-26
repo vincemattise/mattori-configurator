@@ -2394,51 +2394,70 @@
           buildThumbstrip();
           renderFloorReview();
         } else if (n === 4) {
-          // Start with all floors unchecked — user must explicitly select
-          excludedFloors = new Set();
-          for (var ei = 0; ei < floors.length; ei++) excludedFloors.add(ei);
-          layoutCalculated = false;
-          customPositions = null;
-          gridEditMode = false;
-
-          renderLayoutView();
-
-          // Hide result section + note section + Layout aanpassen until "Bereken indeling"
           var resultSection = document.getElementById('layoutResultSection');
-          if (resultSection) resultSection.style.display = 'none';
           var noteSection = document.querySelector('.layout-note-section');
-          if (noteSection) noteSection.style.display = 'none';
-          var btnToggleGridInit = document.getElementById('btnToggleGrid');
-          if (btnToggleGridInit) btnToggleGridInit.style.display = 'none';
+          var controlsBar = document.getElementById('layoutControlsBar');
 
-          // Clear preview until calculation (show empty frame)
-          if (floorsGrid) floorsGrid.innerHTML = '';
+          if (layoutCalculated) {
+            // ── Returning from step 5 — restore previous state ──
+            renderLayoutView();
+            if (resultSection) resultSection.style.display = '';
+            if (noteSection) noteSection.style.display = '';
+            // Alignment controls only visible in grid edit mode
+            if (controlsBar) controlsBar.style.display = gridEditMode ? '' : 'none';
+            var btnCalcBack = document.getElementById('btnCalcLayout');
+            if (btnCalcBack) btnCalcBack.style.display = 'none';
+            renderPreviewThumbnails();
+            updateFloorLabels();
+            setTimeout(function() { renderGridOverlay(); }, 50);
+          } else {
+            // ── First visit — start fresh ──
+            excludedFloors = new Set();
+            for (var ei = 0; ei < floors.length; ei++) excludedFloors.add(ei);
+            layoutCalculated = false;
+            customPositions = null;
+            gridEditMode = false;
 
-          // Wire up the "Bereken indeling" button
-          var btnCalc = document.getElementById('btnCalcLayout');
-          if (btnCalc) {
-            btnCalc.style.display = '';
-            btnCalc.disabled = true; // disabled until at least one floor is checked
-            btnCalc.onclick = function() {
-              layoutCalculated = true;
-              this.style.display = 'none';
-              if (resultSection) resultSection.style.display = '';
-              if (noteSection) noteSection.style.display = '';
-              // Show "Layout aanpassen" button now
-              var btnTG = document.getElementById('btnToggleGrid');
-              if (btnTG) {
-                var inclCount = 0;
-                for (var _i = 0; _i < floors.length; _i++) {
-                  if (!excludedFloors.has(_i)) inclCount++;
+            renderLayoutView();
+
+            // Hide result section + note section + Layout aanpassen until "Bereken indeling"
+            if (resultSection) resultSection.style.display = 'none';
+            if (noteSection) noteSection.style.display = 'none';
+            if (controlsBar) controlsBar.style.display = 'none';
+            var btnToggleGridInit = document.getElementById('btnToggleGrid');
+            if (btnToggleGridInit) btnToggleGridInit.style.display = 'none';
+
+            // Clear preview until calculation (show empty frame)
+            if (floorsGrid) floorsGrid.innerHTML = '';
+
+            // Wire up the "Bereken indeling" button
+            var btnCalc = document.getElementById('btnCalcLayout');
+            if (btnCalc) {
+              btnCalc.style.display = '';
+              btnCalc.disabled = true; // disabled until at least one floor is checked
+              btnCalc.onclick = function() {
+                layoutCalculated = true;
+                this.style.display = 'none';
+                if (resultSection) resultSection.style.display = '';
+                if (noteSection) noteSection.style.display = '';
+                // Alignment controls stay hidden until Layout aanpassen
+                if (controlsBar) controlsBar.style.display = 'none';
+                // Show "Layout aanpassen" button now
+                var btnTG = document.getElementById('btnToggleGrid');
+                if (btnTG) {
+                  var inclCount = 0;
+                  for (var _i = 0; _i < floors.length; _i++) {
+                    if (!excludedFloors.has(_i)) inclCount++;
+                  }
+                  btnTG.style.display = inclCount >= 2 ? '' : 'none';
                 }
-                btnTG.style.display = inclCount >= 2 ? '' : 'none';
-              }
-              customPositions = null;
-              renderPreviewThumbnails();
-              updateFloorLabels();
-              updateWizardUI(); // show "Volgende" now
-              setTimeout(function() { renderGridOverlay(); }, 50);
-            };
+                customPositions = null;
+                renderPreviewThumbnails();
+                updateFloorLabels();
+                updateWizardUI(); // show "Volgende" now
+                setTimeout(function() { renderGridOverlay(); }, 50);
+              };
+            }
           }
         } else if (n === 5) {
           // Re-render with perspective camera (final look with depth)
@@ -2834,18 +2853,27 @@
             cb.type = 'checkbox';
             cb.checked = !isExcluded;
             cb.addEventListener('change', function() {
-              toggleFloorExclusion(floorIdx);
-              customPositions = null; // reset drag positions
-
-              // Always reset calculation — user must click "Bereken" again
+              // Reset calculation state BEFORE toggling (prevents premature render)
+              var wasCalculated = layoutCalculated;
               if (layoutCalculated) {
                 layoutCalculated = false;
                 gridEditMode = false;
+              }
+              customPositions = null;
+
+              toggleFloorExclusion(floorIdx);
+
+              // Hide result + note sections after reset
+              if (wasCalculated) {
                 var resultSection2 = document.getElementById('layoutResultSection');
                 if (resultSection2) resultSection2.style.display = 'none';
                 var noteSection2 = document.querySelector('.layout-note-section');
                 if (noteSection2) noteSection2.style.display = 'none';
-                updateWizardUI(); // hide "Volgende" until recalculated
+                var controlsBar2 = document.getElementById('layoutControlsBar');
+                if (controlsBar2) controlsBar2.style.display = 'none';
+                // Clear preview (guard in renderPreviewThumbnails handles this now)
+                if (floorsGrid) floorsGrid.innerHTML = '';
+                updateWizardUI();
               }
               // Update checkbox UI + show "Bereken" button
               var chip2 = this.parentElement;
@@ -2853,6 +2881,29 @@
               var btnCalc2 = document.getElementById('btnCalcLayout');
               if (btnCalc2) {
                 btnCalc2.style.display = '';
+                btnCalc2.onclick = function() {
+                  layoutCalculated = true;
+                  this.style.display = 'none';
+                  var rs = document.getElementById('layoutResultSection');
+                  if (rs) rs.style.display = '';
+                  var ns = document.querySelector('.layout-note-section');
+                  if (ns) ns.style.display = '';
+                  var cb2 = document.getElementById('layoutControlsBar');
+                  if (cb2) cb2.style.display = 'none';
+                  var btnTG2 = document.getElementById('btnToggleGrid');
+                  if (btnTG2) {
+                    var ic = 0;
+                    for (var _j = 0; _j < floors.length; _j++) {
+                      if (!excludedFloors.has(_j)) ic++;
+                    }
+                    btnTG2.style.display = ic >= 2 ? '' : 'none';
+                  }
+                  customPositions = null;
+                  renderPreviewThumbnails();
+                  updateFloorLabels();
+                  updateWizardUI();
+                  setTimeout(function() { renderGridOverlay(); }, 50);
+                };
                 var anyIncluded = false;
                 for (var ci = 0; ci < floors.length; ci++) {
                   if (!excludedFloors.has(ci)) { anyIncluded = true; break; }
@@ -2960,6 +3011,9 @@
           this.innerHTML = gridEditMode
             ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Terug naar automatisch'
             : '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Layout aanpassen';
+          // Show/hide alignment controls with grid edit mode
+          var ctrlBar = document.getElementById('layoutControlsBar');
+          if (ctrlBar) ctrlBar.style.display = gridEditMode ? '' : 'none';
           if (gridEditMode) {
             enableGridDrag();
           } else {
