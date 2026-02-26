@@ -4874,6 +4874,8 @@
       var wizard = document.getElementById('wizard');
       if (!wizard) return;
 
+      wizard.style.position = 'relative';
+
       var corner = document.createElement('div');
       corner.className = 'feedback-corner';
       corner.innerHTML =
