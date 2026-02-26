@@ -2,7 +2,7 @@
 <script>
 (function(){
   var sheets = [
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.13/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.14/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -23,7 +23,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel" style="display:none;">
-    <div class="admin-panel-label">Admin &middot; v45.13</div>
+    <div class="admin-panel-label">Admin &middot; v45.14</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
@@ -265,18 +265,10 @@
                     <span>Handmatig aanpassen</span>
                   </label>
                   <span class="layout-reset-icon" id="btnResetLayout" title="Reset naar berekende posities" style="display:none;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 2.5v3.5h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 6C4.3 4 6 2.5 8.2 2.5c3 0 5.3 2.4 5.3 5.5s-2.3 5.5-5.3 5.5c-2 0-3.8-1.2-4.6-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-                  <span class="info-tooltip info-tooltip-lg">i<span class="tooltip-content"><b>X</b> en <b>Y</b>: lijn alle plattegronden uit (links, midden, rechts / boven, midden, onder).<br><br><b>Schaal</b>: vergroot of verklein alle plattegronden.<br><br>Per plattegrond: uitlijning aanpassen of 90° draaien.<br><br>Sleep individuele plattegronden naar de gewenste positie op het grid.</span></span>
+                  <span class="info-tooltip info-tooltip-lg">i<span class="tooltip-content"><b>Schaal</b>: vergroot of verklein alle plattegronden.<br><br>Per plattegrond: uitlijning (links/midden/rechts, boven/midden/onder) en 90&deg; rotatie.<br><br>Sleep individuele plattegronden naar de gewenste positie op het grid.</span></span>
                 </div>
                 <div class="layout-controls-inner" id="layoutControlsInner">
                   <div class="layout-controls-bar">
-                    <div class="layout-align-group">
-                      <span class="layout-align-label">X</span>
-                      <div class="floor-align-group" id="alignGroupX"></div>
-                    </div>
-                    <div class="layout-align-group">
-                      <span class="layout-align-label">Y</span>
-                      <div class="floor-align-group" id="alignGroupY"></div>
-                    </div>
                     <div class="layout-align-group">
                       <span class="layout-align-label">Schaal</span>
                       <div class="floor-align-group" id="scaleGroup"></div>
@@ -361,4 +353,4 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.13/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.14/mattori-configurator.js"></script>

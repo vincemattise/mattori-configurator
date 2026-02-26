@@ -1513,6 +1513,7 @@
       if (!gridEditMode || !floorsGrid || !showGridOverlay) return;
       // Add alignment border lines to each floor thumbnail (only on alignment edges)
       var wraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
+      var grid = getGridDimensions();
       for (var wi = 0; wi < wraps.length; wi++) {
         (function(wrap, posIdx) {
           if (!currentLayout || !currentLayout.positions[posIdx]) return;
@@ -1528,11 +1529,17 @@
           var lineColor = 'rgba(0, 0, 0, 0.55)';
           var lineWidth = '1.5';
 
-          // X alignment — dashed line at alignment position (per-floor)
+          // Per-floor alignment
           var floorIdx = pos.index;
           var thisAlignX = getFloorAlignX(floorIdx);
           var thisAlignY = getFloorAlignY(floorIdx);
-          var vx = thisAlignX === 'left' ? 0 : thisAlignX === 'right' ? w : w / 2;
+
+          // Compute alignment line positions SNAPPED to actual grid crossings
+          // Convert desired position to zone coords, snap to grid, convert back to local
+          var rawVx = thisAlignX === 'left' ? 0 : thisAlignX === 'right' ? w : w / 2;
+          var zoneVx = parseFloat(wrap.style.left) + rawVx;
+          var vx = snapToGrid(zoneVx, grid.cellPx) - parseFloat(wrap.style.left);
+
           var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           vLine.setAttribute('x1', vx); vLine.setAttribute('y1', 0);
           vLine.setAttribute('x2', vx); vLine.setAttribute('y2', h);
@@ -1541,8 +1548,10 @@
           vLine.setAttribute('stroke-dasharray', '6 4');
           svg.appendChild(vLine);
 
-          // Y alignment — dashed line at alignment position (per-floor)
-          var hy = thisAlignY === 'top' ? 0 : thisAlignY === 'bottom' ? h : h / 2;
+          var rawHy = thisAlignY === 'top' ? 0 : thisAlignY === 'bottom' ? h : h / 2;
+          var zoneHy = parseFloat(wrap.style.top) + rawHy;
+          var hy = snapToGrid(zoneHy, grid.cellPx) - parseFloat(wrap.style.top);
+
           var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           hLine.setAttribute('x1', 0); hLine.setAttribute('y1', hy);
           hLine.setAttribute('x2', w); hLine.setAttribute('y2', hy);
@@ -1638,6 +1647,9 @@
           }
           // Check for overlaps after every drag
           checkFloorOverlaps();
+          // Show reset icon
+          var _resetBtn = document.getElementById('btnResetLayout');
+          if (_resetBtn) _resetBtn.style.display = 'inline-flex';
         }
       }
 
@@ -2487,12 +2499,8 @@
             renderLayoutView();
             if (resultSection) resultSection.style.display = '';
             if (noteSection) noteSection.style.display = '';
-            // Tools box visible when 2+ floors
-            if (controlsBar) {
-              var ic2 = 0;
-              for (var _ic = 0; _ic < floors.length; _ic++) { if (!excludedFloors.has(_ic)) ic2++; }
-              controlsBar.style.display = ic2 >= 2 ? '' : 'none';
-            }
+            // Always show tools box
+            if (controlsBar) controlsBar.style.display = '';
             var btnCalcBack = document.getElementById('btnCalcLayout');
             if (btnCalcBack) btnCalcBack.style.display = 'none';
             renderPreviewThumbnails();
@@ -2549,12 +2557,8 @@
                 this.style.display = 'none';
                 if (resultSection) resultSection.style.display = '';
                 if (noteSection) noteSection.style.display = '';
-                // Show tools box when 2+ floors
-                var inclCount = 0;
-                for (var _i = 0; _i < floors.length; _i++) {
-                  if (!excludedFloors.has(_i)) inclCount++;
-                }
-                if (controlsBar) controlsBar.style.display = inclCount >= 2 ? '' : 'none';
+                // Always show tools box (per-floor controls + rotation work for 1+ floors)
+                if (controlsBar) controlsBar.style.display = '';
                 // Ensure edit mode checkbox starts unchecked, controls disabled
                 var chkEM = document.getElementById('chkEditMode');
                 var ctrlIn = document.getElementById('layoutControlsInner');
@@ -2564,6 +2568,7 @@
                 customPositions = null;
                 renderPreviewThumbnails();
                 updateFloorLabels();
+                renderLayoutView(); // populate per-floor controls
                 updateWizardUI(); // show "Volgende" now
                 setTimeout(function() { renderGridOverlay(); }, 50);
               };
@@ -3012,13 +3017,9 @@
                   if (rs) rs.style.display = '';
                   var ns = document.querySelector('.layout-note-section');
                   if (ns) ns.style.display = '';
-                  // Show tools box when 2+ floors
+                  // Always show tools box
                   var cb2 = document.getElementById('layoutControlsBar');
-                  var ic = 0;
-                  for (var _j = 0; _j < floors.length; _j++) {
-                    if (!excludedFloors.has(_j)) ic++;
-                  }
-                  if (cb2) cb2.style.display = ic >= 2 ? '' : 'none';
+                  if (cb2) cb2.style.display = '';
                   // Ensure edit mode starts unchecked
                   var chkEM2 = document.getElementById('chkEditMode');
                   var ctrlIn2 = document.getElementById('layoutControlsInner');
@@ -3028,6 +3029,7 @@
                   customPositions = null;
                   renderPreviewThumbnails();
                   updateFloorLabels();
+                  renderLayoutView(); // populate per-floor controls
                   updateWizardUI();
                   setTimeout(function() { renderGridOverlay(); }, 50);
                 };
@@ -3047,89 +3049,7 @@
         }
       }
 
-      // ── Alignment buttons (X and Y) ──
-      var alignGroupX = document.getElementById('alignGroupX');
-      var alignGroupY = document.getElementById('alignGroupY');
-
-      if (alignGroupX) {
-        alignGroupX.innerHTML = '';
-        var xValues = ['left', 'center', 'right'];
-        var xIcons = {
-          left: '<svg width="16" height="16" viewBox="0 0 16 16"><line x1="1.5" y1="1" x2="1.5" y2="15" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="2" width="10" height="5" rx="1" fill="currentColor" opacity="0.8"/><rect x="3" y="9" width="7" height="5" rx="1" fill="currentColor" opacity="0.4"/></svg>',
-          center: '<svg width="16" height="16" viewBox="0 0 16 16"><line x1="8" y1="1" x2="8" y2="15" stroke="currentColor" stroke-width="1" stroke-dasharray="2 1.5"/><rect x="2" y="2" width="12" height="5" rx="1" fill="currentColor" opacity="0.8"/><rect x="3.5" y="9" width="9" height="5" rx="1" fill="currentColor" opacity="0.4"/></svg>',
-          right: '<svg width="16" height="16" viewBox="0 0 16 16"><line x1="14.5" y1="1" x2="14.5" y2="15" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="2" width="10" height="5" rx="1" fill="currentColor" opacity="0.8"/><rect x="6" y="9" width="7" height="5" rx="1" fill="currentColor" opacity="0.4"/></svg>'
-        };
-        var xTitles = { left: 'Links uitlijnen', center: 'Midden uitlijnen', right: 'Rechts uitlijnen' };
-        for (var xi = 0; xi < xValues.length; xi++) {
-          (function(val) {
-            var btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'floor-align-btn' + (val === layoutAlignX ? ' active' : '');
-            btn.innerHTML = xIcons[val];
-            btn.title = xTitles[val];
-            btn.dataset.align = val;
-            btn.addEventListener('click', function() {
-              layoutAlignX = val;
-              // Also update all per-floor X alignment to match global
-              for (var fk in floorSettings) {
-                if (floorSettings.hasOwnProperty(fk)) delete floorSettings[fk].alignX;
-              }
-              customPositions = null;
-              var siblings = alignGroupX.querySelectorAll('.floor-align-btn');
-              for (var s = 0; s < siblings.length; s++) siblings[s].classList.remove('active');
-              this.classList.add('active');
-              updatePreviewWithLoading(function() {
-                renderPreviewThumbnails();
-                renderGridOverlayIfStep4();
-                updateFloorLabels();
-                if (gridEditMode) enableGridDrag();
-                renderLayoutView();
-              });
-            });
-            alignGroupX.appendChild(btn);
-          })(xValues[xi]);
-        }
-      }
-
-      if (alignGroupY) {
-        alignGroupY.innerHTML = '';
-        var yValues = ['top', 'center', 'bottom'];
-        var yIcons = {
-          top: '<svg width="16" height="16" viewBox="0 0 16 16"><line x1="1" y1="1.5" x2="15" y2="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="3" width="5" height="10" rx="1" fill="currentColor" opacity="0.8"/><rect x="9" y="3" width="5" height="7" rx="1" fill="currentColor" opacity="0.4"/></svg>',
-          center: '<svg width="16" height="16" viewBox="0 0 16 16"><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1" stroke-dasharray="2 1.5"/><rect x="2" y="1.5" width="5" height="13" rx="1" fill="currentColor" opacity="0.8"/><rect x="9" y="3.5" width="5" height="9" rx="1" fill="currentColor" opacity="0.4"/></svg>',
-          bottom: '<svg width="16" height="16" viewBox="0 0 16 16"><line x1="1" y1="14.5" x2="15" y2="14.5" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="3" width="5" height="10" rx="1" fill="currentColor" opacity="0.8"/><rect x="9" y="6" width="5" height="7" rx="1" fill="currentColor" opacity="0.4"/></svg>'
-        };
-        var yTitles = { top: 'Bovenkant uitlijnen', center: 'Midden uitlijnen', bottom: 'Onderkant uitlijnen' };
-        for (var yi = 0; yi < yValues.length; yi++) {
-          (function(val) {
-            var btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'floor-align-btn' + (val === layoutAlignY ? ' active' : '');
-            btn.innerHTML = yIcons[val];
-            btn.title = yTitles[val];
-            btn.dataset.align = val;
-            btn.addEventListener('click', function() {
-              layoutAlignY = val;
-              // Also update all per-floor Y alignment to match global
-              for (var fk in floorSettings) {
-                if (floorSettings.hasOwnProperty(fk)) delete floorSettings[fk].alignY;
-              }
-              customPositions = null;
-              var siblings = alignGroupY.querySelectorAll('.floor-align-btn');
-              for (var s = 0; s < siblings.length; s++) siblings[s].classList.remove('active');
-              this.classList.add('active');
-              updatePreviewWithLoading(function() {
-                renderPreviewThumbnails();
-                renderGridOverlayIfStep4();
-                updateFloorLabels();
-                if (gridEditMode) enableGridDrag();
-                renderLayoutView();
-              });
-            });
-            alignGroupY.appendChild(btn);
-          })(yValues[yi]);
-        }
-      }
+      // (Global X/Y alignment buttons removed — per-floor alignment handles this)
 
       // ── Scale buttons ──
       var scaleGroup = document.getElementById('scaleGroup');
