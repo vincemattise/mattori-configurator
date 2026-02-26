@@ -1430,7 +1430,7 @@
 
     // Reset only a single floor's custom position (keep other floors intact)
     function resetSingleFloorPosition(floorIdx) {
-      if (!customPositions) return; // nothing to reset
+      if (!customPositions) return;
       var cp = customPositions.find(function(c) { return c.index === floorIdx; });
       if (cp) {
         cp.gridX = null;
@@ -1439,6 +1439,49 @@
       // If ALL floors are now null, clean up customPositions entirely
       var anyCustom = customPositions.some(function(c) { return c.gridX !== null; });
       if (!anyCustom) customPositions = null;
+    }
+
+    // Re-snap a floor in-place after alignment change (stay near current position)
+    function reSnapFloorAlignment(floorIdx) {
+      if (!customPositions || !currentLayout) return;
+      var cp = customPositions.find(function(c) { return c.index === floorIdx; });
+      if (!cp || cp.gridX === null) return; // auto-positioned → auto will handle it
+      var grid = getGridDimensions();
+      // Find this floor's dimensions from current layout
+      var pos = null;
+      for (var i = 0; i < currentLayout.positions.length; i++) {
+        if (currentLayout.positions[i].index === floorIdx) { pos = currentLayout.positions[i]; break; }
+      }
+      if (!pos) return;
+      var currentLeft = cp.gridX * grid.cellPx;
+      var currentTop = cp.gridY * grid.cellPx;
+      var w = pos.w, h = pos.h;
+      var alignX = getFloorAlignX(floorIdx);
+      var alignY = getFloorAlignY(floorIdx);
+      // Re-snap X: move alignment edge to nearest grid crossing
+      var newLeft;
+      if (alignX === 'left') {
+        newLeft = snapToGrid(currentLeft, grid.cellPx);
+      } else if (alignX === 'right') {
+        newLeft = snapToGrid(currentLeft + w, grid.cellPx) - w;
+      } else {
+        newLeft = snapToGrid(currentLeft + w / 2, grid.cellPx) - w / 2;
+      }
+      // Re-snap Y: move alignment edge to nearest grid crossing
+      var newTop;
+      if (alignY === 'top') {
+        newTop = snapToGrid(currentTop, grid.cellPx);
+      } else if (alignY === 'bottom') {
+        newTop = snapToGrid(currentTop + h, grid.cellPx) - h;
+      } else {
+        newTop = snapToGrid(currentTop + h / 2, grid.cellPx) - h / 2;
+      }
+      // Clamp within zone
+      newLeft = Math.max(0, Math.min(grid.zoneW - w, newLeft));
+      newTop = Math.max(0, Math.min(grid.zoneH - h, newTop));
+      // Store re-snapped position (top-left grid coord)
+      cp.gridX = pxToGridCoord(newLeft, grid.cellPx);
+      cp.gridY = pxToGridCoord(newTop, grid.cellPx);
     }
 
     // --- Grid overlay (SVG) ---
@@ -1537,7 +1580,7 @@
           svg.setAttribute('width', w);
           svg.setAttribute('height', h);
           svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
-          svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:15;overflow:visible;';
+          svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:15;';
 
           var lineColor = 'rgba(0, 0, 0, 0.55)';
           var lineWidth = '1.5';
@@ -2959,16 +3002,14 @@
       if (!floorSettings[floorIndex]) floorSettings[floorIndex] = {};
       var current = getFloorRotate(floorIndex);
       floorSettings[floorIndex].rotate = (current + 90) % 360;
-      // Only reset this floor's position, keep others
+      // Only reset this floor's position, keep others (dimensions change on rotate)
       resetSingleFloorPosition(floorIndex);
-      updatePreviewWithLoading(function() {
-        renderPreviewThumbnails();
-        renderGridOverlayIfStep4();
-        updateFloorLabels();
-        if (gridEditMode) enableGridDrag();
-        checkFloorOverlaps();
-        renderLayoutView();
-      });
+      renderPreviewThumbnails();
+      renderGridOverlayIfStep4();
+      updateFloorLabels();
+      if (gridEditMode) enableGridDrag();
+      checkFloorOverlaps();
+      renderLayoutView();
     }
 
     // ============================================================
@@ -3148,16 +3189,13 @@
                   btn.addEventListener('click', function() {
                     if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
                     floorSettings[floorIdx].alignX = val;
-                    // Only reset THIS floor's custom position, keep others
-                    resetSingleFloorPosition(floorIdx);
-                    updatePreviewWithLoading(function() {
-                      renderPreviewThumbnails();
-                      renderGridOverlayIfStep4();
-                      updateFloorLabels();
-                      if (gridEditMode) enableGridDrag();
-                      checkFloorOverlaps();
-                      renderLayoutView();
-                    });
+                    reSnapFloorAlignment(floorIdx);
+                    renderPreviewThumbnails();
+                    renderGridOverlayIfStep4();
+                    updateFloorLabels();
+                    if (gridEditMode) enableGridDrag();
+                    checkFloorOverlaps();
+                    renderLayoutView();
                   });
                   xBtns.appendChild(btn);
                 })(xVals[bx]);
@@ -3178,16 +3216,13 @@
                   btn.addEventListener('click', function() {
                     if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
                     floorSettings[floorIdx].alignY = val;
-                    // Only reset THIS floor's custom position, keep others
-                    resetSingleFloorPosition(floorIdx);
-                    updatePreviewWithLoading(function() {
-                      renderPreviewThumbnails();
-                      renderGridOverlayIfStep4();
-                      updateFloorLabels();
-                      if (gridEditMode) enableGridDrag();
-                      checkFloorOverlaps();
-                      renderLayoutView();
-                    });
+                    reSnapFloorAlignment(floorIdx);
+                    renderPreviewThumbnails();
+                    renderGridOverlayIfStep4();
+                    updateFloorLabels();
+                    if (gridEditMode) enableGridDrag();
+                    checkFloorOverlaps();
+                    renderLayoutView();
                   });
                   yBtns.appendChild(btn);
                 })(yVals[by]);
