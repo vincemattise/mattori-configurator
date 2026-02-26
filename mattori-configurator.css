@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.12/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.13/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -793,24 +793,51 @@
       color: #fff;
     }
 
-    /* Reset layout link */
-    .mattori-configurator .layout-reset-link {
-      display: inline-block;
-      font-size: 0.7rem;
+    /* Reset layout icon (¾ arrow next to checkbox) */
+    .mattori-configurator .layout-reset-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
       color: #999;
       cursor: pointer;
-      margin-top: 0.3rem;
-      text-decoration: underline;
-      text-underline-offset: 2px;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+      margin-left: 2px;
     }
 
-    .mattori-configurator .layout-reset-link:hover {
+    .mattori-configurator .layout-reset-icon:hover {
+      color: #333;
+      background: rgba(0,0,0,0.05);
+    }
+
+    /* Per-floor rotate button */
+    .mattori-configurator .per-floor-rotate {
+      width: 22px;
+      height: 22px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      color: #999;
+      transition: all 0.15s ease;
+      margin-left: 4px;
+      flex-shrink: 0;
+    }
+
+    .mattori-configurator .per-floor-rotate:hover {
+      border-color: #aaa;
       color: #555;
     }
 
     /* Spacing above result section (below floor checkboxes) */
     .mattori-configurator #layoutResultSection {
-      margin-top: 1rem;
+      margin-top: calc(1rem + 10px);
     }
 
     /* Layout note section */

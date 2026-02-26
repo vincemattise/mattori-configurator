@@ -1316,10 +1316,10 @@
       var camera;
       if (opts.ortho) {
         // Orthographic camera — uniform scale, flat top-down (for editing)
-        // Use actual bounding box to prevent clipping (size.x may > worldW*0.01
-        // due to wall thickness), with tiny padding for anti-aliasing safety
-        var effectiveW = size.x;
-        var effectiveH = size.z;
+        // Use actual bounding box to prevent clipping. Swap for 90°/270° rotation.
+        var isSwapped = (rotation === 90 || rotation === 270);
+        var effectiveW = isSwapped ? size.z : size.x;
+        var effectiveH = isSwapped ? size.x : size.z;
         var pxPerUnitW = width / effectiveW;
         var pxPerUnitH = height / effectiveH;
         var pxPerUnit = Math.min(pxPerUnitW, pxPerUnitH);
@@ -1334,18 +1334,20 @@
 
         // Fine-tune alignment: push model to canvas edge so it touches
         // the alignment line at that edge
+        var modelHalfW = effectiveW / 2;
+        var modelHalfH = effectiveH / 2;
 
         // Y-axis: push to top or bottom edge
         var alignY = getFloorAlignY(floorIndex);
         if (alignY === 'top' || alignY === 'bottom') {
-          var shiftZ = halfFrustumH - size.z / 2;
+          var shiftZ = halfFrustumH - modelHalfH;
           scene.position.z += (alignY === 'bottom') ? shiftZ : -shiftZ;
         }
 
         // X-axis: push to left or right edge
         var alignX = getFloorAlignX(floorIndex);
         if (alignX === 'left' || alignX === 'right') {
-          var shiftX = halfFrustumW - size.x / 2;
+          var shiftX = halfFrustumW - modelHalfW;
           scene.position.x += (alignX === 'right') ? shiftX : -shiftX;
         }
 
@@ -1697,17 +1699,25 @@
       var props = {};
       // Always include global alignment settings
       props['Uitlijning'] = 'X=' + layoutAlignX + ', Y=' + layoutAlignY;
-      // Include per-floor alignment if any differ from global
+      // Include per-floor alignment and rotation if any differ from defaults
       for (var fk in floorSettings) {
         if (floorSettings.hasOwnProperty(fk)) {
           var fs = floorSettings[fk];
           var hasCustomAlign = (fs.alignX && fs.alignX !== layoutAlignX) || (fs.alignY && fs.alignY !== layoutAlignY);
-          if (hasCustomAlign) {
+          var hasRotation = fs.rotate && fs.rotate !== 0;
+          if (hasCustomAlign || hasRotation) {
             var floor = floors[parseInt(fk)];
             var fname = floor ? floor.name : ('Verdieping ' + (parseInt(fk) + 1));
-            var ax = fs.alignX || layoutAlignX;
-            var ay = fs.alignY || layoutAlignY;
-            props['Uitlijning ' + fname] = 'X=' + ax + ', Y=' + ay;
+            var parts = [];
+            if (hasCustomAlign) {
+              var ax = fs.alignX || layoutAlignX;
+              var ay = fs.alignY || layoutAlignY;
+              parts.push('X=' + ax + ', Y=' + ay);
+            }
+            if (hasRotation) {
+              parts.push('Rotatie=' + fs.rotate + '°');
+            }
+            props['Instelling ' + fname] = parts.join(', ');
           }
         }
       }
@@ -1739,10 +1749,12 @@
     });
 
     function computeFloorLayout(zoneW, zoneH, includedIndices) {
-      // Gather floor dimensions in cm
+      // Gather floor dimensions in cm (swap for 90°/270° rotation)
       var items = includedIndices.map(function(i) {
         var f = floors[i];
-        return { index: i, w: f.worldW, h: f.worldH, name: f.name || '' };
+        var rot = getFloorRotate(i);
+        var isSwapped = (rot === 90 || rot === 270);
+        return { index: i, w: isSwapped ? f.worldH : f.worldW, h: isSwapped ? f.worldW : f.worldH, name: f.name || '' };
       });
 
       if (items.length === 0) return { scale: 1, positions: [] };
@@ -2935,6 +2947,7 @@
         renderGridOverlayIfStep4();
         updateFloorLabels();
         if (gridEditMode) enableGridDrag();
+        renderLayoutView();
       });
     }
 
@@ -3153,7 +3166,7 @@
         }
       }
 
-      // ── Per-floor alignment section ──
+      // ── Per-floor alignment + rotation section ──
       var perFloorSection = document.getElementById('perFloorAlignSection');
       if (perFloorSection) {
         perFloorSection.innerHTML = '';
@@ -3161,7 +3174,21 @@
         for (var pfi = 0; pfi < floors.length; pfi++) {
           if (!excludedFloors.has(pfi)) includedForAlign.push(pfi);
         }
-        if (includedForAlign.length >= 2) {
+        // Show per-floor controls for ALL included floors (even with 1 floor for rotation)
+        if (includedForAlign.length >= 1) {
+          // SVG line icons for alignment (small 14×14)
+          var xIcons = {
+            left:   '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="1.5" y1="1" x2="1.5" y2="13" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="3" width="8" height="3" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="3" y="8" width="5" height="3" rx="0.5" fill="currentColor" opacity="0.35"/></svg>',
+            center: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" stroke-width="1" stroke-dasharray="2 1.5"/><rect x="2" y="3" width="10" height="3" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="3.5" y="8" width="7" height="3" rx="0.5" fill="currentColor" opacity="0.35"/></svg>',
+            right:  '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="12.5" y1="1" x2="12.5" y2="13" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="3" width="8" height="3" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="6" y="8" width="5" height="3" rx="0.5" fill="currentColor" opacity="0.35"/></svg>'
+          };
+          var yIcons = {
+            top:    '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="1" y1="1.5" x2="13" y2="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="3" width="4" height="8" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="8" y="3" width="4" height="5" rx="0.5" fill="currentColor" opacity="0.35"/></svg>',
+            center: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="1" stroke-dasharray="2 1.5"/><rect x="2" y="1" width="4" height="12" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="8" y="3" width="4" height="8" rx="0.5" fill="currentColor" opacity="0.35"/></svg>',
+            bottom: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="1" y1="12.5" x2="13" y2="12.5" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="3" width="4" height="8" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="8" y="6" width="4" height="5" rx="0.5" fill="currentColor" opacity="0.35"/></svg>'
+          };
+          var rotateIcon = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13 3v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 7c-.8-2.2-2.8-3.8-5.2-3.8-3.2 0-5.8 2.6-5.8 5.8s2.6 5.8 5.8 5.8c2.2 0 4-1.3 4.9-3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+
           for (var afi = 0; afi < includedForAlign.length; afi++) {
             (function(floorIdx) {
               var row = document.createElement('div');
@@ -3172,20 +3199,17 @@
               name.textContent = floors[floorIdx].name || ('Verdieping ' + (floorIdx + 1));
               row.appendChild(name);
 
-              // X alignment buttons (L/C/R)
+              // X alignment buttons (line icons)
               var xBtns = document.createElement('span');
               xBtns.className = 'per-floor-btns';
               var xVals = ['left', 'center', 'right'];
-              var xLabels = ['L', 'M', 'R'];
               var currentX = (floorSettings[floorIdx] && floorSettings[floorIdx].alignX) || layoutAlignX;
               for (var bx = 0; bx < xVals.length; bx++) {
-                (function(val, label) {
+                (function(val) {
                   var btn = document.createElement('button');
                   btn.type = 'button';
                   btn.className = 'per-floor-btn' + (val === currentX ? ' active' : '');
-                  btn.textContent = label;
-                  btn.style.fontSize = '9px';
-                  btn.style.fontWeight = '700';
+                  btn.innerHTML = xIcons[val];
                   btn.addEventListener('click', function() {
                     if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
                     floorSettings[floorIdx].alignX = val;
@@ -3199,24 +3223,21 @@
                     });
                   });
                   xBtns.appendChild(btn);
-                })(xVals[bx], xLabels[bx]);
+                })(xVals[bx]);
               }
               row.appendChild(xBtns);
 
-              // Y alignment buttons (B/M/O)
+              // Y alignment buttons (line icons)
               var yBtns = document.createElement('span');
               yBtns.className = 'per-floor-btns';
               var yVals = ['top', 'center', 'bottom'];
-              var yLabels = ['B', 'M', 'O'];
               var currentY = (floorSettings[floorIdx] && floorSettings[floorIdx].alignY) || layoutAlignY;
               for (var by = 0; by < yVals.length; by++) {
-                (function(val, label) {
+                (function(val) {
                   var btn = document.createElement('button');
                   btn.type = 'button';
                   btn.className = 'per-floor-btn' + (val === currentY ? ' active' : '');
-                  btn.textContent = label;
-                  btn.style.fontSize = '9px';
-                  btn.style.fontWeight = '700';
+                  btn.innerHTML = yIcons[val];
                   btn.addEventListener('click', function() {
                     if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
                     floorSettings[floorIdx].alignY = val;
@@ -3230,9 +3251,20 @@
                     });
                   });
                   yBtns.appendChild(btn);
-                })(yVals[by], yLabels[by]);
+                })(yVals[by]);
               }
               row.appendChild(yBtns);
+
+              // Rotate 90° button
+              var rotBtn = document.createElement('button');
+              rotBtn.type = 'button';
+              rotBtn.className = 'per-floor-rotate';
+              rotBtn.innerHTML = rotateIcon;
+              rotBtn.title = '90° draaien';
+              rotBtn.addEventListener('click', function() {
+                rotateFloor90(floorIdx);
+              });
+              row.appendChild(rotBtn);
 
               perFloorSection.appendChild(row);
             })(includedForAlign[afi]);
@@ -3240,10 +3272,10 @@
         }
       }
 
-      // ── Reset button ──
+      // ── Reset button (icon next to checkbox) ──
       var btnReset = document.getElementById('btnResetLayout');
       if (btnReset) {
-        btnReset.style.display = customPositions ? '' : 'none';
+        btnReset.style.display = customPositions ? 'inline-flex' : 'none';
         btnReset.onclick = function() {
           customPositions = null;
           layoutHasOverlap = false;
