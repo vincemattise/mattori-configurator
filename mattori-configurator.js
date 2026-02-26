@@ -1428,6 +1428,19 @@
       return gridCoord * cellPx;
     }
 
+    // Reset only a single floor's custom position (keep other floors intact)
+    function resetSingleFloorPosition(floorIdx) {
+      if (!customPositions) return; // nothing to reset
+      var cp = customPositions.find(function(c) { return c.index === floorIdx; });
+      if (cp) {
+        cp.gridX = null;
+        cp.gridY = null;
+      }
+      // If ALL floors are now null, clean up customPositions entirely
+      var anyCustom = customPositions.some(function(c) { return c.gridX !== null; });
+      if (!anyCustom) customPositions = null;
+    }
+
     // --- Grid overlay (SVG) ---
     function renderGridOverlay() {
       if (!floorsGrid) return;
@@ -2946,12 +2959,14 @@
       if (!floorSettings[floorIndex]) floorSettings[floorIndex] = {};
       var current = getFloorRotate(floorIndex);
       floorSettings[floorIndex].rotate = (current + 90) % 360;
-      customPositions = null;
+      // Only reset this floor's position, keep others
+      resetSingleFloorPosition(floorIndex);
       updatePreviewWithLoading(function() {
         renderPreviewThumbnails();
         renderGridOverlayIfStep4();
         updateFloorLabels();
         if (gridEditMode) enableGridDrag();
+        checkFloorOverlaps();
         renderLayoutView();
       });
     }
@@ -3133,12 +3148,14 @@
                   btn.addEventListener('click', function() {
                     if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
                     floorSettings[floorIdx].alignX = val;
-                    customPositions = null;
+                    // Only reset THIS floor's custom position, keep others
+                    resetSingleFloorPosition(floorIdx);
                     updatePreviewWithLoading(function() {
                       renderPreviewThumbnails();
                       renderGridOverlayIfStep4();
                       updateFloorLabels();
                       if (gridEditMode) enableGridDrag();
+                      checkFloorOverlaps();
                       renderLayoutView();
                     });
                   });
@@ -3161,12 +3178,14 @@
                   btn.addEventListener('click', function() {
                     if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
                     floorSettings[floorIdx].alignY = val;
-                    customPositions = null;
+                    // Only reset THIS floor's custom position, keep others
+                    resetSingleFloorPosition(floorIdx);
                     updatePreviewWithLoading(function() {
                       renderPreviewThumbnails();
                       renderGridOverlayIfStep4();
                       updateFloorLabels();
                       if (gridEditMode) enableGridDrag();
+                      checkFloorOverlaps();
                       renderLayoutView();
                     });
                   });
@@ -3192,11 +3211,13 @@
         }
       }
 
-      // ── Reset button (icon next to checkbox) ──
+      // ── Reset button (icon inside label — stop event so checkbox doesn't toggle) ──
       var btnReset = document.getElementById('btnResetLayout');
       if (btnReset) {
         btnReset.style.display = customPositions ? 'inline-flex' : 'none';
-        btnReset.onclick = function() {
+        btnReset.onclick = function(e) {
+          e.preventDefault();
+          e.stopPropagation();
           customPositions = null;
           layoutHasOverlap = false;
           renderPreviewThumbnails();

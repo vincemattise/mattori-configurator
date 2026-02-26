@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.14/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.15/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -793,23 +793,23 @@
       color: #fff;
     }
 
-    /* Reset layout icon (¾ arrow next to checkbox) */
+    /* Reset layout icon (¾ arrow directly after text) */
     .mattori-configurator .layout-reset-icon {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 22px;
-      height: 22px;
+      width: 18px;
+      height: 18px;
       color: #999;
       cursor: pointer;
-      border-radius: 4px;
+      border-radius: 3px;
       transition: all 0.15s ease;
-      margin-left: 2px;
+      margin-left: 0;
     }
 
     .mattori-configurator .layout-reset-icon:hover {
       color: #333;
-      background: rgba(0,0,0,0.05);
+      background: rgba(0,0,0,0.08);
     }
 
     /* Per-floor rotate button */
