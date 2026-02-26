@@ -3537,7 +3537,7 @@
       const floorVoids = floor.voids ?? [];
 
       {
-        const floorSources = [];
+        let floorSources = [];
 
         for (const area of design.areas ?? []) {
           const tessellated = tessellateSurfacePoly(area.poly ?? []);
