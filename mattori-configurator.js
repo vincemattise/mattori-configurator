@@ -1317,7 +1317,7 @@
       if (opts.ortho) {
         // Orthographic camera — uniform scale, flat top-down (for editing)
         var floorData = floors[floorIndex];
-        var padding = 1.1;
+        var padding = 1.0; // no padding — floor fills canvas edge-to-edge for alignment
         var pxPerUnit = width / (floorData.worldW * 0.01 * padding);
         var halfFrustumW = (width / 2) / pxPerUnit;
         var halfFrustumH = (height / 2) / pxPerUnit;
@@ -1331,12 +1331,21 @@
         // Fine-tune alignment: push OBJ to edge of frustum so model
         // visually touches the canvas edge (compensates for OBJ bounding
         // box being slightly larger than worldW/worldH due to wall thickness)
-        var align = getFloorAlignY(floorIndex);
-        if (align === 'top' || align === 'bottom') {
+
+        // Y-axis: push to top or bottom edge
+        var alignY = getFloorAlignY(floorIndex);
+        if (alignY === 'top' || alignY === 'bottom') {
           var shiftZ = halfFrustumH - size.z / 2;
           // Camera up=(0,0,-1) means screen-up = world -Z
           // 'top' on screen → shift scene -Z, 'bottom' → shift scene +Z
-          scene.position.z += (align === 'bottom') ? shiftZ : -shiftZ;
+          scene.position.z += (alignY === 'bottom') ? shiftZ : -shiftZ;
+        }
+
+        // X-axis: push to left or right edge
+        // Camera right = world +X, so 'left' on screen → shift scene -X
+        if (layoutAlignX === 'left' || layoutAlignX === 'right') {
+          var shiftX = halfFrustumW - size.x / 2;
+          scene.position.x += (layoutAlignX === 'right') ? shiftX : -shiftX;
         }
 
         camera.updateProjectionMatrix();
@@ -1437,7 +1446,8 @@
       var actualRows = Math.ceil(grid.zoneH / grid.cellPx);
       var midCol = Math.floor(actualCols / 2);
       var midRow = Math.floor(actualRows / 2);
-      for (var x = 0; x <= actualCols; x++) {
+      // Skip outermost lines (x=0, x=max, y=0, y=max) to avoid border rectangle
+      for (var x = 1; x < actualCols; x++) {
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         var px = x * grid.cellPx;
         line.setAttribute('x1', px); line.setAttribute('y1', 0);
@@ -1447,7 +1457,7 @@
         line.setAttribute('stroke-width', isMid ? '1.5' : '0.5');
         svg.appendChild(line);
       }
-      for (var y = 0; y <= actualRows; y++) {
+      for (var y = 1; y < actualRows; y++) {
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         var py = y * grid.cellPx;
         line.setAttribute('x1', 0); line.setAttribute('y1', py);
@@ -1465,14 +1475,23 @@
       var overlay = document.getElementById('unifiedFloorsOverlay');
       if (overlay) overlay.classList.add('drag-enabled');
 
-      // Snap current auto-layout positions to grid
+      // Snap current auto-layout positions to grid using alignment-aware anchors
+      // so there is zero visual shift when enabling drag mode
       if (!customPositions && currentLayout && currentLayout.positions.length > 0) {
         var grid = getGridDimensions();
         customPositions = currentLayout.positions.map(function(pos) {
+          // Compute the anchor point (the point that aligns to the grid)
+          var anchorX, anchorY;
+          if (layoutAlignX === 'right') anchorX = pos.x + pos.w;
+          else if (layoutAlignX === 'center') anchorX = pos.x + pos.w / 2;
+          else anchorX = pos.x;
+          if (layoutAlignY === 'bottom') anchorY = pos.y + pos.h;
+          else if (layoutAlignY === 'center') anchorY = pos.y + pos.h / 2;
+          else anchorY = pos.y;
           return {
             index: pos.index,
-            gridX: pxToGridCoord(pos.x, grid.cellPx),
-            gridY: pxToGridCoord(pos.y, grid.cellPx)
+            gridX: pxToGridCoord(anchorX, grid.cellPx),
+            gridY: pxToGridCoord(anchorY, grid.cellPx)
           };
         });
       }
@@ -1517,8 +1536,8 @@
           svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
           svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:15;overflow:visible;';
 
-          var lineColor = 'rgba(0, 120, 255, 0.6)';
-          var lineWidth = '2';
+          var lineColor = 'rgba(0, 0, 0, 0.55)';
+          var lineWidth = '1.5';
 
           // X alignment — dashed line at alignment position
           var vx = layoutAlignX === 'left' ? 0 : layoutAlignX === 'right' ? w : w / 2;
@@ -1617,17 +1636,27 @@
         isDragging = false;
         wrap.classList.remove('dragging');
 
-        // Update customPositions
+        // Update customPositions using anchor-based grid coords
         var grid = getGridDimensions();
         var finalLeft = parseFloat(wrap.style.left) || 0;
         var finalTop = parseFloat(wrap.style.top) || 0;
+        var wrapW = parseFloat(wrap.style.width) || 0;
+        var wrapH = parseFloat(wrap.style.height) || 0;
 
         if (customPositions && currentLayout && currentLayout.positions[posIndex]) {
           var floorIdx = currentLayout.positions[posIndex].index;
           var cp = customPositions.find(function(c) { return c.index === floorIdx; });
           if (cp) {
-            cp.gridX = pxToGridCoord(finalLeft, grid.cellPx);
-            cp.gridY = pxToGridCoord(finalTop, grid.cellPx);
+            // Store the anchor point, not the left edge
+            var anchorX, anchorY;
+            if (layoutAlignX === 'right') anchorX = finalLeft + wrapW;
+            else if (layoutAlignX === 'center') anchorX = finalLeft + wrapW / 2;
+            else anchorX = finalLeft;
+            if (layoutAlignY === 'bottom') anchorY = finalTop + wrapH;
+            else if (layoutAlignY === 'center') anchorY = finalTop + wrapH / 2;
+            else anchorY = finalTop;
+            cp.gridX = pxToGridCoord(anchorX, grid.cellPx);
+            cp.gridY = pxToGridCoord(anchorY, grid.cellPx);
           }
         }
       }
@@ -1979,13 +2008,22 @@
       currentLayout = computeFloorLayout(zoneW, zoneH, includedIndices);
 
       // Apply custom positions if user has dragged floors
+      // Grid coords store the ANCHOR position (left/center/right, top/center/bottom)
+      // so we reconstruct the left-edge from the anchor
       if (customPositions) {
         var _grid = getGridDimensions();
         for (var ci = 0; ci < currentLayout.positions.length; ci++) {
           var _cp = customPositions.find(function(c) { return c.index === currentLayout.positions[ci].index; });
           if (_cp) {
-            currentLayout.positions[ci].x = _cp.gridX * _grid.cellPx;
-            currentLayout.positions[ci].y = _cp.gridY * _grid.cellPx;
+            var anchorPx = _cp.gridX * _grid.cellPx;
+            if (layoutAlignX === 'right') currentLayout.positions[ci].x = anchorPx - currentLayout.positions[ci].w;
+            else if (layoutAlignX === 'center') currentLayout.positions[ci].x = anchorPx - currentLayout.positions[ci].w / 2;
+            else currentLayout.positions[ci].x = anchorPx;
+
+            var anchorPy = _cp.gridY * _grid.cellPx;
+            if (layoutAlignY === 'bottom') currentLayout.positions[ci].y = anchorPy - currentLayout.positions[ci].h;
+            else if (layoutAlignY === 'center') currentLayout.positions[ci].y = anchorPy - currentLayout.positions[ci].h / 2;
+            else currentLayout.positions[ci].y = anchorPy;
           }
         }
       }
@@ -2408,8 +2446,12 @@
             renderLayoutView();
             if (resultSection) resultSection.style.display = '';
             if (noteSection) noteSection.style.display = '';
-            // Alignment controls only visible in grid edit mode
-            if (controlsBar) controlsBar.style.display = gridEditMode ? '' : 'none';
+            // Tools box visible when 2+ floors
+            if (controlsBar) {
+              var ic2 = 0;
+              for (var _ic = 0; _ic < floors.length; _ic++) { if (!excludedFloors.has(_ic)) ic2++; }
+              controlsBar.style.display = ic2 >= 2 ? '' : 'none';
+            }
             var btnCalcBack = document.getElementById('btnCalcLayout');
             if (btnCalcBack) btnCalcBack.style.display = 'none';
             renderPreviewThumbnails();
@@ -2431,12 +2473,10 @@
 
             renderLayoutView();
 
-            // Hide result section + note section + Layout aanpassen until "Bereken indeling"
+            // Hide result section + note section until "Bereken indeling"
             if (resultSection) resultSection.style.display = 'none';
             if (noteSection) noteSection.style.display = 'none';
             if (controlsBar) controlsBar.style.display = 'none';
-            var btnToggleGridInit = document.getElementById('btnToggleGrid');
-            if (btnToggleGridInit) btnToggleGridInit.style.display = 'none';
 
             // Clear preview until calculation (show empty frame)
             if (floorsGrid) floorsGrid.innerHTML = '';
@@ -2456,17 +2496,18 @@
                 this.style.display = 'none';
                 if (resultSection) resultSection.style.display = '';
                 if (noteSection) noteSection.style.display = '';
-                // Alignment controls stay hidden until Layout aanpassen
-                if (controlsBar) controlsBar.style.display = 'none';
-                // Show "Layout aanpassen" button now
-                var btnTG = document.getElementById('btnToggleGrid');
-                if (btnTG) {
-                  var inclCount = 0;
-                  for (var _i = 0; _i < floors.length; _i++) {
-                    if (!excludedFloors.has(_i)) inclCount++;
-                  }
-                  btnTG.style.display = inclCount >= 2 ? '' : 'none';
+                // Show tools box when 2+ floors
+                var inclCount = 0;
+                for (var _i = 0; _i < floors.length; _i++) {
+                  if (!excludedFloors.has(_i)) inclCount++;
                 }
+                if (controlsBar) controlsBar.style.display = inclCount >= 2 ? '' : 'none';
+                // Ensure edit mode checkbox starts unchecked, controls disabled
+                var chkEM = document.getElementById('chkEditMode');
+                var ctrlIn = document.getElementById('layoutControlsInner');
+                if (chkEM) chkEM.checked = false;
+                if (ctrlIn) ctrlIn.classList.add('disabled');
+                gridEditMode = false;
                 customPositions = null;
                 renderPreviewThumbnails();
                 updateFloorLabels();
@@ -2910,16 +2951,19 @@
                   if (rs) rs.style.display = '';
                   var ns = document.querySelector('.layout-note-section');
                   if (ns) ns.style.display = '';
+                  // Show tools box when 2+ floors
                   var cb2 = document.getElementById('layoutControlsBar');
-                  if (cb2) cb2.style.display = 'none';
-                  var btnTG2 = document.getElementById('btnToggleGrid');
-                  if (btnTG2) {
-                    var ic = 0;
-                    for (var _j = 0; _j < floors.length; _j++) {
-                      if (!excludedFloors.has(_j)) ic++;
-                    }
-                    btnTG2.style.display = ic >= 2 ? '' : 'none';
+                  var ic = 0;
+                  for (var _j = 0; _j < floors.length; _j++) {
+                    if (!excludedFloors.has(_j)) ic++;
                   }
+                  if (cb2) cb2.style.display = ic >= 2 ? '' : 'none';
+                  // Ensure edit mode starts unchecked
+                  var chkEM2 = document.getElementById('chkEditMode');
+                  var ctrlIn2 = document.getElementById('layoutControlsInner');
+                  if (chkEM2) chkEM2.checked = false;
+                  if (ctrlIn2) ctrlIn2.classList.add('disabled');
+                  gridEditMode = false;
                   customPositions = null;
                   renderPreviewThumbnails();
                   updateFloorLabels();
@@ -3051,26 +3095,25 @@
         }
       }
 
-      // ── Grid toggle button ──
+      // ── Edit mode + tools box ──
       var includedCount = 0;
       for (var gi = 0; gi < floors.length; gi++) {
         if (!excludedFloors.has(gi)) includedCount++;
       }
-      var btnToggleGrid = document.getElementById('btnToggleGrid');
-      if (btnToggleGrid) {
-        btnToggleGrid.style.display = (layoutCalculated && includedCount >= 2) ? '' : 'none';
-        btnToggleGrid.classList.toggle('active', gridEditMode);
-        // color handled by CSS primary button
-        btnToggleGrid.onclick = function() {
-          gridEditMode = !gridEditMode;
-          this.classList.toggle('active', gridEditMode);
-          // color handled by CSS primary button
-          this.innerHTML = gridEditMode
-            ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Reset layout'
-            : '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="5.5" y1="1" x2="5.5" y2="15"/><line x1="10.5" y1="1" x2="10.5" y2="15"/><line x1="1" y1="5.5" x2="15" y2="5.5"/><line x1="1" y1="10.5" x2="15" y2="10.5"/></svg> Layout aanpassen';
-          // Show/hide alignment controls with grid edit mode
-          var ctrlBar = document.getElementById('layoutControlsBar');
-          if (ctrlBar) ctrlBar.style.display = gridEditMode ? '' : 'none';
+      // Show/hide the tools box based on layout state
+      var ctrlBar = document.getElementById('layoutControlsBar');
+      if (ctrlBar) ctrlBar.style.display = (layoutCalculated && includedCount >= 2) ? '' : 'none';
+
+      // "Handmatig aanpassen" checkbox toggles edit mode
+      var chkEditMode = document.getElementById('chkEditMode');
+      var ctrlInner = document.getElementById('layoutControlsInner');
+      if (chkEditMode) {
+        chkEditMode.checked = gridEditMode;
+        // Apply disabled state to controls
+        if (ctrlInner) ctrlInner.classList.toggle('disabled', !gridEditMode);
+        chkEditMode.onchange = function() {
+          gridEditMode = this.checked;
+          if (ctrlInner) ctrlInner.classList.toggle('disabled', !gridEditMode);
           if (gridEditMode) {
             enableGridDrag();
           } else {
