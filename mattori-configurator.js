@@ -4129,7 +4129,7 @@
           // noFloorsMode: Funda link valid but no interactive floor plans
           noFloorsMode = true;
           lastFundaUrl = url;
-          setFundaStatus('success', '<strong>✓ Funda link herkend</strong><strong class="status-warning">✗ Geen interactieve plattegronden beschikbaar</strong><span>Geen zorgen — we bouwen je Frame³ handmatig op basis van de Funda-foto\'s.</span>');
+          setFundaStatus('success', '<strong>✓ Funda link herkend</strong><strong class="status-warning">✗ Geen interactieve plattegronden beschikbaar</strong><span>Geen zorgen — we bouwen je Frame<sup>3</sup> handmatig op basis van de Funda-foto\'s.</span>');
           updateWizardUI();
           return;
         }
