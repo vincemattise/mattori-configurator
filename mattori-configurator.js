@@ -3374,15 +3374,91 @@
 
       // Render unioned solid walls
       for (const polygon of wallUnion) {
-        // polygon = array of rings. First ring = outer, rest = holes
-        for (let ri = 0; ri < polygon.length; ri++) {
-          const ring = polygon[ri];
-          if (ri === 0) {
-            // Outer ring → extrude as wall
-            extrudeWallPoly(ring, 0, WALL_HEIGHT);
+        // polygon = [outerRing, ...holeRings]
+        const outerRing = polygon[0];
+        const holeRings = polygon.slice(1).filter(r => r.length >= 3);
+
+        if (holeRings.length > 0 && typeof THREE !== 'undefined' && THREE.ShapeUtils) {
+          // Polygon WITH holes (e.g. closed perimeter like Vliering)
+          // Use THREE.ShapeUtils for proper triangulation with interior cutout
+          function cleanRing(ring) {
+            const pts = ring.slice();
+            if (pts.length > 1) {
+              const f = pts[0], l = pts[pts.length - 1];
+              if (Math.hypot(f[0] - l[0], f[1] - l[1]) < 0.01) pts.pop();
+            }
+            return pts;
           }
-          // Holes are interior cutouts — skip for wall geometry
-          // (they represent empty space inside wall outlines, rare but possible)
+          const outerPts = cleanRing(outerRing);
+          if (outerPts.length < 3) continue;
+          const outerObj = outerPts.map(p => ({
+            x: (p[0] - centerX) * SCALE,
+            y: (p[1] - centerY) * SCALE
+          }));
+          const holeObjArr = [];
+          for (const hRing of holeRings) {
+            const hPts = cleanRing(hRing);
+            if (hPts.length >= 3) {
+              holeObjArr.push(hPts.map(p => ({
+                x: (p[0] - centerX) * SCALE,
+                y: (p[1] - centerY) * SCALE
+              })));
+            }
+          }
+
+          const contour = outerObj.map(p => new THREE.Vector2(p.x, p.y));
+          const holes = holeObjArr.map(h => h.map(p => new THREE.Vector2(p.x, p.y)));
+          const tris = THREE.ShapeUtils.triangulateShape(contour, holes);
+
+          // Combined vertex array: outer + all hole vertices
+          const allPts = [...outerObj];
+          for (const hole of holeObjArr) allPts.push(...hole);
+
+          const baseBot = vertexIndex;
+          for (const pt of allPts) {
+            vertices.push(`v ${pt.x.toFixed(4)} ${(0).toFixed(4)} ${pt.y.toFixed(4)}`);
+          }
+          vertexIndex += allPts.length;
+          const baseTop = vertexIndex;
+          for (const pt of allPts) {
+            vertices.push(`v ${pt.x.toFixed(4)} ${WALL_HEIGHT.toFixed(4)} ${pt.y.toFixed(4)}`);
+          }
+          vertexIndex += allPts.length;
+          for (const [a, b, c] of tris) {
+            addTriFace(baseBot + a, baseBot + c, baseBot + b);
+            addTriFace(baseTop + a, baseTop + b, baseTop + c);
+          }
+
+          // Side faces — outer ring
+          const nO = outerObj.length;
+          const sbO = vertexIndex;
+          for (const pt of outerObj) vertices.push(`v ${pt.x.toFixed(4)} ${(0).toFixed(4)} ${pt.y.toFixed(4)}`);
+          vertexIndex += nO;
+          const stO = vertexIndex;
+          for (const pt of outerObj) vertices.push(`v ${pt.x.toFixed(4)} ${WALL_HEIGHT.toFixed(4)} ${pt.y.toFixed(4)}`);
+          vertexIndex += nO;
+          for (let i = 0; i < nO; i++) {
+            const j = (i + 1) % nO;
+            addFace(sbO + i, sbO + j, stO + j, stO + i);
+          }
+
+          // Side faces — each hole ring (inner wall surfaces)
+          for (const holePts of holeObjArr) {
+            const nH = holePts.length;
+            const sbH = vertexIndex;
+            for (const pt of holePts) vertices.push(`v ${pt.x.toFixed(4)} ${(0).toFixed(4)} ${pt.y.toFixed(4)}`);
+            vertexIndex += nH;
+            const stH = vertexIndex;
+            for (const pt of holePts) vertices.push(`v ${pt.x.toFixed(4)} ${WALL_HEIGHT.toFixed(4)} ${pt.y.toFixed(4)}`);
+            vertexIndex += nH;
+            for (let i = 0; i < nH; i++) {
+              const j = (i + 1) % nH;
+              addFace(sbH + j, sbH + i, stH + i, stH + j); // reversed winding
+            }
+          }
+        } else {
+          // Simple polygon (no holes) — extrude as before
+          extrudeWallPoly(outerRing, 0, WALL_HEIGHT);
         }
       }
 
