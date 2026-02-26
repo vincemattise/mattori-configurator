@@ -3628,6 +3628,40 @@
 
         // --- Polygon-based floor: union all sources, subtract voids, extrude ---
 
+        // Pre-clip floor sources against voids BEFORE union.
+        // Each source is a simple polygon (4–20 pts) vs a simple rectangle → reliable.
+        for (const v of floorVoids) {
+          if (v.length < 3) continue;
+          const vRing = v.map(p => [p.x, p.y]);
+          const vf = vRing[0], vl = vRing[vRing.length - 1];
+          if (Math.hypot(vf[0] - vl[0], vf[1] - vl[1]) > 0.01) vRing.push([vf[0], vf[1]]);
+          const clipped = [];
+          for (const src of floorSources) {
+            if (src.length < 3) continue;
+            const srcRing = src.map(p => [p.x, p.y]);
+            const sf = srcRing[0], sl = srcRing[srcRing.length - 1];
+            if (Math.hypot(sf[0] - sl[0], sf[1] - sl[1]) > 0.01) srcRing.push([sf[0], sf[1]]);
+            try {
+              const diff = polygonClipping.difference([[srcRing]], [[vRing]]);
+              for (const poly of diff) {
+                for (const ring of poly) {
+                  const pts = ring.slice();
+                  if (pts.length > 1) {
+                    const pf = pts[0], pl = pts[pts.length - 1];
+                    if (Math.hypot(pf[0] - pl[0], pf[1] - pl[1]) < 0.01) pts.pop();
+                  }
+                  if (pts.length >= 3) {
+                    clipped.push(pts.map(p => ({ x: p[0], y: p[1] })));
+                  }
+                }
+              }
+            } catch (e) {
+              clipped.push(src); // keep original if clip fails
+            }
+          }
+          floorSources = clipped;
+        }
+
         // Expand each floor source slightly so adjacent polygons overlap,
         // guaranteeing the union merges them into one continuous shape.
         const FLOOR_EXPAND = 2;
@@ -3682,23 +3716,6 @@
           }
         }
 
-        // Subtract voids (stair openings) — per-polygon to avoid SweepLine crash
-        for (const v of floorVoids) {
-          if (v.length < 3) continue;
-          const vRing = v.map(p => [p.x, p.y]);
-          const vf = vRing[0], vl = vRing[vRing.length - 1];
-          if (Math.hypot(vf[0] - vl[0], vf[1] - vl[1]) > 0.01) vRing.push([vf[0], vf[1]]);
-          const newFloorResult = [];
-          for (const poly of floorResult) {
-            try {
-              const diff = polygonClipping.difference([poly], [[vRing]]);
-              for (const d of diff) newFloorResult.push(d);
-            } catch (e) {
-              newFloorResult.push(poly);
-            }
-          }
-          floorResult = newFloorResult;
-        }
 
         // Extrude each result polygon
         const botY = (-FLOOR_THICKNESS).toFixed(4);
@@ -3724,43 +3741,6 @@
             if (ri === 0) {
               // Outer ring → top and bottom face triangulation
               const tris = earClipTriangulate(objPts);
-
-              // If polygon has holes, filter out triangles inside hole rings
-              let filteredTris = tris;
-              if (polygon.length > 1) {
-                const holePtsArrays = [];
-                for (let hi = 1; hi < polygon.length; hi++) {
-                  const hRing = polygon[hi].slice();
-                  if (hRing.length > 1) {
-                    const hf = hRing[0], hl = hRing[hRing.length - 1];
-                    if (Math.hypot(hf[0] - hl[0], hf[1] - hl[1]) < 0.01) hRing.pop();
-                  }
-                  if (hRing.length >= 3) {
-                    holePtsArrays.push(hRing.map(p => ({
-                      x: (p[0] - centerX) * SCALE,
-                      y: (p[1] - centerY) * SCALE
-                    })));
-                  }
-                }
-                if (holePtsArrays.length > 0) {
-                  filteredTris = tris.filter(([a, b, c]) => {
-                    const tcx = (objPts[a].x + objPts[b].x + objPts[c].x) / 3;
-                    const tcy = (objPts[a].y + objPts[b].y + objPts[c].y) / 3;
-                    for (const hole of holePtsArrays) {
-                      let inside = false;
-                      for (let i = 0, j = hole.length - 1; i < hole.length; j = i++) {
-                        if ((hole[i].y > tcy) !== (hole[j].y > tcy) &&
-                            tcx < (hole[j].x - hole[i].x) * (tcy - hole[i].y) / (hole[j].y - hole[i].y) + hole[i].x) {
-                          inside = !inside;
-                        }
-                      }
-                      if (inside) return false;
-                    }
-                    return true;
-                  });
-                }
-              }
-
               const baseBot = vertexIndex;
               for (const pt of objPts) {
                 vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
@@ -3771,7 +3751,7 @@
                 vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
               }
               vertexIndex += objPts.length;
-              for (const [a, b, c] of filteredTris) {
+              for (const [a, b, c] of tris) {
                 addTriFace(baseBot + a, baseBot + c, baseBot + b); // bottom (flipped winding)
                 addTriFace(baseTop + a, baseTop + b, baseTop + c); // top
               }
