@@ -3723,8 +3723,10 @@
 
             if (ri === 0) {
               // Outer ring → top and bottom face triangulation
-              // If polygon has holes, merge them into outer ring for proper triangulation
-              let triPts = objPts;
+              const tris = earClipTriangulate(objPts);
+
+              // If polygon has holes, filter out triangles inside hole rings
+              let filteredTris = tris;
               if (polygon.length > 1) {
                 const holePtsArrays = [];
                 for (let hi = 1; hi < polygon.length; hi++) {
@@ -3741,21 +3743,35 @@
                   }
                 }
                 if (holePtsArrays.length > 0) {
-                  triPts = mergeHolesIntoPoly(objPts, holePtsArrays);
+                  filteredTris = tris.filter(([a, b, c]) => {
+                    const tcx = (objPts[a].x + objPts[b].x + objPts[c].x) / 3;
+                    const tcy = (objPts[a].y + objPts[b].y + objPts[c].y) / 3;
+                    for (const hole of holePtsArrays) {
+                      let inside = false;
+                      for (let i = 0, j = hole.length - 1; i < hole.length; j = i++) {
+                        if ((hole[i].y > tcy) !== (hole[j].y > tcy) &&
+                            tcx < (hole[j].x - hole[i].x) * (tcy - hole[i].y) / (hole[j].y - hole[i].y) + hole[i].x) {
+                          inside = !inside;
+                        }
+                      }
+                      if (inside) return false;
+                    }
+                    return true;
+                  });
                 }
               }
-              const tris = earClipTriangulate(triPts);
+
               const baseBot = vertexIndex;
-              for (const pt of triPts) {
+              for (const pt of objPts) {
                 vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
               }
-              vertexIndex += triPts.length;
+              vertexIndex += objPts.length;
               const baseTop = vertexIndex;
-              for (const pt of triPts) {
+              for (const pt of objPts) {
                 vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
               }
-              vertexIndex += triPts.length;
-              for (const [a, b, c] of tris) {
+              vertexIndex += objPts.length;
+              for (const [a, b, c] of filteredTris) {
                 addTriFace(baseBot + a, baseBot + c, baseBot + b); // bottom (flipped winding)
                 addTriFace(baseTop + a, baseTop + b, baseTop + c); // top
               }
