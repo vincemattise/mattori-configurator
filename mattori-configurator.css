@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.10/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.11/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -545,8 +545,8 @@
       position: absolute;
       top: calc(18.5% + 65px);
       bottom: calc(18.5% + 65px);
-      left: calc(15.5% + 10px);
-      right: calc(14% + 20px);
+      left: calc(14.75% + 15px);
+      right: calc(14.75% + 15px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -725,6 +725,20 @@
       opacity: 0.22;
       pointer-events: none;
       user-select: none;
+    }
+
+    /* Overlap warning below Volgende button */
+    .mattori-configurator .overlap-warning {
+      font-size: 0.72rem;
+      color: #c44;
+      text-align: center;
+      margin-top: 0.4rem;
+      line-height: 1.3;
+    }
+
+    /* Spacing above result section (below floor checkboxes) */
+    .mattori-configurator #layoutResultSection {
+      margin-top: 0.5rem;
     }
 
     /* Layout note section */
@@ -1525,19 +1539,18 @@
       flex-shrink: 0;
     }
 
-    .mattori-configurator .info-tooltip[data-tooltip]:hover::after {
-      content: attr(data-tooltip);
+    .mattori-configurator .tooltip-content {
+      display: none;
       position: absolute;
       right: 0;
       bottom: calc(100% + 6px);
-      transform: none;
       background: #333;
       color: #fff;
       font-size: 11px;
       font-weight: 400;
       font-style: normal;
-      line-height: 1.35;
-      padding: 6px 10px;
+      line-height: 1.4;
+      padding: 8px 11px;
       border-radius: 6px;
       white-space: normal;
       width: max-content;
@@ -1545,6 +1558,10 @@
       z-index: 100;
       pointer-events: none;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .mattori-configurator .info-tooltip:hover .tooltip-content {
+      display: block;
     }
 
     .mattori-configurator .layout-grid-toggle {

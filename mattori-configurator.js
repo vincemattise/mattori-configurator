@@ -1396,7 +1396,7 @@
     var GRID_CELL_MM = 5;         // grid cell size in mm
 
     var gridEditMode = false;     // true when user activated drag-to-reposition
-    var customPositions = null;   // null = auto-layout, or [{index, gridX, gridY}]
+    var customPositions = null;   // null = auto-layout, or [{index, gridX, gridY}] (gridX/gridY=null means auto)
     var layoutCalculated = false; // true after user clicks "Bereken indeling" in step 4
     var _dragCleanups = [];       // cleanup functions for drag event listeners
 
@@ -1475,28 +1475,11 @@
       var overlay = document.getElementById('unifiedFloorsOverlay');
       if (overlay) overlay.classList.add('drag-enabled');
 
-      // Snap current auto-layout positions to grid using alignment-aware anchors
-      // so there is zero visual shift when enabling drag mode
-      if (!customPositions && currentLayout && currentLayout.positions.length > 0) {
-        var grid = getGridDimensions();
-        customPositions = currentLayout.positions.map(function(pos) {
-          // Compute the anchor point (the point that aligns to the grid)
-          var anchorX, anchorY;
-          if (layoutAlignX === 'right') anchorX = pos.x + pos.w;
-          else if (layoutAlignX === 'center') anchorX = pos.x + pos.w / 2;
-          else anchorX = pos.x;
-          if (layoutAlignY === 'bottom') anchorY = pos.y + pos.h;
-          else if (layoutAlignY === 'center') anchorY = pos.y + pos.h / 2;
-          else anchorY = pos.y;
-          return {
-            index: pos.index,
-            gridX: pxToGridCoord(anchorX, grid.cellPx),
-            gridY: pxToGridCoord(anchorY, grid.cellPx)
-          };
-        });
-      }
+      // Don't create customPositions here — auto-layout positions are already
+      // grid-snapped by computeFloorLayout(). This prevents ANY visual shift
+      // when enabling drag mode. customPositions are created per-floor on
+      // first actual drag.
 
-      // Re-render with snapped positions
       renderPreviewThumbnails();
       renderGridOverlay();
 
@@ -1606,22 +1589,9 @@
         var rawLeft = origLeft + dx;
         var rawTop = origTop + dy;
 
-        // Snap based on alignment anchor
-        var newLeft, newTop;
-        if (layoutAlignX === 'right') {
-          newLeft = snapToGrid(rawLeft + wrapW, grid.cellPx) - wrapW;
-        } else if (layoutAlignX === 'center') {
-          newLeft = snapToGrid(rawLeft + wrapW / 2, grid.cellPx) - wrapW / 2;
-        } else {
-          newLeft = snapToGrid(rawLeft, grid.cellPx);
-        }
-        if (layoutAlignY === 'bottom') {
-          newTop = snapToGrid(rawTop + wrapH, grid.cellPx) - wrapH;
-        } else if (layoutAlignY === 'center') {
-          newTop = snapToGrid(rawTop + wrapH / 2, grid.cellPx) - wrapH / 2;
-        } else {
-          newTop = snapToGrid(rawTop, grid.cellPx);
-        }
+        // Snap by top-left corner (per-floor independent positioning)
+        var newLeft = snapToGrid(rawLeft, grid.cellPx);
+        var newTop = snapToGrid(rawTop, grid.cellPx);
 
         // Clamp within zone
         newLeft = Math.max(0, Math.min(grid.zoneW - wrapW, newLeft));
@@ -1636,28 +1606,26 @@
         isDragging = false;
         wrap.classList.remove('dragging');
 
-        // Update customPositions using anchor-based grid coords
+        // Store top-left grid coords (per-floor independent)
         var grid = getGridDimensions();
         var finalLeft = parseFloat(wrap.style.left) || 0;
         var finalTop = parseFloat(wrap.style.top) || 0;
-        var wrapW = parseFloat(wrap.style.width) || 0;
-        var wrapH = parseFloat(wrap.style.height) || 0;
 
-        if (customPositions && currentLayout && currentLayout.positions[posIndex]) {
+        if (currentLayout && currentLayout.positions[posIndex]) {
           var floorIdx = currentLayout.positions[posIndex].index;
+          // Create customPositions on first drag (null entries = use auto-layout)
+          if (!customPositions) {
+            customPositions = currentLayout.positions.map(function(pos) {
+              return { index: pos.index, gridX: null, gridY: null };
+            });
+          }
           var cp = customPositions.find(function(c) { return c.index === floorIdx; });
           if (cp) {
-            // Store the anchor point, not the left edge
-            var anchorX, anchorY;
-            if (layoutAlignX === 'right') anchorX = finalLeft + wrapW;
-            else if (layoutAlignX === 'center') anchorX = finalLeft + wrapW / 2;
-            else anchorX = finalLeft;
-            if (layoutAlignY === 'bottom') anchorY = finalTop + wrapH;
-            else if (layoutAlignY === 'center') anchorY = finalTop + wrapH / 2;
-            else anchorY = finalTop;
-            cp.gridX = pxToGridCoord(anchorX, grid.cellPx);
-            cp.gridY = pxToGridCoord(anchorY, grid.cellPx);
+            cp.gridX = pxToGridCoord(finalLeft, grid.cellPx);
+            cp.gridY = pxToGridCoord(finalTop, grid.cellPx);
           }
+          // Check for overlaps after every drag
+          checkFloorOverlaps();
         }
       }
 
@@ -1676,6 +1644,42 @@
         document.removeEventListener('touchmove', onMove);
         document.removeEventListener('touchend', onEnd);
       });
+    }
+
+    // --- Overlap detection ---
+    var layoutHasOverlap = false;
+
+    function checkFloorOverlaps() {
+      layoutHasOverlap = false;
+      if (!currentLayout || currentLayout.positions.length < 2) {
+        updateWizardUI();
+        return;
+      }
+      var positions = currentLayout.positions;
+      // Get actual rendered positions from the DOM wraps
+      var wraps = floorsGrid ? floorsGrid.querySelectorAll('.floor-canvas-wrap') : [];
+      var rects = [];
+      for (var wi = 0; wi < wraps.length; wi++) {
+        var l = parseFloat(wraps[wi].style.left) || 0;
+        var t = parseFloat(wraps[wi].style.top) || 0;
+        var w = parseFloat(wraps[wi].style.width) || 0;
+        var h = parseFloat(wraps[wi].style.height) || 0;
+        rects.push({ x: l, y: t, w: w, h: h });
+      }
+      // Check all pairs for overlap (with 2px tolerance)
+      var tolerance = 2;
+      for (var a = 0; a < rects.length; a++) {
+        for (var b = a + 1; b < rects.length; b++) {
+          var ra = rects[a], rb = rects[b];
+          if (ra.x + tolerance < rb.x + rb.w && rb.x + tolerance < ra.x + ra.w &&
+              ra.y + tolerance < rb.y + rb.h && rb.y + tolerance < ra.y + ra.h) {
+            layoutHasOverlap = true;
+            break;
+          }
+        }
+        if (layoutHasOverlap) break;
+      }
+      updateWizardUI();
     }
 
     // --- Grid position cart properties ---
@@ -2008,22 +2012,14 @@
       currentLayout = computeFloorLayout(zoneW, zoneH, includedIndices);
 
       // Apply custom positions if user has dragged floors
-      // Grid coords store the ANCHOR position (left/center/right, top/center/bottom)
-      // so we reconstruct the left-edge from the anchor
+      // Grid coords store top-left corner (null = use auto-layout position)
       if (customPositions) {
         var _grid = getGridDimensions();
         for (var ci = 0; ci < currentLayout.positions.length; ci++) {
           var _cp = customPositions.find(function(c) { return c.index === currentLayout.positions[ci].index; });
-          if (_cp) {
-            var anchorPx = _cp.gridX * _grid.cellPx;
-            if (layoutAlignX === 'right') currentLayout.positions[ci].x = anchorPx - currentLayout.positions[ci].w;
-            else if (layoutAlignX === 'center') currentLayout.positions[ci].x = anchorPx - currentLayout.positions[ci].w / 2;
-            else currentLayout.positions[ci].x = anchorPx;
-
-            var anchorPy = _cp.gridY * _grid.cellPx;
-            if (layoutAlignY === 'bottom') currentLayout.positions[ci].y = anchorPy - currentLayout.positions[ci].h;
-            else if (layoutAlignY === 'center') currentLayout.positions[ci].y = anchorPy - currentLayout.positions[ci].h / 2;
-            else currentLayout.positions[ci].y = anchorPy;
+          if (_cp && _cp.gridX !== null) {
+            currentLayout.positions[ci].x = _cp.gridX * _grid.cellPx;
+            currentLayout.positions[ci].y = _cp.gridY * _grid.cellPx;
           }
         }
       }
@@ -2456,7 +2452,19 @@
             if (btnCalcBack) btnCalcBack.style.display = 'none';
             renderPreviewThumbnails();
             updateFloorLabels();
-            setTimeout(function() { renderGridOverlay(); }, 50);
+            setTimeout(function() {
+              renderGridOverlay();
+              // Re-enable drag mode if it was on
+              if (gridEditMode) {
+                var overlay = document.getElementById('unifiedFloorsOverlay');
+                if (overlay) overlay.classList.add('drag-enabled');
+                var wraps = floorsGrid ? floorsGrid.querySelectorAll('.floor-canvas-wrap') : [];
+                for (var _wi = 0; _wi < wraps.length; _wi++) {
+                  attachDragHandlers(wraps[_wi], _wi);
+                }
+                addGridFloorButtons();
+              }
+            }, 50);
           } else {
             // ── First visit — smart pre-check based on floor names ──
             excludedFloors = new Set();
@@ -2577,6 +2585,20 @@
       } else if (currentWizardStep === 4) {
         // Step 4: hide "Volgende" until layout is calculated
         btnWizardNext.style.display = layoutCalculated ? '' : 'none';
+        // Disable if floors overlap
+        if (layoutCalculated && layoutHasOverlap) {
+          btnWizardNext.disabled = true;
+        }
+        // Show/hide overlap warning
+        var overlapWarn = document.getElementById('overlapWarning');
+        if (!overlapWarn && layoutHasOverlap && layoutCalculated) {
+          overlapWarn = document.createElement('div');
+          overlapWarn.id = 'overlapWarning';
+          overlapWarn.className = 'overlap-warning';
+          overlapWarn.textContent = 'Plattegronden overlappen elkaar. Verschuif ze zodat ze niet overlappen.';
+          btnWizardNext.parentElement.appendChild(overlapWarn);
+        }
+        if (overlapWarn) overlapWarn.style.display = layoutHasOverlap ? '' : 'none';
       } else {
         btnWizardNext.style.display = '';
       }
@@ -3119,8 +3141,10 @@
           } else {
             disableGridDrag();
             customPositions = null;
+            layoutHasOverlap = false;
             renderPreviewThumbnails();
             renderGridOverlayIfStep4();
+            updateWizardUI();
           }
         };
       }
