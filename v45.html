@@ -2,7 +2,7 @@
 <script>
 (function(){
   var sheets = [
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.1/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.2/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -23,7 +23,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel" style="display:none;">
-    <div class="admin-panel-label">Admin &middot; v45.1</div>
+    <div class="admin-panel-label">Admin &middot; v45.2</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
@@ -115,7 +115,7 @@
           <div class="unified-floors-overlay" id="unifiedFloorsOverlay">
             <div class="floors-loading" id="floorsLoading">
               <div class="floors-loading-spinner"></div>
-              <div class="floors-loading-text">Plattegronden laden…</div>
+              <div class="floors-loading-text">Plattegronden laden...</div>
             </div>
             <div class="floors-grid" id="floorsGrid"></div>
           </div>
@@ -134,7 +134,7 @@
     <div class="page-col-right">
       <div class="page-col-right-inner">
 
-        <h1 class="product-title collapsible-info stagger-in" style="--stagger:0.06s">Maak je eigen Mattori Frame<sup>3</sup></h1>
+        <h1 class="product-title collapsible-info stagger-in" style="--stagger:0.06s">Maak je eigen Mattori Frame&#179;</h1>
 
         <div class="product-price-block collapsible-info stagger-in" style="--stagger:0.12s">
           <span class="product-price-old">&euro;99,95</span>
@@ -149,7 +149,7 @@
         <!-- Start configurator button -->
         <button class="btn-start-configurator stagger-in" id="btnStartConfigurator" onclick="startConfigurator()" style="--stagger:0.24s" disabled>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" /></svg>
-          Maak je eigen Frame<sup>3</sup>
+          Maak je eigen Frame&#179;
         </button>
 
         <!-- ═══════════════════════════════════════════ -->
@@ -212,7 +212,7 @@
               <div class="floor-review-panel" id="floorReviewDefault">
                 <div class="floor-review-actions-row">
                   <button type="button" class="btn-floor-flag" id="btnFloorFlag" onclick="showFloorIssuePanel()">Klopt niet</button>
-                  <button type="button" class="btn-floor-good" id="btnFloorGood" onclick="confirmFloorGood()">Klopt <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg></button>
+                  <button type="button" class="btn-floor-good" id="btnFloorGood" onclick="confirmFloorGood()">Klopt</button>
                 </div>
                 <p class="floor-review-hint-text">Wil je een plattegrond niet in je ontwerp? Dat stel je in bij de volgende stap.</p>
               </div>
@@ -220,8 +220,8 @@
               <!-- Issue panel: small difference -->
               <div class="floor-review-panel" id="floorReviewIssue" style="display:none;">
                 <div class="floor-issue-box">
-                  <textarea id="floorIssueText" class="wizard-input" placeholder="Beschrijf kort wat er anders is…" rows="2"></textarea>
-                  <button type="button" class="btn-floor-save" onclick="saveFloorIssue()">Opslaan & door →</button>
+                  <textarea id="floorIssueText" class="wizard-input" placeholder="Beschrijf kort wat er anders is..." rows="2"></textarea>
+                  <button type="button" class="btn-floor-save" onclick="saveFloorIssue()">Opslaan &amp; door</button>
                 </div>
                 <button type="button" class="btn-floor-major" onclick="showFloorMajorPanel()">Klopt helemaal niet</button>
               </div>
@@ -231,7 +231,7 @@
                 <p class="floor-major-text">Geen zorgen — neem contact met ons op, of bestel op goed vertrouwen. We bekijken de plattegrond dan handmatig.</p>
                 <div class="floor-major-actions">
                   <a class="btn-floor-contact" id="btnFloorContact" href="#">Contact</a>
-                  <button type="button" class="btn-floor-trust" onclick="confirmFloorMajor()">Doorgaan →</button>
+                  <button type="button" class="btn-floor-trust" onclick="confirmFloorMajor()">Doorgaan</button>
                 </div>
                 <button type="button" class="btn-floor-back" onclick="showFloorDefaultPanel()">← Terug</button>
               </div>
@@ -294,14 +294,14 @@
 
           <!-- Navigation buttons -->
           <div class="wizard-nav" id="wizardNav">
-            <button class="btn-wizard-prev" id="btnWizardPrev" style="display:none;">&#8592;</button>
-            <button class="btn-wizard-next" id="btnWizardNext" style="display:none;">Volgende &#8594;</button>
-            <button class="btn-order" id="btnOrder" onclick="submitOrder()" style="display:none;">Afronden &amp; bestellen &#10022;</button>
+            <button class="btn-wizard-prev" id="btnWizardPrev" style="display:none;">&lt;</button>
+            <button class="btn-wizard-next" id="btnWizardNext" style="display:none;">Volgende</button>
+            <button class="btn-order" id="btnOrder" onclick="submitOrder()" style="display:none;">Afronden &amp; bestellen</button>
           </div>
 
           <!-- Disclaimer (shown on last step) -->
           <div class="order-return-notice" id="orderNotice" style="display:none;">
-            De preview is een indicatie — het eindresultaat kan in detail afwijken. Ons team bekijkt elke bestelling persoonlijk en zorgt ervoor dat jouw Frame<sup>3</sup> er prachtig uitziet.
+            De preview is een indicatie — het eindresultaat kan in detail afwijken. Ons team bekijkt elke bestelling persoonlijk en zorgt ervoor dat jouw Frame&#179; er prachtig uitziet.
           </div>
 
         </div>
@@ -347,4 +347,4 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.1/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.2/mattori-configurator.js"></script>

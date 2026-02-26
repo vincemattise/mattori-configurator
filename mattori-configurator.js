@@ -437,7 +437,7 @@
         const parts = streetSlug.split('-');
         const merged = [];
         for (let i = 0; i < parts.length; i++) {
-          if (i > 0 && /^\d+$/.test(parts[i - 1]) && /^\d+[a-z]?$/.test(parts[i]) && parts[i].length <= 3) {
+          if (i > 0 && /^\d+$/.test(parts[i - 1]) && /^(\d+[a-z]?|[a-z]{1,2})$/i.test(parts[i]) && parts[i].length <= 3) {
             merged[merged.length - 1] += '-' + parts[i];
           } else {
             merged.push(parts[i]);
@@ -1496,23 +1496,43 @@
 
     function addGridFloorButtons() {
       if (!gridEditMode || !floorsGrid) return;
+      // Add alignment indicator lines to each floor thumbnail
       var wraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
       for (var wi = 0; wi < wraps.length; wi++) {
         (function(wrap, posIdx) {
           if (!currentLayout || !currentLayout.positions[posIdx]) return;
-          var floorIdx = currentLayout.positions[posIdx].index;
+          var pos = currentLayout.positions[posIdx];
+          var w = pos.w, h = pos.h;
 
-          // 90° rotation button (top-right)
-          var rotBtn = document.createElement('button');
-          rotBtn.type = 'button';
-          rotBtn.className = 'grid-rotate-btn';
-          rotBtn.title = '90° draaien';
-          rotBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
-          rotBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            rotateFloor90(floorIdx);
-          });
-          wrap.appendChild(rotBtn);
+          var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('width', w);
+          svg.setAttribute('height', h);
+          svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:15;';
+
+          var lineColor = 'rgba(220, 60, 60, 0.7)';
+          var lineWidth = '2';
+
+          // Vertical line based on X alignment
+          var vx = layoutAlignX === 'left' ? 0 : layoutAlignX === 'right' ? w : w / 2;
+          var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          vLine.setAttribute('x1', vx); vLine.setAttribute('y1', 0);
+          vLine.setAttribute('x2', vx); vLine.setAttribute('y2', h);
+          vLine.setAttribute('stroke', lineColor);
+          vLine.setAttribute('stroke-width', layoutAlignX === 'center' ? '1.5' : lineWidth);
+          if (layoutAlignX === 'center') vLine.setAttribute('stroke-dasharray', '6 4');
+          svg.appendChild(vLine);
+
+          // Horizontal line based on Y alignment
+          var hy = layoutAlignY === 'top' ? 0 : layoutAlignY === 'bottom' ? h : h / 2;
+          var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          hLine.setAttribute('x1', 0); hLine.setAttribute('y1', hy);
+          hLine.setAttribute('x2', w); hLine.setAttribute('y2', hy);
+          hLine.setAttribute('stroke', lineColor);
+          hLine.setAttribute('stroke-width', layoutAlignY === 'center' ? '1.5' : lineWidth);
+          if (layoutAlignY === 'center') hLine.setAttribute('stroke-dasharray', '6 4');
+          svg.appendChild(hLine);
+
+          wrap.appendChild(svg);
         })(wraps[wi], wi);
       }
     }
@@ -2793,26 +2813,27 @@
               toggleFloorExclusion(floorIdx);
               customPositions = null; // reset drag positions
 
+              // Always reset calculation — user must click "Bereken" again
               if (layoutCalculated) {
-                // After calculation: immediately update preview
-                renderLayoutView();
-                renderPreviewThumbnails();
-                renderGridOverlayIfStep4();
-                updateFloorLabels();
-                buildThumbstrip();
-              } else {
-                // Before calculation: only update checkbox UI + button state
-                var chip2 = this.parentElement;
-                if (chip2) chip2.className = 'floor-include-chip' + (excludedFloors.has(floorIdx) ? ' excluded' : '');
-                // Enable/disable "Bereken indeling" based on whether any floor is checked
-                var btnCalc2 = document.getElementById('btnCalcLayout');
-                if (btnCalc2) {
-                  var anyIncluded = false;
-                  for (var ci = 0; ci < floors.length; ci++) {
-                    if (!excludedFloors.has(ci)) { anyIncluded = true; break; }
-                  }
-                  btnCalc2.disabled = !anyIncluded;
+                layoutCalculated = false;
+                gridEditMode = false;
+                var resultSection2 = document.getElementById('layoutResultSection');
+                if (resultSection2) resultSection2.style.display = 'none';
+                var noteSection2 = document.querySelector('.layout-note-section');
+                if (noteSection2) noteSection2.style.display = 'none';
+                updateWizardUI(); // hide "Volgende" until recalculated
+              }
+              // Update checkbox UI + show "Bereken" button
+              var chip2 = this.parentElement;
+              if (chip2) chip2.className = 'floor-include-chip' + (excludedFloors.has(floorIdx) ? ' excluded' : '');
+              var btnCalc2 = document.getElementById('btnCalcLayout');
+              if (btnCalc2) {
+                btnCalc2.style.display = '';
+                var anyIncluded = false;
+                for (var ci = 0; ci < floors.length; ci++) {
+                  if (!excludedFloors.has(ci)) { anyIncluded = true; break; }
                 }
+                btnCalc2.disabled = !anyIncluded;
               }
             });
             var label = document.createElement('span');
@@ -4179,7 +4200,7 @@
       btn.id = 'contactEmailBtn';
       btn.className = 'btn-contact-email';
       btn.href = 'mailto:vince@mattori.nl?subject=' + subject + '&body=' + body;
-      btn.textContent = 'Neem contact op →';
+      btn.textContent = 'Neem contact op';
       statusBox.parentNode.insertBefore(btn, statusBox.nextSibling);
     }
 
@@ -4216,7 +4237,7 @@
           // noFloorsMode: Funda link valid but no interactive floor plans
           noFloorsMode = true;
           lastFundaUrl = url;
-          setFundaStatus('success', '<strong>✓ Funda link herkend</strong><strong class="status-warning">✗ Geen interactieve plattegronden beschikbaar</strong><span>Geen zorgen — we bouwen je Frame<sup>3</sup> handmatig op basis van de Funda-foto\'s.</span>');
+          setFundaStatus('success', '<strong>✓ Funda link herkend</strong><strong class="status-warning">✗ Geen interactieve plattegronden beschikbaar</strong><span>Geen zorgen — we bouwen je Frame\u00B3 handmatig op basis van de Funda-foto\'s.</span>');
           updateWizardUI();
           return;
         }
@@ -4313,7 +4334,7 @@
       // Disable the correct button (btnOrder for normal flow, btnWizardNext for noFloorsMode)
       var orderBtn = noFloorsMode ? btnWizardNext : document.getElementById('btnOrder');
       var originalText = orderBtn ? orderBtn.textContent : '';
-      if (orderBtn) { orderBtn.disabled = true; orderBtn.innerHTML = '<span class="btn-spinner"></span> Toevoegen…'; }
+      if (orderBtn) { orderBtn.disabled = true; orderBtn.innerHTML = '<span class="btn-spinner"></span> Toevoegen...'; }
 
       // Force browser repaint so spinner is visible before heavy html2canvas work
       await new Promise(function(r) { requestAnimationFrame(function() { requestAnimationFrame(r); }); });
