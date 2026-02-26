@@ -4033,13 +4033,14 @@
       17: 'https://www.funda.nl/detail/koop/ederveen/huis-hoofdweg-116/43243379/',
       18: 'https://www.funda.nl/detail/koop/berlicum/huis-de-misse-1/43243248/',
       19: 'https://www.funda.nl/detail/koop/breda/huis-oede-van-hoornestraat-12/43243210/',
-      20: 'https://www.funda.nl/detail/koop/breda/appartement-haagdijk-141/43132850/'
+      20: 'https://www.funda.nl/detail/koop/breda/appartement-haagdijk-141/43132850/',
+      21: 'https://www.funda.nl/detail/koop/waarland/huis-veluweweg-32-b/89499833/'
     };
     function pasteTestLink(n) {
       var input = document.getElementById('fundaUrl');
       if (input) input.value = TEST_LINKS[n] || TEST_LINKS[1];
     }
-    for (const n of Array.from({length: 20}, (_, i) => i + 1)) {
+    for (const n of Array.from({length: 21}, (_, i) => i + 1)) {
       const btn = document.getElementById('btnTest' + n);
       if (btn) btn.addEventListener('click', () => pasteTestLink(n));
     }
