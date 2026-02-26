@@ -1932,6 +1932,14 @@
     // RENDER PREVIEW USING LAYOUT ENGINE
     // ============================================================
     function renderPreviewThumbnails() {
+      // In step 4, don't render until "Bereken indeling" is clicked
+      if (currentWizardStep === 4 && !layoutCalculated) {
+        for (const v of previewViewers) { if (v.renderer) v.renderer.dispose(); }
+        previewViewers = [];
+        floorsGrid.innerHTML = '';
+        return;
+      }
+
       // Cleanup old preview viewers
       for (const v of previewViewers) {
         if (v.renderer) v.renderer.dispose();
@@ -2942,7 +2950,7 @@
       }
       var btnToggleGrid = document.getElementById('btnToggleGrid');
       if (btnToggleGrid) {
-        btnToggleGrid.style.display = includedCount >= 2 ? '' : 'none';
+        btnToggleGrid.style.display = (layoutCalculated && includedCount >= 2) ? '' : 'none';
         btnToggleGrid.classList.toggle('active', gridEditMode);
         // color handled by CSS primary button
         btnToggleGrid.onclick = function() {
