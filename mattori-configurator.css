@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.11/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v45.12/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -727,18 +727,90 @@
       user-select: none;
     }
 
-    /* Overlap warning below Volgende button */
+    /* Overlap warning below navigation buttons */
     .mattori-configurator .overlap-warning {
       font-size: 0.72rem;
       color: #c44;
       text-align: center;
       margin-top: 0.4rem;
       line-height: 1.3;
+      width: 100%;
+    }
+
+    /* Per-floor alignment section */
+    .mattori-configurator .per-floor-section {
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .mattori-configurator .per-floor-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .mattori-configurator .per-floor-name {
+      font-size: 0.68rem;
+      color: #666;
+      min-width: 0;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mattori-configurator .per-floor-btns {
+      display: flex;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .mattori-configurator .per-floor-btn {
+      width: 22px;
+      height: 22px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      color: #999;
+      transition: all 0.15s ease;
+    }
+
+    .mattori-configurator .per-floor-btn:hover {
+      border-color: #aaa;
+      color: #555;
+    }
+
+    .mattori-configurator .per-floor-btn.active {
+      background: #1a1a1a;
+      border-color: #1a1a1a;
+      color: #fff;
+    }
+
+    /* Reset layout link */
+    .mattori-configurator .layout-reset-link {
+      display: inline-block;
+      font-size: 0.7rem;
+      color: #999;
+      cursor: pointer;
+      margin-top: 0.3rem;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .mattori-configurator .layout-reset-link:hover {
+      color: #555;
     }
 
     /* Spacing above result section (below floor checkboxes) */
     .mattori-configurator #layoutResultSection {
-      margin-top: 0.5rem;
+      margin-top: 1rem;
     }
 
     /* Layout note section */
@@ -1043,6 +1115,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-wrap: wrap;
       margin-top: 1.2rem;
       gap: 0.5rem;
     }

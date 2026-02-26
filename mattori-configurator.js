@@ -1343,9 +1343,10 @@
         }
 
         // X-axis: push to left or right edge
-        if (layoutAlignX === 'left' || layoutAlignX === 'right') {
+        var alignX = getFloorAlignX(floorIndex);
+        if (alignX === 'left' || alignX === 'right') {
           var shiftX = halfFrustumW - size.x / 2;
-          scene.position.x += (layoutAlignX === 'right') ? shiftX : -shiftX;
+          scene.position.x += (alignX === 'right') ? shiftX : -shiftX;
         }
 
         camera.updateProjectionMatrix();
@@ -1432,8 +1433,8 @@
       if (existing) existing.remove();
       // Respect user toggle
       if (!showGridOverlay) return;
-      // Show grid in step 4 always, or when gridEditMode is on
-      if (!gridEditMode && currentWizardStep !== 4) return;
+      // Only show grid when edit mode is active
+      if (!gridEditMode) return;
 
       var grid = getGridDimensions();
       var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1473,7 +1474,10 @@
     // --- Drag handlers ---
     function enableGridDrag() {
       var overlay = document.getElementById('unifiedFloorsOverlay');
-      if (overlay) overlay.classList.add('drag-enabled');
+      if (overlay) {
+        overlay.classList.add('drag-enabled');
+        if (showGridOverlay) overlay.classList.add('zone-editing');
+      }
 
       // Don't create customPositions here — auto-layout positions are already
       // grid-snapped by computeFloorLayout(). This prevents ANY visual shift
@@ -1522,8 +1526,11 @@
           var lineColor = 'rgba(0, 0, 0, 0.55)';
           var lineWidth = '1.5';
 
-          // X alignment — dashed line at alignment position
-          var vx = layoutAlignX === 'left' ? 0 : layoutAlignX === 'right' ? w : w / 2;
+          // X alignment — dashed line at alignment position (per-floor)
+          var floorIdx = pos.index;
+          var thisAlignX = getFloorAlignX(floorIdx);
+          var thisAlignY = getFloorAlignY(floorIdx);
+          var vx = thisAlignX === 'left' ? 0 : thisAlignX === 'right' ? w : w / 2;
           var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           vLine.setAttribute('x1', vx); vLine.setAttribute('y1', 0);
           vLine.setAttribute('x2', vx); vLine.setAttribute('y2', h);
@@ -1532,8 +1539,8 @@
           vLine.setAttribute('stroke-dasharray', '6 4');
           svg.appendChild(vLine);
 
-          // Y alignment — dashed line at alignment position
-          var hy = layoutAlignY === 'top' ? 0 : layoutAlignY === 'bottom' ? h : h / 2;
+          // Y alignment — dashed line at alignment position (per-floor)
+          var hy = thisAlignY === 'top' ? 0 : thisAlignY === 'bottom' ? h : h / 2;
           var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           hLine.setAttribute('x1', 0); hLine.setAttribute('y1', hy);
           hLine.setAttribute('x2', w); hLine.setAttribute('y2', hy);
@@ -1549,7 +1556,10 @@
 
     function disableGridDrag() {
       var overlay = document.getElementById('unifiedFloorsOverlay');
-      if (overlay) overlay.classList.remove('drag-enabled');
+      if (overlay) {
+        overlay.classList.remove('drag-enabled');
+        overlay.classList.remove('zone-editing');
+      }
 
       var gridEl = floorsGrid ? floorsGrid.querySelector('.grid-overlay') : null;
       if (gridEl) gridEl.remove();
@@ -1685,8 +1695,22 @@
     // --- Grid position cart properties ---
     function getGridPositionProperties() {
       var props = {};
-      // Always include alignment settings
+      // Always include global alignment settings
       props['Uitlijning'] = 'X=' + layoutAlignX + ', Y=' + layoutAlignY;
+      // Include per-floor alignment if any differ from global
+      for (var fk in floorSettings) {
+        if (floorSettings.hasOwnProperty(fk)) {
+          var fs = floorSettings[fk];
+          var hasCustomAlign = (fs.alignX && fs.alignX !== layoutAlignX) || (fs.alignY && fs.alignY !== layoutAlignY);
+          if (hasCustomAlign) {
+            var floor = floors[parseInt(fk)];
+            var fname = floor ? floor.name : ('Verdieping ' + (parseInt(fk) + 1));
+            var ax = fs.alignX || layoutAlignX;
+            var ay = fs.alignY || layoutAlignY;
+            props['Uitlijning ' + fname] = 'X=' + ax + ', Y=' + ay;
+          }
+        }
+      }
       if (!customPositions) return props;
       for (var i = 0; i < customPositions.length; i++) {
         var cp = customPositions[i];
@@ -1806,11 +1830,14 @@
       for (var ri = 0; ri < result.length; ri++) {
         var r = result[ri];
 
-        // Determine the anchor point per axis based on alignment
+        // Determine the anchor point per axis based on per-floor alignment
+        var floorAlignX = getFloorAlignX(r.index);
+        var floorAlignY = getFloorAlignY(r.index);
+
         // X-axis
-        if (layoutAlignX === 'left') {
+        if (floorAlignX === 'left') {
           r.x = snapToGrid(r.x, cellPx);
-        } else if (layoutAlignX === 'right') {
+        } else if (floorAlignX === 'right') {
           // Snap right edge, then derive x
           var rightSnapped = snapToGrid(r.x + r.w, cellPx);
           r.x = rightSnapped - r.w;
@@ -1822,9 +1849,9 @@
         }
 
         // Y-axis
-        if (layoutAlignY === 'top') {
+        if (floorAlignY === 'top') {
           r.y = snapToGrid(r.y, cellPx);
-        } else if (layoutAlignY === 'bottom') {
+        } else if (floorAlignY === 'bottom') {
           // Snap bottom edge, then derive y
           var bottomSnapped = snapToGrid(r.y + r.h, cellPx);
           r.y = bottomSnapped - r.h;
@@ -1847,8 +1874,14 @@
       };
     }
 
+    function getFloorAlignX(floorIndex) {
+      var fs = floorSettings[floorIndex];
+      return (fs && fs.alignX) ? fs.alignX : layoutAlignX;
+    }
+
     function getFloorAlignY(floorIndex) {
-      return layoutAlignY;
+      var fs = floorSettings[floorIndex];
+      return (fs && fs.alignY) ? fs.alignY : layoutAlignY;
     }
 
     function getFloorRotate(floorIndex) {
@@ -2398,7 +2431,7 @@
 
         // Toggle dashed border on the active editing zone
         if (unifiedAddressOverlay) unifiedAddressOverlay.classList.toggle('zone-editing', n === 2);
-        if (unifiedFloorsOverlay) unifiedFloorsOverlay.classList.toggle('zone-editing', n === 4);
+        if (unifiedFloorsOverlay) unifiedFloorsOverlay.classList.toggle('zone-editing', n === 4 && gridEditMode);
         if (unifiedLabelsOverlay) unifiedLabelsOverlay.classList.toggle('zone-editing', n === 5);
 
         // Switch between hero image (step 1) and unified frame preview (step 2+)
@@ -2589,16 +2622,9 @@
         if (layoutCalculated && layoutHasOverlap) {
           btnWizardNext.disabled = true;
         }
-        // Show/hide overlap warning
+        // Show/hide overlap warning (static element in HTML)
         var overlapWarn = document.getElementById('overlapWarning');
-        if (!overlapWarn && layoutHasOverlap && layoutCalculated) {
-          overlapWarn = document.createElement('div');
-          overlapWarn.id = 'overlapWarning';
-          overlapWarn.className = 'overlap-warning';
-          overlapWarn.textContent = 'Plattegronden overlappen elkaar. Verschuif ze zodat ze niet overlappen.';
-          btnWizardNext.parentElement.appendChild(overlapWarn);
-        }
-        if (overlapWarn) overlapWarn.style.display = layoutHasOverlap ? '' : 'none';
+        if (overlapWarn) overlapWarn.style.display = (layoutHasOverlap && layoutCalculated) ? '' : 'none';
       } else {
         btnWizardNext.style.display = '';
       }
@@ -3031,6 +3057,10 @@
             btn.dataset.align = val;
             btn.addEventListener('click', function() {
               layoutAlignX = val;
+              // Also update all per-floor X alignment to match global
+              for (var fk in floorSettings) {
+                if (floorSettings.hasOwnProperty(fk)) delete floorSettings[fk].alignX;
+              }
               customPositions = null;
               var siblings = alignGroupX.querySelectorAll('.floor-align-btn');
               for (var s = 0; s < siblings.length; s++) siblings[s].classList.remove('active');
@@ -3040,6 +3070,7 @@
                 renderGridOverlayIfStep4();
                 updateFloorLabels();
                 if (gridEditMode) enableGridDrag();
+                renderLayoutView();
               });
             });
             alignGroupX.appendChild(btn);
@@ -3066,6 +3097,10 @@
             btn.dataset.align = val;
             btn.addEventListener('click', function() {
               layoutAlignY = val;
+              // Also update all per-floor Y alignment to match global
+              for (var fk in floorSettings) {
+                if (floorSettings.hasOwnProperty(fk)) delete floorSettings[fk].alignY;
+              }
               customPositions = null;
               var siblings = alignGroupY.querySelectorAll('.floor-align-btn');
               for (var s = 0; s < siblings.length; s++) siblings[s].classList.remove('active');
@@ -3075,6 +3110,7 @@
                 renderGridOverlayIfStep4();
                 updateFloorLabels();
                 if (gridEditMode) enableGridDrag();
+                renderLayoutView();
               });
             });
             alignGroupY.appendChild(btn);
@@ -3117,6 +3153,114 @@
         }
       }
 
+      // ── Per-floor alignment section ──
+      var perFloorSection = document.getElementById('perFloorAlignSection');
+      if (perFloorSection) {
+        perFloorSection.innerHTML = '';
+        var includedForAlign = [];
+        for (var pfi = 0; pfi < floors.length; pfi++) {
+          if (!excludedFloors.has(pfi)) includedForAlign.push(pfi);
+        }
+        if (includedForAlign.length >= 2) {
+          for (var afi = 0; afi < includedForAlign.length; afi++) {
+            (function(floorIdx) {
+              var row = document.createElement('div');
+              row.className = 'per-floor-row';
+
+              var name = document.createElement('span');
+              name.className = 'per-floor-name';
+              name.textContent = floors[floorIdx].name || ('Verdieping ' + (floorIdx + 1));
+              row.appendChild(name);
+
+              // X alignment buttons (L/C/R)
+              var xBtns = document.createElement('span');
+              xBtns.className = 'per-floor-btns';
+              var xVals = ['left', 'center', 'right'];
+              var xLabels = ['L', 'M', 'R'];
+              var currentX = (floorSettings[floorIdx] && floorSettings[floorIdx].alignX) || layoutAlignX;
+              for (var bx = 0; bx < xVals.length; bx++) {
+                (function(val, label) {
+                  var btn = document.createElement('button');
+                  btn.type = 'button';
+                  btn.className = 'per-floor-btn' + (val === currentX ? ' active' : '');
+                  btn.textContent = label;
+                  btn.style.fontSize = '9px';
+                  btn.style.fontWeight = '700';
+                  btn.addEventListener('click', function() {
+                    if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
+                    floorSettings[floorIdx].alignX = val;
+                    customPositions = null;
+                    updatePreviewWithLoading(function() {
+                      renderPreviewThumbnails();
+                      renderGridOverlayIfStep4();
+                      updateFloorLabels();
+                      if (gridEditMode) enableGridDrag();
+                      renderLayoutView();
+                    });
+                  });
+                  xBtns.appendChild(btn);
+                })(xVals[bx], xLabels[bx]);
+              }
+              row.appendChild(xBtns);
+
+              // Y alignment buttons (B/M/O)
+              var yBtns = document.createElement('span');
+              yBtns.className = 'per-floor-btns';
+              var yVals = ['top', 'center', 'bottom'];
+              var yLabels = ['B', 'M', 'O'];
+              var currentY = (floorSettings[floorIdx] && floorSettings[floorIdx].alignY) || layoutAlignY;
+              for (var by = 0; by < yVals.length; by++) {
+                (function(val, label) {
+                  var btn = document.createElement('button');
+                  btn.type = 'button';
+                  btn.className = 'per-floor-btn' + (val === currentY ? ' active' : '');
+                  btn.textContent = label;
+                  btn.style.fontSize = '9px';
+                  btn.style.fontWeight = '700';
+                  btn.addEventListener('click', function() {
+                    if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
+                    floorSettings[floorIdx].alignY = val;
+                    customPositions = null;
+                    updatePreviewWithLoading(function() {
+                      renderPreviewThumbnails();
+                      renderGridOverlayIfStep4();
+                      updateFloorLabels();
+                      if (gridEditMode) enableGridDrag();
+                      renderLayoutView();
+                    });
+                  });
+                  yBtns.appendChild(btn);
+                })(yVals[by], yLabels[by]);
+              }
+              row.appendChild(yBtns);
+
+              perFloorSection.appendChild(row);
+            })(includedForAlign[afi]);
+          }
+        }
+      }
+
+      // ── Reset button ──
+      var btnReset = document.getElementById('btnResetLayout');
+      if (btnReset) {
+        btnReset.style.display = customPositions ? '' : 'none';
+        btnReset.onclick = function() {
+          customPositions = null;
+          layoutHasOverlap = false;
+          renderPreviewThumbnails();
+          renderGridOverlay();
+          updateWizardUI();
+          if (gridEditMode) {
+            var wraps = floorsGrid ? floorsGrid.querySelectorAll('.floor-canvas-wrap') : [];
+            _dragCleanups.forEach(function(fn) { fn(); });
+            _dragCleanups = [];
+            for (var _rw = 0; _rw < wraps.length; _rw++) attachDragHandlers(wraps[_rw], _rw);
+            addGridFloorButtons();
+          }
+          btnReset.style.display = 'none';
+        };
+      }
+
       // ── Edit mode + tools box ──
       var includedCount = 0;
       for (var gi = 0; gi < floors.length; gi++) {
@@ -3143,7 +3287,7 @@
             customPositions = null;
             layoutHasOverlap = false;
             renderPreviewThumbnails();
-            renderGridOverlayIfStep4();
+            renderGridOverlay();
             updateWizardUI();
           }
         };
