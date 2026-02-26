@@ -1387,7 +1387,7 @@
     var layoutAlignX = 'center'; // 'left', 'center', or 'right'
     var layoutAlignY = 'bottom'; // 'top', 'center', or 'bottom'
     var layoutGapFactor = 0.08; // gap as fraction of largest floor dimension (0..0.3)
-    var layoutScaleFactor = 1.0; // user scale: 0.7 (klein), 1.0 (normaal), 1.15 (groot)
+    var layoutScaleFactor = 1.0; // user scale: 0.82 (klein), 1.0 (normaal), 1.1 (groot)
     var showGridOverlay = true; // user toggle for grid + alignment lines
     var floorSettings = {}; // per-floor: { rotate: 0|90|180|270 }
 
@@ -3112,9 +3112,9 @@
       if (scaleGroup) {
         scaleGroup.innerHTML = '';
         var scaleOptions = [
-          { val: 0.7, label: 'S', title: 'Klein' },
+          { val: 0.82, label: 'S', title: 'Klein' },
           { val: 1.0, label: 'M', title: 'Normaal' },
-          { val: 1.15, label: 'L', title: 'Groot' }
+          { val: 1.1, label: 'L', title: 'Groot' }
         ];
         for (var si = 0; si < scaleOptions.length; si++) {
           (function(opt) {
