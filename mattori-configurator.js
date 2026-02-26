@@ -1375,6 +1375,7 @@
     var layoutAlignX = 'center'; // 'left', 'center', or 'right'
     var layoutAlignY = 'bottom'; // 'top', 'center', or 'bottom'
     var layoutGapFactor = 0.08; // gap as fraction of largest floor dimension (0..0.3)
+    var layoutScaleFactor = 1.0; // user scale: 0.7 (klein), 1.0 (normaal), 1.15 (groot)
     var floorSettings = {}; // per-floor: { rotate: 0|90|180|270 }
 
     // ============================================================
@@ -1432,6 +1433,7 @@
       var actualCols = Math.ceil(grid.zoneW / grid.cellPx);
       var actualRows = Math.ceil(grid.zoneH / grid.cellPx);
       var midCol = Math.floor(actualCols / 2);
+      var midRow = Math.floor(actualRows / 2);
       for (var x = 0; x <= actualCols; x++) {
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         var px = x * grid.cellPx;
@@ -1447,8 +1449,9 @@
         var py = y * grid.cellPx;
         line.setAttribute('x1', 0); line.setAttribute('y1', py);
         line.setAttribute('x2', grid.zoneW); line.setAttribute('y2', py);
-        line.setAttribute('stroke', 'rgba(0,0,0,0.07)');
-        line.setAttribute('stroke-width', '0.5');
+        var isMidH = (y === midRow);
+        line.setAttribute('stroke', isMidH ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.07)');
+        line.setAttribute('stroke-width', isMidH ? '1.5' : '0.5');
         svg.appendChild(line);
       }
       floorsGrid.insertBefore(svg, floorsGrid.firstChild);
@@ -1497,7 +1500,7 @@
 
     function addGridFloorButtons() {
       if (!gridEditMode || !floorsGrid) return;
-      // Add alignment indicator lines to each floor thumbnail
+      // Add alignment border lines to each floor thumbnail (only on alignment edges)
       var wraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
       for (var wi = 0; wi < wraps.length; wi++) {
         (function(wrap, posIdx) {
@@ -1508,31 +1511,61 @@
           var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
           svg.setAttribute('width', w);
           svg.setAttribute('height', h);
-          svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:15;';
+          svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+          svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:15;overflow:visible;';
 
-          var lineColor = 'rgba(220, 60, 60, 0.7)';
+          var lineColor = 'rgba(220, 60, 60, 0.65)';
           var lineWidth = '2';
-          var edgeOffset = 3; // offset from edge so line is visible
 
-          // Vertical line based on X alignment
-          var vx = layoutAlignX === 'left' ? edgeOffset : layoutAlignX === 'right' ? w - edgeOffset : w / 2;
-          var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-          vLine.setAttribute('x1', vx); vLine.setAttribute('y1', 0);
-          vLine.setAttribute('x2', vx); vLine.setAttribute('y2', h);
-          vLine.setAttribute('stroke', lineColor);
-          vLine.setAttribute('stroke-width', lineWidth);
-          vLine.setAttribute('stroke-dasharray', '6 4');
-          svg.appendChild(vLine);
+          // X alignment — edge border or center dashed line
+          if (layoutAlignX === 'left') {
+            var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            vLine.setAttribute('x1', 0); vLine.setAttribute('y1', 0);
+            vLine.setAttribute('x2', 0); vLine.setAttribute('y2', h);
+            vLine.setAttribute('stroke', lineColor);
+            vLine.setAttribute('stroke-width', lineWidth);
+            svg.appendChild(vLine);
+          } else if (layoutAlignX === 'right') {
+            var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            vLine.setAttribute('x1', w); vLine.setAttribute('y1', 0);
+            vLine.setAttribute('x2', w); vLine.setAttribute('y2', h);
+            vLine.setAttribute('stroke', lineColor);
+            vLine.setAttribute('stroke-width', lineWidth);
+            svg.appendChild(vLine);
+          } else {
+            var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            vLine.setAttribute('x1', w / 2); vLine.setAttribute('y1', 0);
+            vLine.setAttribute('x2', w / 2); vLine.setAttribute('y2', h);
+            vLine.setAttribute('stroke', lineColor);
+            vLine.setAttribute('stroke-width', lineWidth);
+            vLine.setAttribute('stroke-dasharray', '6 4');
+            svg.appendChild(vLine);
+          }
 
-          // Horizontal line based on Y alignment
-          var hy = layoutAlignY === 'top' ? edgeOffset : layoutAlignY === 'bottom' ? h - edgeOffset : h / 2;
-          var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-          hLine.setAttribute('x1', 0); hLine.setAttribute('y1', hy);
-          hLine.setAttribute('x2', w); hLine.setAttribute('y2', hy);
-          hLine.setAttribute('stroke', lineColor);
-          hLine.setAttribute('stroke-width', lineWidth);
-          hLine.setAttribute('stroke-dasharray', '6 4');
-          svg.appendChild(hLine);
+          // Y alignment — edge border or center dashed line
+          if (layoutAlignY === 'top') {
+            var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            hLine.setAttribute('x1', 0); hLine.setAttribute('y1', 0);
+            hLine.setAttribute('x2', w); hLine.setAttribute('y2', 0);
+            hLine.setAttribute('stroke', lineColor);
+            hLine.setAttribute('stroke-width', lineWidth);
+            svg.appendChild(hLine);
+          } else if (layoutAlignY === 'bottom') {
+            var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            hLine.setAttribute('x1', 0); hLine.setAttribute('y1', h);
+            hLine.setAttribute('x2', w); hLine.setAttribute('y2', h);
+            hLine.setAttribute('stroke', lineColor);
+            hLine.setAttribute('stroke-width', lineWidth);
+            svg.appendChild(hLine);
+          } else {
+            var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            hLine.setAttribute('x1', 0); hLine.setAttribute('y1', h / 2);
+            hLine.setAttribute('x2', w); hLine.setAttribute('y2', h / 2);
+            hLine.setAttribute('stroke', lineColor);
+            hLine.setAttribute('stroke-width', lineWidth);
+            hLine.setAttribute('stroke-dasharray', '6 4');
+            svg.appendChild(hLine);
+          }
 
           wrap.appendChild(svg);
         })(wraps[wi], wi);
@@ -1701,10 +1734,9 @@
         // Single floor — centered
         layouts.push(layoutSingle(items));
       } else if (items.length === 2) {
-        // Two floors — try side-by-side, stacked, and diagonal
+        // Two floors — try side-by-side and stacked (no diagonal — causes overlap)
         layouts.push(layoutSideBySide(items));
         layouts.push(layoutStacked(items));
-        layouts.push(layoutDiagonal(items));
       } else if (items.length === 3) {
         layouts.push(layoutTriangle(items));
         layouts.push(layoutSideBySide(items));
@@ -1742,7 +1774,7 @@
       if (!best) return { scale: 1, positions: [] };
 
       // Center the layout in the zone
-      var finalScale = best.scale * 0.88; // 12% padding
+      var finalScale = best.scale * 0.88 * layoutScaleFactor; // 12% padding + user scale
       var scaledW = best.bbox.w * finalScale;
       var scaledH = best.bbox.h * finalScale;
       var offsetX = (zoneW - scaledW) / 2 - best.bbox.x * finalScale;
@@ -2991,6 +3023,41 @@
             });
             alignGroupY.appendChild(btn);
           })(yValues[yi]);
+        }
+      }
+
+      // ── Scale buttons ──
+      var scaleGroup = document.getElementById('scaleGroup');
+      if (scaleGroup) {
+        scaleGroup.innerHTML = '';
+        var scaleOptions = [
+          { val: 0.7, label: 'S', title: 'Klein' },
+          { val: 1.0, label: 'M', title: 'Normaal' },
+          { val: 1.15, label: 'L', title: 'Groot' }
+        ];
+        for (var si = 0; si < scaleOptions.length; si++) {
+          (function(opt) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'floor-align-btn' + (opt.val === layoutScaleFactor ? ' active' : '');
+            btn.textContent = opt.label;
+            btn.title = opt.title;
+            btn.style.cssText = 'font-size:11px;font-weight:700;min-width:28px;';
+            btn.addEventListener('click', function() {
+              layoutScaleFactor = opt.val;
+              customPositions = null;
+              var siblings = scaleGroup.querySelectorAll('.floor-align-btn');
+              for (var s = 0; s < siblings.length; s++) siblings[s].classList.remove('active');
+              this.classList.add('active');
+              updatePreviewWithLoading(function() {
+                renderPreviewThumbnails();
+                renderGridOverlayIfStep4();
+                updateFloorLabels();
+                if (gridEditMode) enableGridDrag();
+              });
+            });
+            scaleGroup.appendChild(btn);
+          })(scaleOptions[si]);
         }
       }
 
