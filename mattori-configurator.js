@@ -3718,13 +3718,20 @@
         }
 
         // Subtract voids (stair openings)
+        console.warn('[OBJ] Floor "' + floor.name + '": ' + floorVoids.length + ' voids, floorResult has ' + floorResult.length + ' polygons');
         for (const v of floorVoids) {
           if (v.length < 3) continue;
           const vRing = v.map(p => [p.x, p.y]);
           const vf = vRing[0], vl = vRing[vRing.length - 1];
           if (Math.hypot(vf[0] - vl[0], vf[1] - vl[1]) > 0.01) vRing.push([vf[0], vf[1]]);
+          const prevRings = floorResult.map(p => p.length);
+          console.warn('[OBJ] Void ring (' + vRing.length + ' pts): x=' + vRing[0][0].toFixed(1) + '..' + vRing[2][0].toFixed(1) + ', y=' + vRing[0][1].toFixed(1) + '..' + vRing[2][1].toFixed(1));
           try {
+            const before = JSON.stringify(floorResult).length;
             floorResult = polygonClipping.difference(floorResult, [[vRing]]);
+            const after = JSON.stringify(floorResult).length;
+            const newRings = floorResult.map(p => p.length);
+            console.warn('[OBJ] After difference: ' + floorResult.length + ' polygons, rings: [' + newRings.join(',') + '] (was [' + prevRings.join(',') + ']), JSON size ' + before + ' → ' + after);
           } catch (e) {
             console.warn('Floor void subtraction failed', e);
           }
@@ -3756,6 +3763,7 @@
               // If polygon has holes, merge them into outer ring for proper triangulation
               let triPts = objPts;
               if (polygon.length > 1) {
+                console.warn('[OBJ] Polygon with ' + polygon.length + ' rings (has holes!) — merging for triangulation');
                 const holePtsArrays = [];
                 for (let hi = 1; hi < polygon.length; hi++) {
                   const hRing = polygon[hi].slice();
