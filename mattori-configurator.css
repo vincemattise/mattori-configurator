@@ -1,7 +1,7 @@
 /* Self-hosted Nexa Bold — exact OTF from local system */
     @font-face {
       font-family: 'Nexa Bold';
-      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v46.1/NexaBold.otf') format('opentype');
+      src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v46.2/NexaBold.otf') format('opentype');
       font-weight: 700;
       font-style: normal;
       font-display: swap;
@@ -2379,20 +2379,21 @@
     /* ── Feedback corner ── */
     .mattori-configurator .wizard {
       position: relative;
-      overflow: hidden;
     }
     .mattori-configurator .feedback-corner {
       position: absolute;
       bottom: 0;
       right: 0;
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       cursor: pointer;
       z-index: 5;
+      border-radius: 0 0 14px 0;
+      overflow: hidden;
     }
     .mattori-configurator .feedback-corner:hover .feedback-corner-fold {
-      border-bottom-width: 44px;
-      border-left-width: 44px;
+      border-bottom-width: 40px;
+      border-left-width: 40px;
     }
     .mattori-configurator .feedback-corner-fold {
       position: absolute;
@@ -2402,24 +2403,24 @@
       height: 0;
       border-style: solid;
       border-width: 0;
-      border-bottom-width: 40px;
-      border-left-width: 40px;
+      border-bottom-width: 36px;
+      border-left-width: 36px;
       border-color: transparent transparent #e8e8e6 transparent;
       transition: border-width 0.15s ease;
     }
     .mattori-configurator .feedback-corner-icon {
       position: absolute;
-      bottom: 5px;
-      right: 3px;
-      width: 13px;
-      height: 13px;
+      bottom: 4px;
+      right: 4px;
+      width: 12px;
+      height: 12px;
       color: #999;
       pointer-events: none;
     }
 
     .mattori-configurator .feedback-popup {
       position: absolute;
-      bottom: 48px;
+      bottom: 44px;
       right: 8px;
       width: 240px;
       background: #fff;
@@ -2449,6 +2450,7 @@
       outline: none;
       transition: border-color 0.15s;
       color: #1a1a1a;
+      background: #fff;
     }
     .mattori-configurator .feedback-popup textarea:focus {
       border-color: #1a1a1a;
