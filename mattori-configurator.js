@@ -1468,6 +1468,11 @@
       if (!gridEditMode) return;
 
       var grid = getGridDimensions();
+      // Pixel-snap helper: round to nearest pixel + 0.5 so strokes sit on pixel center
+      // (both grid lines and alignment lines use this → guaranteed overlap)
+      var dpr = window.devicePixelRatio || 1;
+      function crispPx(v) { return (Math.round(v * dpr) + 0.5) / dpr; }
+
       var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('class', 'grid-overlay');
       svg.setAttribute('width', grid.zoneW);
@@ -1480,7 +1485,7 @@
       // 34 columns (fixed), vertical lines span only maxGridH (full rows)
       for (var x = 1; x < GRID_COLS; x++) {
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        var px = x * grid.cellPx;
+        var px = crispPx(x * grid.cellPx);
         line.setAttribute('x1', px); line.setAttribute('y1', 0);
         line.setAttribute('x2', px); line.setAttribute('y2', grid.maxGridH);
         var isMid = (x === midCol);
@@ -1490,14 +1495,15 @@
       }
       // Draw bottom border of grid at maxGridH (closes the last full row)
       var borderLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      borderLine.setAttribute('x1', 0); borderLine.setAttribute('y1', grid.maxGridH);
-      borderLine.setAttribute('x2', grid.zoneW); borderLine.setAttribute('y2', grid.maxGridH);
+      var crispMaxH = crispPx(grid.maxGridH);
+      borderLine.setAttribute('x1', 0); borderLine.setAttribute('y1', crispMaxH);
+      borderLine.setAttribute('x2', grid.zoneW); borderLine.setAttribute('y2', crispMaxH);
       borderLine.setAttribute('stroke', 'rgba(0,0,0,0.07)');
       borderLine.setAttribute('stroke-width', '0.5');
       svg.appendChild(borderLine);
       for (var y = 1; y < grid.visibleRows; y++) {
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        var py = y * grid.cellPx;
+        var py = crispPx(y * grid.cellPx);
         line.setAttribute('x1', 0); line.setAttribute('y1', py);
         line.setAttribute('x2', grid.zoneW); line.setAttribute('y2', py);
         var isMidH = (y === midRow);
@@ -1528,13 +1534,16 @@
       var lineColor = 'rgba(0, 0, 0, 0.55)';
       var lineWidth = '1.5';
       var cp = grid.cellPx;
+      // Same pixel-snap as grid overlay → guaranteed to overlap on same pixel
+      var dpr = window.devicePixelRatio || 1;
+      function crispPx(v) { return (Math.round(v * dpr) + 0.5) / dpr; }
 
       for (var ai = 0; ai < currentLayout.positions.length; ai++) {
         var pos = currentLayout.positions[ai];
         // anchorCellX/Y are integers → integer × cellPx = pixel-perfect grid crossing
         if (pos.anchorCellX == null || pos.anchorCellY == null) continue;
 
-        var vx = pos.anchorCellX * cp;
+        var vx = crispPx(pos.anchorCellX * cp);
         var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         vLine.setAttribute('x1', vx); vLine.setAttribute('y1', pos.y);
         vLine.setAttribute('x2', vx); vLine.setAttribute('y2', pos.y + pos.h);
@@ -1543,7 +1552,7 @@
         vLine.setAttribute('stroke-dasharray', '6 4');
         alignSvg.appendChild(vLine);
 
-        var hy = pos.anchorCellY * cp;
+        var hy = crispPx(pos.anchorCellY * cp);
         var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         hLine.setAttribute('x1', pos.x); hLine.setAttribute('y1', hy);
         hLine.setAttribute('x2', pos.x + pos.w); hLine.setAttribute('y2', hy);
