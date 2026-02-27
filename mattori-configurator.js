@@ -3222,14 +3222,14 @@
           // SVG line icons for alignment (small 14×14)
           // Minimal alignment icons: just the alignment line inside the button square
           var xIcons = {
-            left:   '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="2" y1="1" x2="2" y2="13" stroke="currentColor" stroke-width="2"/></svg>',
-            center: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" stroke-width="2"/></svg>',
-            right:  '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="12" y1="1" x2="12" y2="13" stroke="currentColor" stroke-width="2"/></svg>'
+            left:   '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="2" y1="0" x2="2" y2="14" stroke="currentColor" stroke-width="2"/></svg>',
+            center: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="7" y1="0" x2="7" y2="14" stroke="currentColor" stroke-width="2"/></svg>',
+            right:  '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="12" y1="0" x2="12" y2="14" stroke="currentColor" stroke-width="2"/></svg>'
           };
           var yIcons = {
-            top:    '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="1" y1="2" x2="13" y2="2" stroke="currentColor" stroke-width="2"/></svg>',
-            center: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="2"/></svg>',
-            bottom: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="1" y1="12" x2="13" y2="12" stroke="currentColor" stroke-width="2"/></svg>'
+            top:    '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="0" y1="2" x2="14" y2="2" stroke="currentColor" stroke-width="2"/></svg>',
+            center: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="0" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="2"/></svg>',
+            bottom: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="0" y1="12" x2="14" y2="12" stroke="currentColor" stroke-width="2"/></svg>'
           };
           var rotateIcon = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13 3v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 7c-.8-2.2-2.8-3.8-5.2-3.8-3.2 0-5.8 2.6-5.8 5.8s2.6 5.8 5.8 5.8c2.2 0 4-1.3 4.9-3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
 
