@@ -4866,11 +4866,11 @@
           });
         }
 
-        // Icon: relative+offset → absolute at computed position + Y correction
+        // Icon: relative+offset → absolute at computed position (no Y correction — icon was already correct)
         if (_icon && iconRect && overlayRect) {
           overrideStyle(_icon, {
             'position': 'absolute',
-            'top': Math.round(iconRect.top - overlayRect.top + addressYCorrection) + 'px',
+            'top': Math.round(iconRect.top - overlayRect.top) + 'px',
             'left': Math.round(iconRect.left - overlayRect.left) + 'px',
             'margin-bottom': '0',
             'margin-top': '0'
