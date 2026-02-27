@@ -4814,6 +4814,18 @@
             var style = clonedDoc.createElement('style');
             style.textContent = "@font-face { font-family: 'Nexa Bold'; src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v48.4/NexaBold.otf') format('opentype'); font-weight: 700; font-style: normal; }";
             clonedDoc.head.appendChild(style);
+            // Prevent text clipping — html2canvas renders fonts with slightly different metrics
+            var addrOverlay = clonedDoc.querySelector('.unified-address-overlay');
+            if (addrOverlay) addrOverlay.style.overflow = 'visible';
+            var addrInner = clonedDoc.querySelector('.unified-address-inner');
+            if (addrInner) addrInner.style.overflow = 'visible';
+            var fStreet = clonedDoc.querySelector('.frame-street');
+            if (fStreet) { fStreet.style.overflow = 'visible'; fStreet.style.textOverflow = 'unset'; }
+            var fCity = clonedDoc.querySelector('.frame-city');
+            if (fCity) { fCity.style.overflow = 'visible'; fCity.style.textOverflow = 'unset'; }
+            // Also unlock labels overlay clipping
+            var labelsOv = clonedDoc.querySelector('.unified-labels-overlay');
+            if (labelsOv) labelsOv.style.overflow = 'visible';
           }
         });
         var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
