@@ -2338,7 +2338,7 @@
         const rawName = floors[i].name || 'Verdieping';
         labels.push({
           index: i,
-          label: translateFloorName(rawName, isSingle)
+          label: rawName   // Use original floor name (as shown in step 4)
         });
       }
       return labels;
@@ -2399,9 +2399,8 @@
             el.classList.add('label-positioned');
             el.style.position = 'absolute';
             el.style.left = labelPositions[i].centerPct + '%';
-            el.style.transform = 'translateX(-50%)';
             el.style.top = '50%';
-            el.style.marginTop = '-0.6em';
+            el.style.transform = 'translate(-50%, -50%)';
           }
 
           unifiedLabelsOverlay.appendChild(el);
