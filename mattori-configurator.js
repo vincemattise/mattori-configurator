@@ -1493,6 +1493,8 @@
       if (!floorsGrid) return;
       var existing = floorsGrid.querySelector('.grid-overlay');
       if (existing) existing.remove();
+      var existingAlign = floorsGrid.querySelector('.align-overlay');
+      if (existingAlign) existingAlign.remove();
       // Respect user toggle
       if (!showGridOverlay) return;
       // Only show grid when edit mode is active
@@ -1531,6 +1533,50 @@
         svg.appendChild(line);
       }
       floorsGrid.insertBefore(svg, floorsGrid.firstChild);
+
+      // --- Alignment lines in a SEPARATE SVG (z-index:15 = on top of floors) ---
+      // Same parent (floorsGrid) = same coordinate origin = no sub-pixel drift vs grid
+      var existingAlign = floorsGrid.querySelector('.align-overlay');
+      if (existingAlign) existingAlign.remove();
+
+      if (currentLayout && currentLayout.positions) {
+        var alignSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        alignSvg.setAttribute('class', 'align-overlay');
+        alignSvg.setAttribute('width', grid.zoneW);
+        alignSvg.setAttribute('height', grid.zoneH);
+        alignSvg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:15;overflow:visible;';
+
+        var lineColor = 'rgba(0, 0, 0, 0.55)';
+        var lineWidth = '1.5';
+        for (var ai = 0; ai < currentLayout.positions.length; ai++) {
+          var pos = currentLayout.positions[ai];
+          var floorIdx = pos.index;
+          var thisAlignX = getFloorAlignX(floorIdx);
+          var thisAlignY = getFloorAlignY(floorIdx);
+
+          // Vertical alignment line in zone coordinates
+          var vx = thisAlignX === 'left' ? pos.x : thisAlignX === 'right' ? (pos.x + pos.w) : (pos.x + pos.w / 2);
+          var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          vLine.setAttribute('x1', vx); vLine.setAttribute('y1', pos.y);
+          vLine.setAttribute('x2', vx); vLine.setAttribute('y2', pos.y + pos.h);
+          vLine.setAttribute('stroke', lineColor);
+          vLine.setAttribute('stroke-width', lineWidth);
+          vLine.setAttribute('stroke-dasharray', '6 4');
+          alignSvg.appendChild(vLine);
+
+          // Horizontal alignment line in zone coordinates
+          var hy = thisAlignY === 'top' ? pos.y : thisAlignY === 'bottom' ? (pos.y + pos.h) : (pos.y + pos.h / 2);
+          var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          hLine.setAttribute('x1', pos.x); hLine.setAttribute('y1', hy);
+          hLine.setAttribute('x2', pos.x + pos.w); hLine.setAttribute('y2', hy);
+          hLine.setAttribute('stroke', lineColor);
+          hLine.setAttribute('stroke-width', lineWidth);
+          hLine.setAttribute('stroke-dasharray', '6 4');
+          alignSvg.appendChild(hLine);
+        }
+
+        floorsGrid.appendChild(alignSvg);
+      }
     }
 
     // --- Drag handlers ---
@@ -1570,57 +1616,9 @@
     }
 
     function addGridFloorButtons() {
+      // Alignment lines are now drawn in renderGridOverlay() (same SVG = no sub-pixel drift)
+      // This function is kept as a hook for future per-floor UI elements
       if (!gridEditMode || !floorsGrid || !showGridOverlay) return;
-      // Add alignment border lines to each floor thumbnail (only on alignment edges)
-      var wraps = floorsGrid.querySelectorAll('.floor-canvas-wrap');
-      var grid = getGridDimensions();
-      for (var wi = 0; wi < wraps.length; wi++) {
-        (function(wrap, posIdx) {
-          if (!currentLayout || !currentLayout.positions[posIdx]) return;
-          var pos = currentLayout.positions[posIdx];
-          var w = pos.w, h = pos.h;
-
-          var pad = 2; // padding so edge strokes aren't clipped
-          var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          svg.setAttribute('width', w + pad * 2);
-          svg.setAttribute('height', h + pad * 2);
-          svg.setAttribute('viewBox', (-pad) + ' ' + (-pad) + ' ' + (w + pad * 2) + ' ' + (h + pad * 2));
-          svg.style.cssText = 'position:absolute;top:' + (-pad) + 'px;left:' + (-pad) + 'px;pointer-events:none;z-index:15;overflow:visible;';
-
-          var lineColor = 'rgba(0, 0, 0, 0.55)';
-          var lineWidth = '1.5';
-
-          // Per-floor alignment
-          var floorIdx = pos.index;
-          var thisAlignX = getFloorAlignX(floorIdx);
-          var thisAlignY = getFloorAlignY(floorIdx);
-
-          // Draw alignment lines at the floor's alignment edge directly.
-          // No snapToGrid needed — computeFloorLayout already snapped the
-          // alignment edge to the grid. Re-snapping causes FP drift.
-          var vx = thisAlignX === 'left' ? 0 : thisAlignX === 'right' ? w : w / 2;
-
-          var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-          vLine.setAttribute('x1', vx); vLine.setAttribute('y1', 0);
-          vLine.setAttribute('x2', vx); vLine.setAttribute('y2', h);
-          vLine.setAttribute('stroke', lineColor);
-          vLine.setAttribute('stroke-width', lineWidth);
-          vLine.setAttribute('stroke-dasharray', '6 4');
-          svg.appendChild(vLine);
-
-          var hy = thisAlignY === 'top' ? 0 : thisAlignY === 'bottom' ? h : h / 2;
-
-          var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-          hLine.setAttribute('x1', 0); hLine.setAttribute('y1', hy);
-          hLine.setAttribute('x2', w); hLine.setAttribute('y2', hy);
-          hLine.setAttribute('stroke', lineColor);
-          hLine.setAttribute('stroke-width', lineWidth);
-          hLine.setAttribute('stroke-dasharray', '6 4');
-          svg.appendChild(hLine);
-
-          wrap.appendChild(svg);
-        })(wraps[wi], wi);
-      }
     }
 
     function disableGridDrag() {
@@ -1632,6 +1630,8 @@
 
       var gridEl = floorsGrid ? floorsGrid.querySelector('.grid-overlay') : null;
       if (gridEl) gridEl.remove();
+      var alignEl = floorsGrid ? floorsGrid.querySelector('.align-overlay') : null;
+      if (alignEl) alignEl.remove();
 
       _dragCleanups.forEach(function(fn) { fn(); });
       _dragCleanups = [];
@@ -3326,12 +3326,11 @@
             renderGridOverlay();
             addGridFloorButtons();
           } else {
-            // Remove grid overlay
+            // Remove grid overlay + alignment overlay
             var gridEl = floorsGrid ? floorsGrid.querySelector('.grid-overlay') : null;
             if (gridEl) gridEl.remove();
-            // Remove alignment line SVGs from floor wraps
-            var wraps = floorsGrid ? floorsGrid.querySelectorAll('.floor-canvas-wrap svg') : [];
-            for (var _sv = 0; _sv < wraps.length; _sv++) wraps[_sv].remove();
+            var alignEl = floorsGrid ? floorsGrid.querySelector('.align-overlay') : null;
+            if (alignEl) alignEl.remove();
           }
         };
       }
@@ -4781,17 +4780,20 @@
       var layoutNoteText = layoutNoteEl ? layoutNoteEl.value.trim() : '';
       if (layoutNoteText) itemProperties['Opmerking indeling'] = layoutNoteText;
 
-      // Hide grid overlay before screenshot
+      // Hide grid + alignment overlays before screenshot
       var _gridOverlayEl = floorsGrid ? floorsGrid.querySelector('.grid-overlay') : null;
+      var _alignOverlayEl = floorsGrid ? floorsGrid.querySelector('.align-overlay') : null;
       if (_gridOverlayEl) _gridOverlayEl.style.display = 'none';
+      if (_alignOverlayEl) _alignOverlayEl.style.display = 'none';
 
       // Save preview screenshot to localStorage keyed by Funda link (skip in noFloorsMode)
       if (!noFloorsMode && fundaLink) {
         await capturePreviewToLocalStorage(fundaLink);
       }
 
-      // Restore grid overlay
+      // Restore grid + alignment overlays
       if (_gridOverlayEl) _gridOverlayEl.style.display = '';
+      if (_alignOverlayEl) _alignOverlayEl.style.display = '';
 
       try {
         var res = await fetch('/cart/add.js', {
