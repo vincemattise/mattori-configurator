@@ -1595,11 +1595,14 @@
           var thisAlignX = getFloorAlignX(floorIdx);
           var thisAlignY = getFloorAlignY(floorIdx);
 
+          // Use pos.x/y from currentLayout (exact floats) instead of
+          // parseFloat(wrap.style.left/top) which the browser truncates
+          var posX = pos.x, posY = pos.y;
+
           // Compute alignment line positions SNAPPED to actual grid crossings
-          // Convert desired position to zone coords, snap to grid, convert back to local
           var rawVx = thisAlignX === 'left' ? 0 : thisAlignX === 'right' ? w : w / 2;
-          var zoneVx = parseFloat(wrap.style.left) + rawVx;
-          var vx = snapToGrid(zoneVx, grid.cellPx) - parseFloat(wrap.style.left);
+          var zoneVx = posX + rawVx;
+          var vx = snapToGrid(zoneVx, grid.cellPx) - posX;
 
           var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           vLine.setAttribute('x1', vx); vLine.setAttribute('y1', 0);
@@ -1610,8 +1613,8 @@
           svg.appendChild(vLine);
 
           var rawHy = thisAlignY === 'top' ? 0 : thisAlignY === 'bottom' ? h : h / 2;
-          var zoneHy = parseFloat(wrap.style.top) + rawHy;
-          var hy = snapToGrid(zoneHy, grid.cellPx) - parseFloat(wrap.style.top);
+          var zoneHy = posY + rawHy;
+          var hy = snapToGrid(zoneHy, grid.cellPx) - posY;
 
           var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           hLine.setAttribute('x1', 0); hLine.setAttribute('y1', hy);
