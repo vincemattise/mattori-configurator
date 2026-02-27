@@ -4806,7 +4806,16 @@
           useCORS: true,
           allowTaint: false,
           backgroundColor: '#ffffff',
-          scale: 2
+          scale: 2,
+          onclone: function(clonedDoc) {
+            // html2canvas renders text with slightly different metrics, causing
+            // overflow:hidden to clip the address lines. Only fix: unlock overflow.
+            var els = clonedDoc.querySelectorAll('.frame-street, .frame-city');
+            for (var i = 0; i < els.length; i++) {
+              els[i].style.overflow = 'visible';
+              els[i].style.textOverflow = 'unset';
+            }
+          }
         });
         var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
