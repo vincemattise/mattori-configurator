@@ -4794,70 +4794,20 @@
 
     // Order button — adds product to Shopify cart via Cart API
     // Capture screenshot of unified frame preview → upload to Railway + store in localStorage
+    // Uses html-to-image (SVG foreignObject) for pixel-perfect 1:1 capture
     async function captureAndUploadPreview(fundaLink) {
       var previewEl = document.getElementById('unifiedFramePreview');
-      if (!previewEl || typeof html2canvas === 'undefined') {
-        console.warn('[Mattori] Screenshot overgeslagen:', !previewEl ? 'geen preview element' : 'html2canvas niet geladen');
+      if (!previewEl || typeof htmlToImage === 'undefined') {
+        console.warn('[Mattori] Screenshot overgeslagen:', !previewEl ? 'geen preview element' : 'html-to-image niet geladen');
         return null;
       }
       try {
-        // Wait for all fonts (especially Nexa Bold) to be fully loaded before capturing
         await document.fonts.ready;
-
-        var canvas = await html2canvas(previewEl, {
-          useCORS: true,
-          allowTaint: false,
-          backgroundColor: '#ffffff',
-          scale: 2,
-          onclone: function(clonedDoc) {
-            // Ensure Nexa Bold font-face is defined in the cloned document
-            var style = clonedDoc.createElement('style');
-            style.textContent = "@font-face { font-family: 'Nexa Bold'; src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v48.4/NexaBold.otf') format('opentype'); font-weight: 700; font-style: normal; }";
-            clonedDoc.head.appendChild(style);
-
-            // Fix address position: html2canvas doesn't handle justify-content:flex-end
-            // combined with position:relative + negative top offsets correctly.
-            // Solution: read the actual visual position from the live DOM, then set the
-            // clone overlay to that exact pixel position with a simpler layout.
-            var parentRect = previewEl.getBoundingClientRect();
-            var liveIcon = previewEl.querySelector('.frame-house-icon');
-            var cloneOverlay = clonedDoc.querySelector('.unified-address-overlay');
-            if (cloneOverlay) {
-              if (liveIcon) {
-                var iconTop = liveIcon.getBoundingClientRect().top - parentRect.top;
-                cloneOverlay.style.top = iconTop + 'px';
-              }
-              cloneOverlay.style.height = 'auto';
-              cloneOverlay.style.justifyContent = 'flex-start';
-              cloneOverlay.style.overflow = 'visible';
-            }
-            // Remove negative offsets from children (already accounted for in container top)
-            var cloneIcon = clonedDoc.querySelector('.frame-house-icon');
-            if (cloneIcon) { cloneIcon.style.top = '0'; cloneIcon.style.marginBottom = '2px'; }
-            var addrInner = clonedDoc.querySelector('.unified-address-inner');
-            if (addrInner) {
-              // Nudge address text 3% up (relative to frame height) to match visual preview
-              addrInner.style.top = '-' + (parentRect.height * 0.03) + 'px';
-              addrInner.style.overflow = 'visible';
-            }
-            // Prevent text clipping
-            var fStreet = clonedDoc.querySelector('.frame-street');
-            if (fStreet) { fStreet.style.overflow = 'visible'; fStreet.style.textOverflow = 'unset'; }
-            var fCity = clonedDoc.querySelector('.frame-city');
-            if (fCity) { fCity.style.overflow = 'visible'; fCity.style.textOverflow = 'unset'; }
-            // Fix labels overlay position: read live position and apply pixel values
-            var liveLabels = previewEl.querySelector('.unified-labels-overlay');
-            var cloneLabels = clonedDoc.querySelector('.unified-labels-overlay');
-            if (liveLabels && cloneLabels) {
-              var labelsRect = liveLabels.getBoundingClientRect();
-              cloneLabels.style.top = (labelsRect.top - parentRect.top) + 'px';
-              cloneLabels.style.bottom = 'auto';
-              cloneLabels.style.height = labelsRect.height + 'px';
-              cloneLabels.style.overflow = 'visible';
-            }
-          }
+        var dataUrl = await htmlToImage.toJpeg(previewEl, {
+          quality: 0.85,
+          pixelRatio: 2,
+          backgroundColor: '#ffffff'
         });
-        var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
 
         // Store in localStorage for Shopify cart thumbnail display
         if (fundaLink) {
