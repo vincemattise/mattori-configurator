@@ -4841,9 +4841,16 @@
             if (fStreet) { fStreet.style.overflow = 'visible'; fStreet.style.textOverflow = 'unset'; }
             var fCity = clonedDoc.querySelector('.frame-city');
             if (fCity) { fCity.style.overflow = 'visible'; fCity.style.textOverflow = 'unset'; }
-            // Also unlock labels overlay clipping
-            var labelsOv = clonedDoc.querySelector('.unified-labels-overlay');
-            if (labelsOv) labelsOv.style.overflow = 'visible';
+            // Fix labels overlay position: read live position and apply pixel values
+            var liveLabels = previewEl.querySelector('.unified-labels-overlay');
+            var cloneLabels = clonedDoc.querySelector('.unified-labels-overlay');
+            if (liveLabels && cloneLabels) {
+              var labelsRect = liveLabels.getBoundingClientRect();
+              cloneLabels.style.top = (labelsRect.top - parentRect.top) + 'px';
+              cloneLabels.style.bottom = 'auto';
+              cloneLabels.style.height = labelsRect.height + 'px';
+              cloneLabels.style.overflow = 'visible';
+            }
           }
         });
         var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
