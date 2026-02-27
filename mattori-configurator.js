@@ -4825,8 +4825,6 @@
             if (cloneOverlay) {
               if (liveIcon) {
                 var iconTop = liveIcon.getBoundingClientRect().top - parentRect.top;
-                // Nudge address 3% up to match visual preview
-                iconTop -= parentRect.height * 0.03;
                 cloneOverlay.style.top = iconTop + 'px';
               }
               cloneOverlay.style.height = 'auto';
@@ -4837,7 +4835,11 @@
             var cloneIcon = clonedDoc.querySelector('.frame-house-icon');
             if (cloneIcon) { cloneIcon.style.top = '0'; cloneIcon.style.marginBottom = '2px'; }
             var addrInner = clonedDoc.querySelector('.unified-address-inner');
-            if (addrInner) { addrInner.style.top = '0'; addrInner.style.overflow = 'visible'; }
+            if (addrInner) {
+              // Nudge address text 3% up (relative to frame height) to match visual preview
+              addrInner.style.top = '-' + (parentRect.height * 0.03) + 'px';
+              addrInner.style.overflow = 'visible';
+            }
             // Prevent text clipping
             var fStreet = clonedDoc.querySelector('.frame-street');
             if (fStreet) { fStreet.style.overflow = 'visible'; fStreet.style.textOverflow = 'unset'; }
