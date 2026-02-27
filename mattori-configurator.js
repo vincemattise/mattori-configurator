@@ -1408,15 +1408,18 @@
 
     function getGridDimensions() {
       var overlay = floorsGrid ? floorsGrid.parentElement : null;
-      if (!overlay) return { cols: GRID_COLS, rows: GRID_ROWS, cellPx: 10, pxPerMm: 2, zoneW: 340, zoneH: 260 };
+      if (!overlay) return { cols: GRID_COLS, rows: GRID_ROWS, cellPx: 10, pxPerMm: 2, zoneW: 340, zoneH: 260, maxGridH: 260, visibleRows: 26 };
       var overlayRect = overlay.getBoundingClientRect();
       // cellPx based on width (the precise physical dimension)
       var cellPx = overlayRect.width / GRID_COLS;
       // Zone fills the full container
       var zoneW = overlayRect.width;
       var zoneH = overlayRect.height;
+      // maxGridH = only full rows (no partial bottom row)
+      var visibleRows = Math.floor(zoneH / cellPx);
+      var maxGridH = visibleRows * cellPx;
       var pxPerMm = cellPx / GRID_CELL_MM;
-      return { cols: GRID_COLS, rows: GRID_ROWS, cellPx: cellPx, pxPerMm: pxPerMm, zoneW: zoneW, zoneH: zoneH };
+      return { cols: GRID_COLS, rows: GRID_ROWS, cellPx: cellPx, pxPerMm: pxPerMm, zoneW: zoneW, zoneH: zoneH, maxGridH: maxGridH, visibleRows: visibleRows };
     }
 
     function snapToGrid(px, cellPx) {
@@ -1471,22 +1474,28 @@
       svg.setAttribute('height', grid.zoneH);
       svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:1;';
 
-      // Enough rows so no gap is larger than 1 cell
-      var visibleRows = Math.ceil(grid.zoneH / grid.cellPx);
+      // Only full rows — no partial bottom row
       var midCol = Math.floor(GRID_COLS / 2);
-      var midRow = Math.floor(visibleRows / 2);
-      // 34 columns (fixed), rows fill container height
+      var midRow = Math.floor(grid.visibleRows / 2);
+      // 34 columns (fixed), vertical lines span only maxGridH (full rows)
       for (var x = 1; x < GRID_COLS; x++) {
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         var px = x * grid.cellPx;
         line.setAttribute('x1', px); line.setAttribute('y1', 0);
-        line.setAttribute('x2', px); line.setAttribute('y2', grid.zoneH);
+        line.setAttribute('x2', px); line.setAttribute('y2', grid.maxGridH);
         var isMid = (x === midCol);
         line.setAttribute('stroke', isMid ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.07)');
         line.setAttribute('stroke-width', isMid ? '1.5' : '0.5');
         svg.appendChild(line);
       }
-      for (var y = 1; y < visibleRows; y++) {
+      // Draw bottom border of grid at maxGridH (closes the last full row)
+      var borderLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      borderLine.setAttribute('x1', 0); borderLine.setAttribute('y1', grid.maxGridH);
+      borderLine.setAttribute('x2', grid.zoneW); borderLine.setAttribute('y2', grid.maxGridH);
+      borderLine.setAttribute('stroke', 'rgba(0,0,0,0.07)');
+      borderLine.setAttribute('stroke-width', '0.5');
+      svg.appendChild(borderLine);
+      for (var y = 1; y < grid.visibleRows; y++) {
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         var py = y * grid.cellPx;
         line.setAttribute('x1', 0); line.setAttribute('y1', py);
@@ -1651,9 +1660,9 @@
         else if (alignY === 'center') newTop = snapToGrid(rawTop + wrapH / 2, cp) - wrapH / 2;
         else                          newTop = snapToGrid(rawTop, cp);
 
-        // Clamp within zone
+        // Clamp within zone (use maxGridH to prevent dragging into partial bottom row)
         newLeft = Math.max(0, Math.min(grid.zoneW - wrapW, newLeft));
-        newTop = Math.max(0, Math.min(grid.zoneH - wrapH, newTop));
+        newTop = Math.max(0, Math.min(grid.maxGridH - wrapH, newTop));
 
         wrap.style.left = newLeft + 'px';
         wrap.style.top = newTop + 'px';
@@ -2082,10 +2091,10 @@
         includedIndices = floorOrder.slice();
       }
 
-      // Get exact grid-native zone dimensions (no partial rows)
+      // Get exact grid-native zone dimensions (maxGridH = no partial rows)
       var grid = getGridDimensions();
       var zoneW = grid.zoneW;
-      var zoneH = grid.zoneH;
+      var zoneH = grid.maxGridH;  // use full-row height, not container height
 
       if (zoneW < 10 || zoneH < 10 || includedIndices.length === 0) return;
 
