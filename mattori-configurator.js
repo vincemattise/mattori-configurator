@@ -2998,12 +2998,18 @@
       });
     }
 
+    function showResetButton() {
+      var btn = document.getElementById('btnResetLayout');
+      if (btn) btn.style.display = 'inline-flex';
+    }
+
     function rotateFloor90(floorIndex) {
       if (!floorSettings[floorIndex]) floorSettings[floorIndex] = {};
       var current = getFloorRotate(floorIndex);
       floorSettings[floorIndex].rotate = (current + 90) % 360;
       // Only reset this floor's position, keep others (dimensions change on rotate)
       resetSingleFloorPosition(floorIndex);
+      showResetButton();
       renderPreviewThumbnails();
       renderGridOverlayIfStep4();
       updateFloorLabels();
@@ -3127,6 +3133,7 @@
             btn.addEventListener('click', function() {
               layoutScaleFactor = opt.val;
               customPositions = null;
+              showResetButton();
               var siblings = scaleGroup.querySelectorAll('.floor-align-btn');
               for (var s = 0; s < siblings.length; s++) siblings[s].classList.remove('active');
               this.classList.add('active');
@@ -3190,6 +3197,7 @@
                     if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
                     floorSettings[floorIdx].alignX = val;
                     reSnapFloorAlignment(floorIdx);
+                    showResetButton();
                     renderPreviewThumbnails();
                     renderGridOverlayIfStep4();
                     updateFloorLabels();
@@ -3217,6 +3225,7 @@
                     if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
                     floorSettings[floorIdx].alignY = val;
                     reSnapFloorAlignment(floorIdx);
+                    showResetButton();
                     renderPreviewThumbnails();
                     renderGridOverlayIfStep4();
                     updateFloorLabels();
@@ -3249,11 +3258,12 @@
       // ── Reset button (icon inside label — stop event so checkbox doesn't toggle) ──
       var btnReset = document.getElementById('btnResetLayout');
       if (btnReset) {
-        btnReset.style.display = customPositions ? 'inline-flex' : 'none';
         btnReset.onclick = function(e) {
           e.preventDefault();
           e.stopPropagation();
           customPositions = null;
+          layoutScaleFactor = 1.0;
+          floorSettings = {};
           layoutHasOverlap = false;
           renderPreviewThumbnails();
           renderGridOverlay();
@@ -3265,6 +3275,7 @@
             for (var _rw = 0; _rw < wraps.length; _rw++) attachDragHandlers(wraps[_rw], _rw);
             addGridFloorButtons();
           }
+          renderLayoutView();
           btnReset.style.display = 'none';
         };
       }
