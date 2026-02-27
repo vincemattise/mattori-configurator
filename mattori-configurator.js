@@ -1471,8 +1471,8 @@
       svg.setAttribute('height', grid.zoneH);
       svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:1;';
 
-      // How many rows actually fit in the container height
-      var visibleRows = Math.floor(grid.zoneH / grid.cellPx);
+      // Enough rows so no gap is larger than 1 cell
+      var visibleRows = Math.ceil(grid.zoneH / grid.cellPx);
       var midCol = Math.floor(GRID_COLS / 2);
       var midRow = Math.floor(visibleRows / 2);
       // 34 columns (fixed), rows fill container height
