@@ -4260,6 +4260,51 @@
           floorResult = newFloorResult;
         }
 
+        // === Bridge slabs: fill floor-thickness material under walls/balustrades floating over voids ===
+        // Without these, walls crossing stairwell openings float in mid-air (breaks 3D printing).
+        const bridgePolys = [];
+        for (const v of floorVoids) {
+          if (v.length < 3) continue;
+          const vRing = v.map(p => [p.x, p.y]);
+          const vf2 = vRing[0], vl2 = vRing[vRing.length - 1];
+          if (Math.hypot(vf2[0] - vl2[0], vf2[1] - vl2[1]) > 0.01) vRing.push([vf2[0], vf2[1]]);
+
+          // Intersect solid wall union footprints with this void
+          for (const wPoly of wallUnion) {
+            try {
+              const inter = polygonClipping.intersection([wPoly], [[vRing]]);
+              for (const p of inter) bridgePolys.push(p);
+            } catch (e) { /* skip on error */ }
+          }
+
+          // Intersect opening wall footprints with this void
+          for (const ow of openingWalls) {
+            const owr = wallToRect(ow, 0, 0);
+            if (!owr || owr.length < 4) continue;
+            const owRing = owr.slice(0, 4).map(p => [p[0], p[1]]);
+            owRing.push([owRing[0][0], owRing[0][1]]);
+            try {
+              const inter = polygonClipping.intersection([[owRing]], [[vRing]]);
+              for (const p of inter) bridgePolys.push(p);
+            } catch (e) { /* skip */ }
+          }
+
+          // Intersect balustrade strip/fill footprints with this void
+          const allBalPolys = [...balStripsOBJ, ...balFillsOBJ];
+          for (const bStrip of allBalPolys) {
+            if (bStrip.length < 3) continue;
+            const bRing = bStrip.map(p => [p.x, p.y]);
+            const bf = bRing[0], bl = bRing[bRing.length - 1];
+            if (Math.hypot(bf[0] - bl[0], bf[1] - bl[1]) > 0.01) bRing.push([bf[0], bf[1]]);
+            try {
+              const inter = polygonClipping.intersection([[bRing]], [[vRing]]);
+              for (const p of inter) bridgePolys.push(p);
+            } catch (e) { /* skip */ }
+          }
+        }
+        // Add bridge slabs to floor result — they'll be extruded with the same floor thickness
+        for (const bp of bridgePolys) floorResult.push(bp);
+
         // Extrude each result polygon
         const botY = (-FLOOR_THICKNESS).toFixed(4);
         const topY = (0).toFixed(4);
