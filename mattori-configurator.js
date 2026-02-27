@@ -3495,7 +3495,6 @@
       var commentsArea = document.createElement('textarea');
       commentsArea.id = 'labelComments';
       commentsArea.className = 'comments-textarea';
-      commentsArea.placeholder = 'Eventuele opmerkingen over de labels of het ontwerp...';
       commentsArea.value = labelComments || '';
       commentsArea.addEventListener('input', function() {
         labelComments = commentsArea.value;

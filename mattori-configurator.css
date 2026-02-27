@@ -2066,9 +2066,6 @@
       box-sizing: border-box;
     }
 
-    .mattori-configurator .comments-textarea::placeholder {
-      color: #999;
-    }
 
     .mattori-configurator .comments-textarea:focus {
       border-color: #1a1a1a;
