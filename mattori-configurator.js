@@ -1410,11 +1410,11 @@
       var overlay = floorsGrid ? floorsGrid.parentElement : null;
       if (!overlay) return { cols: GRID_COLS, rows: GRID_ROWS, cellPx: 10, pxPerMm: 2, zoneW: 340, zoneH: 260 };
       var overlayRect = overlay.getBoundingClientRect();
-      // cellPx = smallest of width/34 and height/26 so grid fits fully
-      var cellPx = Math.min(overlayRect.width / GRID_COLS, overlayRect.height / GRID_ROWS);
-      // Zone is exactly cols × rows cells — no partial rows
-      var zoneW = GRID_COLS * cellPx;
-      var zoneH = GRID_ROWS * cellPx;
+      // cellPx based on width (the precise physical dimension)
+      var cellPx = overlayRect.width / GRID_COLS;
+      // Zone fills the full container
+      var zoneW = overlayRect.width;
+      var zoneH = overlayRect.height;
       var pxPerMm = cellPx / GRID_CELL_MM;
       return { cols: GRID_COLS, rows: GRID_ROWS, cellPx: cellPx, pxPerMm: pxPerMm, zoneW: zoneW, zoneH: zoneH };
     }
@@ -2087,12 +2087,11 @@
 
       if (zoneW < 10 || zoneH < 10 || includedIndices.length === 0) return;
 
-      // Make floorsGrid exact grid size, centered in container
+      // Make floorsGrid fill container
       floorsGrid.style.position = 'relative';
-      floorsGrid.style.width = zoneW + 'px';
-      floorsGrid.style.height = zoneH + 'px';
+      floorsGrid.style.width = '100%';
+      floorsGrid.style.height = '100%';
       floorsGrid.style.display = 'block';
-      floorsGrid.style.margin = '0 auto';
 
       // Compute layout
       currentLayout = computeFloorLayout(zoneW, zoneH, includedIndices);
