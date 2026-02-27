@@ -4802,65 +4802,60 @@
       }
       try {
         await document.fonts.ready;
+
+        // Temporarily simplify the live DOM CSS before html2canvas clones it.
+        // html2canvas can't handle flex-end + negative top/margin combos,
+        // so we replace them with simple absolute pixel positions, then restore.
+        var _overlay = previewEl.querySelector('.unified-address-overlay');
+        var _icon = previewEl.querySelector('.frame-house-icon');
+        var _inner = previewEl.querySelector('.unified-address-inner');
+        var _street = previewEl.querySelector('.frame-street');
+        var _city = previewEl.querySelector('.frame-city');
+        var _labels = previewEl.querySelector('.unified-labels-overlay');
+        var _container = previewEl.querySelector('.unified-frame-container');
+        var _saved = {};
+
+        // Read all visual positions BEFORE changing anything
+        var contRect = _container ? _container.getBoundingClientRect() : previewEl.getBoundingClientRect();
+        if (_icon && _inner && _overlay) {
+          var iconRect = _icon.getBoundingClientRect();
+          var innerRect = _inner.getBoundingClientRect();
+          _saved.overlay = _overlay.style.cssText;
+          _saved.icon = _icon.style.cssText;
+          _saved.inner = _inner.style.cssText;
+          _saved.street = _street ? _street.style.cssText : '';
+          _saved.city = _city ? _city.style.cssText : '';
+
+          // Replace overlay flex layout with simple block
+          _overlay.style.cssText += '; display:block !important; overflow:visible !important;';
+          // Position icon absolutely at its current visual spot
+          _icon.style.cssText += '; position:absolute !important; top:' + (iconRect.top - contRect.top) + 'px !important; left:0 !important; right:0 !important; margin:0 auto !important;';
+          // Position address text at its current visual spot
+          _inner.style.cssText += '; position:absolute !important; top:' + (innerRect.top - contRect.top) + 'px !important; left:' + (innerRect.left - contRect.left) + 'px !important; width:' + innerRect.width + 'px !important;';
+          // Unlock text clipping
+          if (_street) _street.style.cssText += '; overflow:visible !important; text-overflow:unset !important;';
+          if (_city) _city.style.cssText += '; overflow:visible !important; text-overflow:unset !important;';
+        }
+        if (_labels) {
+          var labelsRect = _labels.getBoundingClientRect();
+          _saved.labels = _labels.style.cssText;
+          _labels.style.cssText += '; top:' + (labelsRect.top - contRect.top) + 'px !important; bottom:auto !important; overflow:visible !important;';
+        }
+
         var canvas = await html2canvas(previewEl, {
           useCORS: true,
           allowTaint: false,
           backgroundColor: '#ffffff',
-          scale: 2,
-          onclone: function(clonedDoc) {
-            // html2canvas can't handle flex-end + negative top/margin tricks.
-            // Fix: read exact pixel positions from the live DOM and apply as
-            // simple absolute positions in the clone. No flexbox, no offsets.
-            var parentRect = previewEl.getBoundingClientRect();
-
-            // --- Address overlay: icon + street + city ---
-            var liveOverlay = previewEl.querySelector('.unified-address-overlay');
-            var liveIcon = previewEl.querySelector('.frame-house-icon');
-            var liveInner = previewEl.querySelector('.unified-address-inner');
-            if (liveOverlay && liveIcon && liveInner) {
-              var overlayRect = liveOverlay.getBoundingClientRect();
-              var iconRect = liveIcon.getBoundingClientRect();
-              var innerRect = liveInner.getBoundingClientRect();
-
-              var co = clonedDoc.querySelector('.unified-address-overlay');
-              if (co) { co.style.display = 'block'; co.style.overflow = 'visible'; }
-
-              var ci = clonedDoc.querySelector('.frame-house-icon');
-              if (ci) {
-                ci.style.position = 'absolute';
-                ci.style.top = (iconRect.top - overlayRect.top) + 'px';
-                ci.style.left = '0'; ci.style.right = '0';
-                ci.style.margin = '0 auto';
-                ci.style.marginBottom = '0';
-              }
-
-              var cn = clonedDoc.querySelector('.unified-address-inner');
-              if (cn) {
-                cn.style.position = 'absolute';
-                cn.style.top = (innerRect.top - overlayRect.top) + 'px';
-                cn.style.left = '0'; cn.style.right = '0';
-                cn.style.overflow = 'visible';
-              }
-            }
-
-            // --- Text clipping fix ---
-            var txts = clonedDoc.querySelectorAll('.frame-street, .frame-city');
-            for (var t = 0; t < txts.length; t++) {
-              txts[t].style.overflow = 'visible';
-              txts[t].style.textOverflow = 'unset';
-            }
-
-            // --- Labels overlay: read live position ---
-            var liveLabels = previewEl.querySelector('.unified-labels-overlay');
-            var cloneLabels = clonedDoc.querySelector('.unified-labels-overlay');
-            if (liveLabels && cloneLabels) {
-              var labelsRect = liveLabels.getBoundingClientRect();
-              cloneLabels.style.top = (labelsRect.top - parentRect.top) + 'px';
-              cloneLabels.style.bottom = 'auto';
-              cloneLabels.style.overflow = 'visible';
-            }
-          }
+          scale: 2
         });
+
+        // Restore all original styles
+        if (_saved.overlay !== undefined) _overlay.style.cssText = _saved.overlay;
+        if (_saved.icon !== undefined) _icon.style.cssText = _saved.icon;
+        if (_saved.inner !== undefined) _inner.style.cssText = _saved.inner;
+        if (_saved.street !== undefined && _street) _street.style.cssText = _saved.street;
+        if (_saved.city !== undefined && _city) _city.style.cssText = _saved.city;
+        if (_saved.labels !== undefined) _labels.style.cssText = _saved.labels;
         var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
         // Store in localStorage for Shopify cart thumbnail display
