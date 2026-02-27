@@ -4852,6 +4852,9 @@
         // ── Flatten complex CSS to simple positioning for html2canvas ──
         // Problem: html2canvas can't handle flex-end + negative margins + relative offsets
         // Solution: read computed positions, then set simple absolute px values
+        // Y-axis corrections for html2canvas rendering offset (px, negative = up)
+        var addressYCorrection = -20;   // address elements: 20px up
+        var labelsYCorrection  = -10;   // floor plan labels: 10px up
 
         // Address overlay: flex-end → block with absolute children
         if (_overlay && overlayRect) {
@@ -4863,32 +4866,32 @@
           });
         }
 
-        // Icon: relative+offset → absolute at computed position
+        // Icon: relative+offset → absolute at computed position + Y correction
         if (_icon && iconRect && overlayRect) {
           overrideStyle(_icon, {
             'position': 'absolute',
-            'top': Math.round(iconRect.top - overlayRect.top) + 'px',
+            'top': Math.round(iconRect.top - overlayRect.top + addressYCorrection) + 'px',
             'left': Math.round(iconRect.left - overlayRect.left) + 'px',
             'margin-bottom': '0',
             'margin-top': '0'
           });
         }
 
-        // Inner text block: relative+offset → absolute at computed position
+        // Inner text block: relative+offset → absolute at computed position + Y correction
         if (_inner && innerRect && overlayRect) {
           overrideStyle(_inner, {
             'position': 'absolute',
-            'top': Math.round(innerRect.top - overlayRect.top) + 'px',
+            'top': Math.round(innerRect.top - overlayRect.top + addressYCorrection) + 'px',
             'left': '0',
             'right': '0',
             'width': '100%'
           });
         }
 
-        // Labels overlay: bottom-based → top-based (html2canvas handles top better)
+        // Labels overlay: bottom-based → top-based + Y correction
         if (_labels && labelsRect && contRect) {
           overrideStyle(_labels, {
-            'top': Math.round(labelsRect.top - contRect.top) + 'px',
+            'top': Math.round(labelsRect.top - contRect.top + labelsYCorrection) + 'px',
             'bottom': 'auto'
           });
         }
@@ -4908,11 +4911,6 @@
         }
 
         if (!canvas) return null;
-
-        // DEBUG: small green square as version marker v49.25 (TEMPORARY)
-        var ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#00ff00';
-        ctx.fillRect(Math.round(canvas.width * 0.22), Math.round(canvas.height * 0.22), 30, 30);
 
         var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
