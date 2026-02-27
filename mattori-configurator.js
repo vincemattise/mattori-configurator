@@ -4808,12 +4808,56 @@
           backgroundColor: '#ffffff',
           scale: 2,
           onclone: function(clonedDoc) {
-            // html2canvas renders text with slightly different metrics, causing
-            // overflow:hidden to clip the address lines. Only fix: unlock overflow.
-            var els = clonedDoc.querySelectorAll('.frame-street, .frame-city');
-            for (var i = 0; i < els.length; i++) {
-              els[i].style.overflow = 'visible';
-              els[i].style.textOverflow = 'unset';
+            // html2canvas can't handle flex-end + negative top/margin tricks.
+            // Fix: read exact pixel positions from the live DOM and apply as
+            // simple absolute positions in the clone. No flexbox, no offsets.
+            var parentRect = previewEl.getBoundingClientRect();
+
+            // --- Address overlay: icon + street + city ---
+            var liveOverlay = previewEl.querySelector('.unified-address-overlay');
+            var liveIcon = previewEl.querySelector('.frame-house-icon');
+            var liveInner = previewEl.querySelector('.unified-address-inner');
+            if (liveOverlay && liveIcon && liveInner) {
+              var overlayRect = liveOverlay.getBoundingClientRect();
+              var iconRect = liveIcon.getBoundingClientRect();
+              var innerRect = liveInner.getBoundingClientRect();
+
+              var co = clonedDoc.querySelector('.unified-address-overlay');
+              if (co) { co.style.display = 'block'; co.style.overflow = 'visible'; }
+
+              var ci = clonedDoc.querySelector('.frame-house-icon');
+              if (ci) {
+                ci.style.position = 'absolute';
+                ci.style.top = (iconRect.top - overlayRect.top) + 'px';
+                ci.style.left = '0'; ci.style.right = '0';
+                ci.style.margin = '0 auto';
+                ci.style.marginBottom = '0';
+              }
+
+              var cn = clonedDoc.querySelector('.unified-address-inner');
+              if (cn) {
+                cn.style.position = 'absolute';
+                cn.style.top = (innerRect.top - overlayRect.top) + 'px';
+                cn.style.left = '0'; cn.style.right = '0';
+                cn.style.overflow = 'visible';
+              }
+            }
+
+            // --- Text clipping fix ---
+            var txts = clonedDoc.querySelectorAll('.frame-street, .frame-city');
+            for (var t = 0; t < txts.length; t++) {
+              txts[t].style.overflow = 'visible';
+              txts[t].style.textOverflow = 'unset';
+            }
+
+            // --- Labels overlay: read live position ---
+            var liveLabels = previewEl.querySelector('.unified-labels-overlay');
+            var cloneLabels = clonedDoc.querySelector('.unified-labels-overlay');
+            if (liveLabels && cloneLabels) {
+              var labelsRect = liveLabels.getBoundingClientRect();
+              cloneLabels.style.top = (labelsRect.top - parentRect.top) + 'px';
+              cloneLabels.style.bottom = 'auto';
+              cloneLabels.style.overflow = 'visible';
             }
           }
         });
