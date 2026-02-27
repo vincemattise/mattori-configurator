@@ -4799,6 +4799,7 @@
         return null;
       }
       try {
+        console.log('[Mattori] Screenshot starten...');
         var canvas = await html2canvas(previewEl, {
           useCORS: true,
           allowTaint: false,
@@ -4806,6 +4807,7 @@
           scale: 0.75
         });
         var dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+        console.log('[Mattori] Screenshot gemaakt, grootte:', Math.round(dataUrl.length / 1024) + 'KB, uploaden...');
 
         // Upload to Railway backend
         var resp = await fetch('https://web-production-89353.up.railway.app/upload-preview', {
@@ -4813,15 +4815,21 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: dataUrl })
         });
-        if (!resp.ok) throw new Error('Upload status ' + resp.status);
+        console.log('[Mattori] Upload response status:', resp.status);
+        if (!resp.ok) {
+          var errText = await resp.text();
+          console.error('[Mattori] Upload fout:', resp.status, errText);
+          throw new Error('Upload status ' + resp.status);
+        }
         var result = await resp.json();
         if (result.url) {
           console.log('[Mattori] Preview uploaded:', result.url);
           return result.url;
         }
+        console.warn('[Mattori] Geen URL in response:', result);
         return null;
       } catch (e) {
-        console.warn('[Mattori] Preview upload mislukt:', e);
+        console.error('[Mattori] Preview upload mislukt:', e);
         return null;
       }
     }
