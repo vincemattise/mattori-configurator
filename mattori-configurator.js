@@ -4896,9 +4896,32 @@
         // ── PASS 2: Draw icon + text manually on canvas (bypasses html2canvas) ──
         var ctx = canvas.getContext('2d');
 
+        // DEBUG: draw diagnostic info on the canvas (TEMPORARY)
+        ctx.save();
+        ctx.font = '22px monospace';
+        ctx.fillStyle = 'red';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        var dbgY = 10;
+        ctx.fillText('draws:' + textDraws.length + ' icon:' + (iconDraw ? 'Y' : 'N'), 10, dbgY); dbgY += 26;
+        ctx.fillText('overlay:' + (_overlay ? _overlay.style.display || 'visible' : 'NULL'), 10, dbgY); dbgY += 26;
+        ctx.fillText('street:' + (_street ? JSON.stringify(_street.textContent.substring(0,15)) : 'NULL'), 10, dbgY); dbgY += 26;
+        ctx.fillText('city:' + (_city ? JSON.stringify(_city.textContent.substring(0,15)) : 'NULL'), 10, dbgY); dbgY += 26;
+        ctx.fillText('icon complete:' + (_icon ? _icon.complete : 'NULL') + ' nw:' + (_icon ? _icon.naturalWidth : '?'), 10, dbgY); dbgY += 26;
+        for (var di = 0; di < textDraws.length; di++) {
+          var dd = textDraws[di];
+          ctx.fillText(di + ': "' + dd.text.substring(0,12) + '" cx=' + Math.round(dd.cx) + ' y=' + Math.round(dd.y) + ' h=' + Math.round(dd.h), 10, dbgY);
+          dbgY += 26;
+          // Draw red crosshair at each text position
+          ctx.beginPath();
+          ctx.arc(dd.cx, dd.y + dd.h / 2, 8, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+
         // Draw house icon
         if (iconDraw) {
-          ctx.drawImage(iconDraw.img, iconDraw.x, iconDraw.y, iconDraw.w, iconDraw.h);
+          try { ctx.drawImage(iconDraw.img, iconDraw.x, iconDraw.y, iconDraw.w, iconDraw.h); } catch(e) {}
         }
 
         // Draw each text element at its exact live-DOM position
