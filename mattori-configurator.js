@@ -1554,36 +1554,29 @@
 
       var lineColor = 'rgba(0, 0, 0, 0.55)';
       var lineWidth = '1.5';
-      var cp = grid.cellPx;
-      // Helper: snap to nearest grid crossing so alignment lines sit
-      // exactly on grid lines (eliminates floating-point drift)
-      function snapLine(v) { return Math.round(v / cp) * cp; }
-
+      // Positions are already grid-snapped in renderPreviewThumbnails,
+      // so alignment lines use raw pos values — no extra snapping needed
       for (var ai = 0; ai < currentLayout.positions.length; ai++) {
         var pos = currentLayout.positions[ai];
         var floorIdx = pos.index;
         var thisAlignX = getFloorAlignX(floorIdx);
         var thisAlignY = getFloorAlignY(floorIdx);
 
-        var sx = snapLine(pos.x), sy = snapLine(pos.y);
-        var sw = snapLine(pos.x + pos.w) - sx;
-        var sh = snapLine(pos.y + pos.h) - sy;
-
-        // Vertical alignment line snapped to grid crossing
-        var vx = thisAlignX === 'left' ? sx : thisAlignX === 'right' ? (sx + sw) : snapLine(pos.x + pos.w / 2);
+        // Vertical alignment line at floor's alignment edge
+        var vx = thisAlignX === 'left' ? pos.x : thisAlignX === 'right' ? (pos.x + pos.w) : (pos.x + pos.w / 2);
         var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        vLine.setAttribute('x1', vx); vLine.setAttribute('y1', sy);
-        vLine.setAttribute('x2', vx); vLine.setAttribute('y2', sy + sh);
+        vLine.setAttribute('x1', vx); vLine.setAttribute('y1', pos.y);
+        vLine.setAttribute('x2', vx); vLine.setAttribute('y2', pos.y + pos.h);
         vLine.setAttribute('stroke', lineColor);
         vLine.setAttribute('stroke-width', lineWidth);
         vLine.setAttribute('stroke-dasharray', '6 4');
         alignSvg.appendChild(vLine);
 
-        // Horizontal alignment line snapped to grid crossing
-        var hy = thisAlignY === 'top' ? sy : thisAlignY === 'bottom' ? (sy + sh) : snapLine(pos.y + pos.h / 2);
+        // Horizontal alignment line at floor's alignment edge
+        var hy = thisAlignY === 'top' ? pos.y : thisAlignY === 'bottom' ? (pos.y + pos.h) : (pos.y + pos.h / 2);
         var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        hLine.setAttribute('x1', sx); hLine.setAttribute('y1', hy);
-        hLine.setAttribute('x2', sx + sw); hLine.setAttribute('y2', hy);
+        hLine.setAttribute('x1', pos.x); hLine.setAttribute('y1', hy);
+        hLine.setAttribute('x2', pos.x + pos.w); hLine.setAttribute('y2', hy);
         hLine.setAttribute('stroke', lineColor);
         hLine.setAttribute('stroke-width', lineWidth);
         hLine.setAttribute('stroke-dasharray', '6 4');
@@ -2162,6 +2155,18 @@
             currentLayout.positions[ci].y = _cp.gridY * _grid.cellPx;
           }
         }
+      }
+
+      // Snap all positions to exact grid crossings so floor wraps,
+      // alignment lines and grid lines share identical pixel values
+      var _snapG = getGridDimensions();
+      var _cPx = _snapG.cellPx;
+      for (var si = 0; si < currentLayout.positions.length; si++) {
+        var sp = currentLayout.positions[si];
+        sp.x = Math.round(sp.x / _cPx) * _cPx;
+        sp.y = Math.round(sp.y / _cPx) * _cPx;
+        sp.w = Math.round(sp.w / _cPx) * _cPx;
+        sp.h = Math.round(sp.h / _cPx) * _cPx;
       }
 
       // Always use ortho (flat 2D top-down) for unified preview
