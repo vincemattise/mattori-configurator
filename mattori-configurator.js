@@ -4860,12 +4860,21 @@
 
       if (noFloorsMode) itemProperties['Opmerking'] = 'Geen interactieve plattegronden — handmatig opbouwen';
 
+      // Scale factor (from step 4)
+      var scaleLabel = layoutScaleFactor <= 0.82 ? 'Klein' : layoutScaleFactor >= 1.1 ? 'Groot' : 'Normaal';
+      itemProperties['Schaal'] = scaleLabel;
+
       // Per-floor review status as individual order properties
       floors.forEach(function(floor, i) {
-        var status = floorReviewStatus[i];
-        if (!status) return;
         var floorName = floor.name || ('Verdieping ' + (i + 1));
         var key = 'Plattegrond ' + floorName;
+        // Mark excluded floors
+        if (excludedFloors.has(i)) {
+          itemProperties[key] = '\u2717 Uitgesloten';
+          return;
+        }
+        var status = floorReviewStatus[i];
+        if (!status) return;
         if (status === 'confirmed') {
           itemProperties[key] = '\u2713 Klopt';
         } else if (status === 'issue') {
