@@ -1471,9 +1471,11 @@
       svg.setAttribute('height', grid.zoneH);
       svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:1;';
 
+      // How many rows actually fit in the container height
+      var visibleRows = Math.floor(grid.zoneH / grid.cellPx);
       var midCol = Math.floor(GRID_COLS / 2);
-      var midRow = Math.floor(GRID_ROWS / 2);
-      // Exact 34×26 grid — no partial rows
+      var midRow = Math.floor(visibleRows / 2);
+      // 34 columns (fixed), rows fill container height
       for (var x = 1; x < GRID_COLS; x++) {
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         var px = x * grid.cellPx;
@@ -1484,7 +1486,7 @@
         line.setAttribute('stroke-width', isMid ? '1.5' : '0.5');
         svg.appendChild(line);
       }
-      for (var y = 1; y < GRID_ROWS; y++) {
+      for (var y = 1; y < visibleRows; y++) {
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         var py = y * grid.cellPx;
         line.setAttribute('x1', 0); line.setAttribute('y1', py);
