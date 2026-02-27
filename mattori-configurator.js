@@ -4804,166 +4804,115 @@
         await document.fonts.ready;
         var scale = 2;
 
-        // ── PASS 0: Read all text positions + styles from live DOM ──
-        var previewRect = previewEl.getBoundingClientRect();
+        // Get the container (containing block for absolute overlays)
+        var container = previewEl.querySelector('.unified-frame-container');
+        var contRect = container ? container.getBoundingClientRect() : previewEl.getBoundingClientRect();
+
+        // Elements that need CSS flattening
         var _overlay = previewEl.querySelector('.unified-address-overlay');
-        var _icon = previewEl.querySelector('.frame-house-icon');
-        var _street = previewEl.querySelector('.frame-street');
-        var _city = previewEl.querySelector('.frame-city');
-        var _labels = previewEl.querySelector('.unified-labels-overlay');
+        var _icon    = previewEl.querySelector('.frame-house-icon');
+        var _inner   = previewEl.querySelector('.unified-address-inner');
+        var _labels  = previewEl.querySelector('.unified-labels-overlay');
 
-        // Collect icon draw data
-        var iconDraw = null;
-        if (_icon && _icon.complete && _icon.naturalWidth > 0) {
-          var ir = _icon.getBoundingClientRect();
-          iconDraw = {
-            img: _icon,
-            x: (ir.left - previewRect.left) * scale,
-            y: (ir.top - previewRect.top) * scale,
-            w: ir.width * scale,
-            h: ir.height * scale
-          };
+        // ── Read exact pixel positions from live DOM BEFORE any style changes ──
+        function getRect(el) {
+          if (!el) return null;
+          var r = el.getBoundingClientRect();
+          return { top: r.top, left: r.left, width: r.width, height: r.height };
+        }
+        var overlayRect = getRect(_overlay);
+        var iconRect    = getRect(_icon);
+        var innerRect   = getRect(_inner);
+        var labelsRect  = getRect(_labels);
+
+        // ── Save + override styles (restore guaranteed via finally) ──
+        var savedStyles = [];
+        function overrideStyle(el, props) {
+          if (!el) return;
+          var orig = {};
+          for (var key in props) {
+            orig[key] = el.style.getPropertyValue(key);
+            el.style.setProperty(key, props[key], 'important');
+          }
+          savedStyles.push({ el: el, orig: orig });
+        }
+        function restoreAll() {
+          for (var i = 0; i < savedStyles.length; i++) {
+            var item = savedStyles[i];
+            for (var key in item.orig) {
+              if (item.orig[key]) {
+                item.el.style.setProperty(key, item.orig[key]);
+              } else {
+                item.el.style.removeProperty(key);
+              }
+            }
+          }
         }
 
-        // Collect text draw data (street, city, labels)
-        var textDraws = [];
-        if (_street && _street.textContent.trim()) {
-          var sr = _street.getBoundingClientRect();
-          var ss = window.getComputedStyle(_street);
-          textDraws.push({
-            text: _street.textContent.trim(),
-            cx: (sr.left - previewRect.left + sr.width / 2) * scale,
-            y: (sr.top - previewRect.top) * scale,
-            h: sr.height * scale,
-            fontSize: parseFloat(ss.fontSize) * scale,
-            fontFamily: ss.fontFamily,
-            fontWeight: ss.fontWeight,
-            color: ss.color,
-            letterSpacing: parseFloat(ss.letterSpacing) || 0
-          });
-        }
-        if (_city && _city.textContent.trim()) {
-          var cr = _city.getBoundingClientRect();
-          var cs = window.getComputedStyle(_city);
-          textDraws.push({
-            text: _city.textContent.trim(),
-            cx: (cr.left - previewRect.left + cr.width / 2) * scale,
-            y: (cr.top - previewRect.top) * scale,
-            h: cr.height * scale,
-            fontSize: parseFloat(cs.fontSize) * scale,
-            fontFamily: cs.fontFamily,
-            fontWeight: cs.fontWeight,
-            color: cs.color,
-            letterSpacing: parseFloat(cs.letterSpacing) || 0
-          });
-        }
-        var labelItems = previewEl.querySelectorAll('.label-item');
-        for (var li = 0; li < labelItems.length; li++) {
-          var el = labelItems[li];
-          if (!el.textContent.trim()) continue;
-          var lr = el.getBoundingClientRect();
-          var ls = window.getComputedStyle(el);
-          textDraws.push({
-            text: el.textContent.trim(),
-            cx: (lr.left - previewRect.left + lr.width / 2) * scale,
-            y: (lr.top - previewRect.top) * scale,
-            h: lr.height * scale,
-            fontSize: parseFloat(ls.fontSize) * scale,
-            fontFamily: ls.fontFamily,
-            fontWeight: ls.fontWeight,
-            color: ls.color,
-            letterSpacing: parseFloat(ls.letterSpacing) || 0
+        // ── Flatten complex CSS to simple positioning for html2canvas ──
+        // Problem: html2canvas can't handle flex-end + negative margins + relative offsets
+        // Solution: read computed positions, then set simple absolute px values
+
+        // Address overlay: flex-end → block with absolute children
+        if (_overlay && overlayRect) {
+          overrideStyle(_overlay, {
+            'display': 'block',
+            'justify-content': 'initial',
+            'flex-direction': 'initial',
+            'align-items': 'initial'
           });
         }
 
-        // ── PASS 1: Hide text overlays, render frame + floors with html2canvas ──
-        var savedOverlay = _overlay ? _overlay.style.display : '';
-        var savedLabels = _labels ? _labels.style.display : '';
-        if (_overlay) _overlay.style.display = 'none';
-        if (_labels) _labels.style.display = 'none';
+        // Icon: relative+offset → absolute at computed position
+        if (_icon && iconRect && overlayRect) {
+          overrideStyle(_icon, {
+            'position': 'absolute',
+            'top': Math.round(iconRect.top - overlayRect.top) + 'px',
+            'left': Math.round(iconRect.left - overlayRect.left) + 'px',
+            'margin-bottom': '0',
+            'margin-top': '0'
+          });
+        }
 
-        var canvas = await html2canvas(previewEl, {
-          useCORS: true,
-          allowTaint: false,
-          backgroundColor: '#ffffff',
-          scale: scale
-        });
+        // Inner text block: relative+offset → absolute at computed position
+        if (_inner && innerRect && overlayRect) {
+          overrideStyle(_inner, {
+            'position': 'absolute',
+            'top': Math.round(innerRect.top - overlayRect.top) + 'px',
+            'left': '0',
+            'right': '0',
+            'width': '100%'
+          });
+        }
 
-        // Restore overlays
-        if (_overlay) _overlay.style.display = savedOverlay;
-        if (_labels) _labels.style.display = savedLabels;
+        // Labels overlay: bottom-based → top-based (html2canvas handles top better)
+        if (_labels && labelsRect && contRect) {
+          overrideStyle(_labels, {
+            'top': Math.round(labelsRect.top - contRect.top) + 'px',
+            'bottom': 'auto'
+          });
+        }
 
-        // ── PASS 2: Draw icon + text manually on canvas (bypasses html2canvas) ──
+        // ── Render with html2canvas (all elements visible, text rendered by html2canvas) ──
+        var canvas;
+        try {
+          canvas = await html2canvas(previewEl, {
+            useCORS: true,
+            allowTaint: false,
+            backgroundColor: '#ffffff',
+            scale: scale
+          });
+        } finally {
+          // ALWAYS restore styles, even if html2canvas throws
+          restoreAll();
+        }
+
+        if (!canvas) return null;
+
+        // DEBUG: small green square as version marker v49.25 (TEMPORARY)
         var ctx = canvas.getContext('2d');
-
-        // DEBUG: draw diagnostic info at CENTER of canvas with yellow background (TEMPORARY)
-        ctx.save();
-        var dbgX = Math.round(canvas.width * 0.22);
-        var dbgTop = Math.round(canvas.height * 0.22);
-        var dbgLineH = 22;
-        var dbgLines = [
-          'v49.24 canvas:' + canvas.width + 'x' + canvas.height,
-          'pRect:' + Math.round(previewRect.width) + 'x' + Math.round(previewRect.height) + ' @' + Math.round(previewRect.left) + ',' + Math.round(previewRect.top),
-          'draws:' + textDraws.length + ' icon:' + (iconDraw ? 'Y x=' + Math.round(iconDraw.x) + ' y=' + Math.round(iconDraw.y) : 'N'),
-          'street:' + (_street ? '"' + _street.textContent.substring(0,18) + '"' : 'NULL'),
-          'city:' + (_city ? '"' + _city.textContent.substring(0,18) + '"' : 'NULL'),
-          'icon:' + (_icon ? 'c=' + _icon.complete + ' nw=' + _icon.naturalWidth : 'NULL')
-        ];
-        for (var di = 0; di < textDraws.length; di++) {
-          var dd = textDraws[di];
-          dbgLines.push(di + ':' + dd.text.substring(0,12) + ' cx=' + Math.round(dd.cx) + ' y=' + Math.round(dd.y) + ' h=' + Math.round(dd.h) + ' fs=' + Math.round(dd.fontSize));
-        }
-        // Yellow background
-        ctx.fillStyle = 'rgba(255,255,0,0.85)';
-        ctx.fillRect(dbgX - 6, dbgTop - 4, canvas.width * 0.58, dbgLines.length * dbgLineH + 8);
-        // Text
-        ctx.font = 'bold 18px monospace';
-        ctx.fillStyle = '#000';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        for (var dli = 0; dli < dbgLines.length; dli++) {
-          ctx.fillText(dbgLines[dli], dbgX, dbgTop + dli * dbgLineH);
-        }
-        // Red crosshairs at each text draw position
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 2;
-        for (var dci = 0; dci < textDraws.length; dci++) {
-          var dcd = textDraws[dci];
-          ctx.beginPath();
-          ctx.arc(dcd.cx, dcd.y + dcd.h / 2, 12, 0, Math.PI * 2);
-          ctx.stroke();
-          // Also draw a crosshair line
-          ctx.beginPath();
-          ctx.moveTo(dcd.cx - 16, dcd.y + dcd.h / 2);
-          ctx.lineTo(dcd.cx + 16, dcd.y + dcd.h / 2);
-          ctx.moveTo(dcd.cx, dcd.y + dcd.h / 2 - 16);
-          ctx.lineTo(dcd.cx, dcd.y + dcd.h / 2 + 16);
-          ctx.stroke();
-        }
-        // Blue crosshair for icon
-        if (iconDraw) {
-          ctx.strokeStyle = 'blue';
-          ctx.beginPath();
-          ctx.arc(iconDraw.x + iconDraw.w / 2, iconDraw.y + iconDraw.h / 2, 12, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-        ctx.restore();
-
-        // Draw house icon
-        if (iconDraw) {
-          try { ctx.drawImage(iconDraw.img, iconDraw.x, iconDraw.y, iconDraw.w, iconDraw.h); } catch(e) {}
-        }
-
-        // Draw each text element at its exact live-DOM position
-        for (var ti = 0; ti < textDraws.length; ti++) {
-          var td = textDraws[ti];
-          ctx.font = td.fontWeight + ' ' + td.fontSize + 'px ' + td.fontFamily;
-          ctx.fillStyle = td.color;
-          ctx.textAlign = 'center';
-          // Vertically center text within its line-box
-          ctx.textBaseline = 'middle';
-          ctx.fillText(td.text, td.cx, td.y + td.h / 2);
-        }
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(Math.round(canvas.width * 0.22), Math.round(canvas.height * 0.22), 30, 30);
 
         var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
