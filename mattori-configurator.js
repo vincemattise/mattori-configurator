@@ -3220,15 +3220,16 @@
         // Show per-floor controls for ALL included floors (even with 1 floor for rotation)
         if (includedForAlign.length >= 1) {
           // SVG line icons for alignment (small 14×14)
+          // Minimal alignment icons: just the alignment line inside the button square
           var xIcons = {
-            left:   '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="1.5" y1="1" x2="1.5" y2="13" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="3" width="8" height="3" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="3" y="8" width="5" height="3" rx="0.5" fill="currentColor" opacity="0.35"/></svg>',
-            center: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" stroke-width="1" stroke-dasharray="2 1.5"/><rect x="2" y="3" width="10" height="3" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="3.5" y="8" width="7" height="3" rx="0.5" fill="currentColor" opacity="0.35"/></svg>',
-            right:  '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="12.5" y1="1" x2="12.5" y2="13" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="3" width="8" height="3" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="6" y="8" width="5" height="3" rx="0.5" fill="currentColor" opacity="0.35"/></svg>'
+            left:   '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="2" y1="1" x2="2" y2="13" stroke="currentColor" stroke-width="2"/></svg>',
+            center: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" stroke-width="2"/></svg>',
+            right:  '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="12" y1="1" x2="12" y2="13" stroke="currentColor" stroke-width="2"/></svg>'
           };
           var yIcons = {
-            top:    '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="1" y1="1.5" x2="13" y2="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="3" width="4" height="8" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="8" y="3" width="4" height="5" rx="0.5" fill="currentColor" opacity="0.35"/></svg>',
-            center: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="1" stroke-dasharray="2 1.5"/><rect x="2" y="1" width="4" height="12" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="8" y="3" width="4" height="8" rx="0.5" fill="currentColor" opacity="0.35"/></svg>',
-            bottom: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="1" y1="12.5" x2="13" y2="12.5" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="3" width="4" height="8" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="8" y="6" width="4" height="5" rx="0.5" fill="currentColor" opacity="0.35"/></svg>'
+            top:    '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="1" y1="2" x2="13" y2="2" stroke="currentColor" stroke-width="2"/></svg>',
+            center: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="2"/></svg>',
+            bottom: '<svg width="14" height="14" viewBox="0 0 14 14"><line x1="1" y1="12" x2="13" y2="12" stroke="currentColor" stroke-width="2"/></svg>'
           };
           var rotateIcon = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13 3v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 7c-.8-2.2-2.8-3.8-5.2-3.8-3.2 0-5.8 2.6-5.8 5.8s2.6 5.8 5.8 5.8c2.2 0 4-1.3 4.9-3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
 
@@ -3272,7 +3273,7 @@
 
               // Y alignment buttons (line icons)
               var yBtns = document.createElement('span');
-              yBtns.className = 'per-floor-btns';
+              yBtns.className = 'per-floor-btns per-floor-btns-y';
               var yVals = ['top', 'center', 'bottom'];
               var currentY = (floorSettings[floorIdx] && floorSettings[floorIdx].alignY) || layoutAlignY;
               for (var by = 0; by < yVals.length; by++) {
