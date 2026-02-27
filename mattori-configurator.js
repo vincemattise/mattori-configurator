@@ -4818,49 +4818,66 @@
         var contRect = _container ? _container.getBoundingClientRect() : previewEl.getBoundingClientRect();
 
         // ── Modify LIVE DOM before html2canvas clones it ──
-        // (onclone doesn't work — html2canvas ignores clone modifications)
+        // Use setAttribute to COMPLETELY REPLACE styles (no duplicates).
+        // Then double-RAF to guarantee browser has painted the changes.
         if (_icon && _inner && _overlay) {
           var overlayRect = _overlay.getBoundingClientRect();
           var iconRect = _icon.getBoundingClientRect();
           var innerRect = _inner.getBoundingClientRect();
-          // Where the icon visually starts, relative to overlay top
-          var iconTop = iconRect.top - overlayRect.top;
-          // Gap between icon bottom and inner text top
-          var gapIconInner = innerRect.top - iconRect.bottom;
 
-          _saved.overlay = _overlay.style.cssText;
-          _saved.icon = _icon.style.cssText;
-          _saved.inner = _inner.style.cssText;
+          _saved.overlay = _overlay.getAttribute('style') || '';
+          _saved.icon = _icon.getAttribute('style') || '';
+          _saved.inner = _inner.getAttribute('style') || '';
 
-          // Replace flex-end with flex-start + padding-top (html2canvas-friendly)
-          _overlay.style.setProperty('justify-content', 'flex-start', 'important');
-          _overlay.style.setProperty('padding-top', iconTop + 'px', 'important');
-          _overlay.style.setProperty('overflow', 'visible', 'important');
-          // Remove problematic negative offsets — padding-top compensates
-          _icon.style.setProperty('position', 'static', 'important');
-          _icon.style.setProperty('margin-bottom', gapIconInner + 'px', 'important');
-          _inner.style.setProperty('position', 'static', 'important');
+          // COMPLETELY replace overlay style: flex-start + padding instead of flex-end
+          var iconTopPx = iconRect.top - overlayRect.top;
+          var gapPx = innerRect.top - iconRect.bottom;
+          _overlay.setAttribute('style',
+            'position:absolute;' +
+            'top:' + (overlayRect.top - contRect.top) + 'px;' +
+            'left:' + (overlayRect.left - contRect.left) + 'px;' +
+            'width:' + overlayRect.width + 'px;' +
+            'height:' + overlayRect.height + 'px;' +
+            'display:flex; flex-direction:column; align-items:center;' +
+            'justify-content:flex-start;' +
+            'padding-top:' + iconTopPx + 'px;' +
+            'overflow:visible; pointer-events:none; box-sizing:border-box;'
+          );
+          // Icon: remove negative offsets, use measured gap as margin
+          _icon.setAttribute('style',
+            'width:21px; height:21px; object-fit:contain; display:block;' +
+            'position:static; top:auto; margin-bottom:' + gapPx + 'px;'
+          );
+          // Inner: simple static flow, no relative offset
+          _inner.setAttribute('style',
+            'text-align:center; white-space:nowrap; width:100%;' +
+            'position:static; top:auto;'
+          );
 
           var _street = previewEl.querySelector('.frame-street');
           var _city = previewEl.querySelector('.frame-city');
-          _saved.street = _street ? _street.style.cssText : '';
-          _saved.city = _city ? _city.style.cssText : '';
-          if (_street) {
-            _street.style.setProperty('overflow', 'visible', 'important');
-            _street.style.setProperty('text-overflow', 'unset', 'important');
-          }
-          if (_city) {
-            _city.style.setProperty('overflow', 'visible', 'important');
-            _city.style.setProperty('text-overflow', 'unset', 'important');
-          }
+          _saved.street = _street ? (_street.getAttribute('style') || '') : '';
+          _saved.city = _city ? (_city.getAttribute('style') || '') : '';
+          if (_street) _street.setAttribute('style', 'overflow:visible; text-overflow:unset;');
+          if (_city) _city.setAttribute('style', 'overflow:visible; text-overflow:unset;');
         }
         if (_labels) {
           var labelsRect = _labels.getBoundingClientRect();
-          _saved.labels = _labels.style.cssText;
-          _labels.style.setProperty('top', (labelsRect.top - contRect.top) + 'px', 'important');
-          _labels.style.setProperty('bottom', 'auto', 'important');
-          _labels.style.setProperty('overflow', 'visible', 'important');
+          _saved.labels = _labels.getAttribute('style') || '';
+          _labels.setAttribute('style',
+            'position:absolute;' +
+            'top:' + (labelsRect.top - contRect.top) + 'px;' +
+            'left:' + (labelsRect.left - contRect.left) + 'px;' +
+            'width:' + labelsRect.width + 'px;' +
+            'height:' + labelsRect.height + 'px;' +
+            'display:flex; align-items:center; justify-content:space-evenly;' +
+            'overflow:visible; pointer-events:none;'
+          );
         }
+
+        // Force layout reflow + wait for paint to complete
+        void previewEl.offsetHeight;
+        await new Promise(function(r) { requestAnimationFrame(function() { requestAnimationFrame(r); }); });
 
         var canvas = await html2canvas(previewEl, {
           useCORS: true,
@@ -4869,19 +4886,19 @@
           scale: 2
         });
 
-        // ── Restore all original styles ──
-        if (_saved.overlay !== undefined) _overlay.style.cssText = _saved.overlay;
-        if (_saved.icon !== undefined) _icon.style.cssText = _saved.icon;
-        if (_saved.inner !== undefined) _inner.style.cssText = _saved.inner;
+        // ── Restore all original styles via setAttribute ──
+        if (_saved.overlay !== undefined) { if (_saved.overlay) _overlay.setAttribute('style', _saved.overlay); else _overlay.removeAttribute('style'); }
+        if (_saved.icon !== undefined) { if (_saved.icon) _icon.setAttribute('style', _saved.icon); else _icon.removeAttribute('style'); }
+        if (_saved.inner !== undefined) { if (_saved.inner) _inner.setAttribute('style', _saved.inner); else _inner.removeAttribute('style'); }
         if (_saved.street !== undefined) {
           var _s = previewEl.querySelector('.frame-street');
-          if (_s) _s.style.cssText = _saved.street;
+          if (_s) { if (_saved.street) _s.setAttribute('style', _saved.street); else _s.removeAttribute('style'); }
         }
         if (_saved.city !== undefined) {
           var _c = previewEl.querySelector('.frame-city');
-          if (_c) _c.style.cssText = _saved.city;
+          if (_c) { if (_saved.city) _c.setAttribute('style', _saved.city); else _c.removeAttribute('style'); }
         }
-        if (_saved.labels !== undefined) _labels.style.cssText = _saved.labels;
+        if (_saved.labels !== undefined) { if (_saved.labels) _labels.setAttribute('style', _saved.labels); else _labels.removeAttribute('style'); }
         var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
         // Store in localStorage for Shopify cart thumbnail display
