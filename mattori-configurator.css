@@ -995,8 +995,9 @@
     }
 
     .mattori-configurator .btn-start-configurator:disabled {
-      opacity: 0.5;
+      opacity: 0.35;
       cursor: wait;
+      pointer-events: none;
     }
 
     .mattori-configurator .btn-start-configurator:hover:not(:disabled) {

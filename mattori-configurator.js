@@ -5006,6 +5006,7 @@
       });
       // Enable button now that JS is loaded and startConfigurator exists
       btnStartConfigurator.disabled = false;
+      btnStartConfigurator.classList.add('ready');
     }
 
     /* ── Feedback corner ── */
