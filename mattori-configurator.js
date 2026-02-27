@@ -1409,8 +1409,10 @@
       var overlayRect = overlay.getBoundingClientRect();
       var zoneW = overlayRect.width;
       var zoneH = overlayRect.height;
-      var pxPerMm = zoneW / ZONE_PHYSICAL_W_MM;
-      var cellPx = GRID_CELL_MM * pxPerMm;
+      // Use the cellPx from the latest layout computation to avoid
+      // floating-point drift between layout snap and grid rendering
+      var cellPx = (currentLayout && currentLayout.cellPx) ? currentLayout.cellPx : (GRID_CELL_MM * (zoneW / ZONE_PHYSICAL_W_MM));
+      var pxPerMm = cellPx / GRID_CELL_MM;
       var cols = Math.floor(ZONE_PHYSICAL_W_MM / GRID_CELL_MM);
       var rows = Math.floor(ZONE_PHYSICAL_H_MM / GRID_CELL_MM);
       return { cols: cols, rows: rows, cellPx: cellPx, pxPerMm: pxPerMm, zoneW: zoneW, zoneH: zoneH };
@@ -1946,7 +1948,7 @@
         }
       }
 
-      return { scale: finalScale, positions: result, type: best.type };
+      return { scale: finalScale, positions: result, type: best.type, cellPx: cellPx };
     }
 
     function layoutSingle(items) {
