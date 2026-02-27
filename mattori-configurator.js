@@ -1140,10 +1140,7 @@
 
       // Show admin export buttons + frame toggle
       document.getElementById('uploadActions').classList.add('active');
-      for (const n of [1, 2]) {
-        const bt = document.getElementById('btnTest' + n);
-        if (bt) bt.style.display = 'none';
-      }
+      // Test 1 & 2 buttons visible (were previously hidden)
       var adminFrameToggle = document.getElementById('adminFrameToggle');
       if (adminFrameToggle) adminFrameToggle.style.display = '';
       // Layout controls moved to step 4 per-floor cards
