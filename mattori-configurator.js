@@ -2289,6 +2289,7 @@
     let floorLabels = [];
     var labelMode = 'single'; // 'single' = 1 label total, 'per-floor' = label per floor
     var singleLabelText = 'floor plan';
+    var labelComments = '';    // Free-text comments from step 5
 
     function translateFloorName(name, singleFloor) {
       const lower = name.toLowerCase().trim();
@@ -2329,16 +2330,31 @@
       if (floorOrder && floorOrder.length === includedIndices.length) {
         includedIndices = floorOrder.slice();
       }
-      const regularCount = includedIndices.filter(i => {
-        const n = (floors[i].name || '').toLowerCase().trim();
-        return !(/^(kelder|zolder|berging|garage|dak|tuin)/.test(n));
-      }).length;
-      const isSingle = regularCount <= 1;
+
+      // Sort by visual X position (left-to-right) for ordinal numbering
+      var sortedByX = includedIndices.slice();
+      if (currentLayout && currentLayout.positions) {
+        sortedByX.sort(function(a, b) {
+          var posA = currentLayout.positions.find(function(p) { return p.index === a; });
+          var posB = currentLayout.positions.find(function(p) { return p.index === b; });
+          var xA = posA ? posA.x + posA.w / 2 : 0;
+          var xB = posB ? posB.x + posB.w / 2 : 0;
+          return xA - xB;
+        });
+      }
+
+      // Assign ordinal labels: 1st floor, 2nd floor, ... (lowercase, left-to-right)
+      var ordinalMap = {};
+      for (var oi = 0; oi < sortedByX.length; oi++) {
+        var n = oi + 1;
+        var suf = n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th';
+        ordinalMap[sortedByX[oi]] = n + suf + ' floor';
+      }
+
       for (const i of includedIndices) {
-        const rawName = floors[i].name || 'Verdieping';
         labels.push({
           index: i,
-          label: rawName   // Use original floor name (as shown in step 4)
+          label: ordinalMap[i] || 'floor plan'
         });
       }
       return labels;
@@ -3470,6 +3486,23 @@
 
       renderLabelsFieldsContent();
       updateFloorLabels();
+
+      // Comments text area
+      var commentsLabel = document.createElement('label');
+      commentsLabel.className = 'comments-label';
+      commentsLabel.textContent = 'Opmerkingen';
+      commentsLabel.style.cssText = 'display:block;margin-top:1.2rem;font-size:0.85rem;font-weight:600;color:#555;margin-bottom:0.4rem;';
+      container.appendChild(commentsLabel);
+
+      var commentsArea = document.createElement('textarea');
+      commentsArea.id = 'labelComments';
+      commentsArea.className = 'comments-textarea';
+      commentsArea.placeholder = 'Eventuele opmerkingen over de labels of het ontwerp...';
+      commentsArea.value = labelComments || '';
+      commentsArea.addEventListener('input', function() {
+        labelComments = commentsArea.value;
+      });
+      container.appendChild(commentsArea);
     }
 
     function renderLabelsFieldsContent() {
@@ -4811,6 +4844,11 @@
         currentLabels.forEach(function(item) {
           itemProperties['Onderschrift ' + (floors[item.index] ? floors[item.index].name : 'Verdieping')] = item.label;
         });
+      }
+
+      // Comments from step 5
+      if (labelComments.trim()) {
+        itemProperties['Opmerkingen'] = labelComments.trim();
       }
 
       // Grid positions (from manual layout adjustment in step 4)
