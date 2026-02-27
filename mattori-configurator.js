@@ -1479,9 +1479,11 @@
       // Clamp within zone
       newLeft = Math.max(0, Math.min(grid.zoneW - w, newLeft));
       newTop = Math.max(0, Math.min(grid.zoneH - h, newTop));
-      // Store re-snapped position (top-left grid coord)
-      cp.gridX = pxToGridCoord(newLeft, grid.cellPx);
-      cp.gridY = pxToGridCoord(newTop, grid.cellPx);
+      // Store re-snapped position as precise float (don't round —
+      // the alignment edge must stay on the grid crossing, even if
+      // the top-left corner isn't on one)
+      cp.gridX = newLeft / grid.cellPx;
+      cp.gridY = newTop / grid.cellPx;
     }
 
     // --- Grid overlay (SVG) ---
@@ -1576,11 +1578,12 @@
           var pos = currentLayout.positions[posIdx];
           var w = pos.w, h = pos.h;
 
+          var pad = 2; // padding so edge strokes aren't clipped
           var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          svg.setAttribute('width', w);
-          svg.setAttribute('height', h);
-          svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
-          svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:15;';
+          svg.setAttribute('width', w + pad * 2);
+          svg.setAttribute('height', h + pad * 2);
+          svg.setAttribute('viewBox', (-pad) + ' ' + (-pad) + ' ' + (w + pad * 2) + ' ' + (h + pad * 2));
+          svg.style.cssText = 'position:absolute;top:' + (-pad) + 'px;left:' + (-pad) + 'px;pointer-events:none;z-index:15;overflow:visible;';
 
           var lineColor = 'rgba(0, 0, 0, 0.55)';
           var lineWidth = '1.5';
