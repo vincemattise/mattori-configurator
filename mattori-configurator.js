@@ -4803,59 +4803,75 @@
       try {
         await document.fonts.ready;
 
-        // Temporarily simplify the live DOM CSS before html2canvas clones it.
+        // Read visual positions from the correctly-rendered live DOM.
         // html2canvas can't handle flex-end + negative top/margin combos,
-        // so we replace them with simple absolute pixel positions, then restore.
+        // so in onclone we replace them with simple absolute pixel positions.
+        // KEY: icon & inner are children of overlay (position:absolute), so
+        // their positions must be relative to overlay, NOT the container.
         var _overlay = previewEl.querySelector('.unified-address-overlay');
         var _icon = previewEl.querySelector('.frame-house-icon');
         var _inner = previewEl.querySelector('.unified-address-inner');
-        var _street = previewEl.querySelector('.frame-street');
-        var _city = previewEl.querySelector('.frame-city');
         var _labels = previewEl.querySelector('.unified-labels-overlay');
         var _container = previewEl.querySelector('.unified-frame-container');
-        var _saved = {};
 
-        // Read all visual positions BEFORE changing anything
+        var pos = {};
         var contRect = _container ? _container.getBoundingClientRect() : previewEl.getBoundingClientRect();
+
         if (_icon && _inner && _overlay) {
+          var overlayRect = _overlay.getBoundingClientRect();
           var iconRect = _icon.getBoundingClientRect();
           var innerRect = _inner.getBoundingClientRect();
-          _saved.overlay = _overlay.style.cssText;
-          _saved.icon = _icon.style.cssText;
-          _saved.inner = _inner.style.cssText;
-          _saved.street = _street ? _street.style.cssText : '';
-          _saved.city = _city ? _city.style.cssText : '';
-
-          // Replace overlay flex layout with simple block
-          _overlay.style.cssText += '; display:block !important; overflow:visible !important;';
-          // Position icon absolutely at its current visual spot
-          _icon.style.cssText += '; position:absolute !important; top:' + (iconRect.top - contRect.top) + 'px !important; left:0 !important; right:0 !important; margin:0 auto !important;';
-          // Position address text at its current visual spot
-          _inner.style.cssText += '; position:absolute !important; top:' + (innerRect.top - contRect.top) + 'px !important; left:' + (innerRect.left - contRect.left) + 'px !important; width:' + innerRect.width + 'px !important;';
-          // Unlock text clipping
-          if (_street) _street.style.cssText += '; overflow:visible !important; text-overflow:unset !important;';
-          if (_city) _city.style.cssText += '; overflow:visible !important; text-overflow:unset !important;';
+          // Positions relative to the OVERLAY (their positioned ancestor)
+          pos.iconTop = iconRect.top - overlayRect.top;
+          pos.iconLeft = iconRect.left - overlayRect.left;
+          pos.innerTop = innerRect.top - overlayRect.top;
+          pos.innerLeft = innerRect.left - overlayRect.left;
+          pos.innerWidth = innerRect.width;
+          pos.hasAddr = true;
         }
         if (_labels) {
           var labelsRect = _labels.getBoundingClientRect();
-          _saved.labels = _labels.style.cssText;
-          _labels.style.cssText += '; top:' + (labelsRect.top - contRect.top) + 'px !important; bottom:auto !important; overflow:visible !important;';
+          // Labels overlay is a direct child of container, so relative to container
+          pos.labelsTop = labelsRect.top - contRect.top;
+          pos.hasLabels = true;
         }
 
         var canvas = await html2canvas(previewEl, {
           useCORS: true,
           allowTaint: false,
           backgroundColor: '#ffffff',
-          scale: 2
+          scale: 2,
+          onclone: function(clonedDoc) {
+            var cp = clonedDoc.getElementById('unifiedFramePreview');
+            if (!cp) return;
+
+            if (pos.hasAddr) {
+              var co = cp.querySelector('.unified-address-overlay');
+              var ci = cp.querySelector('.frame-house-icon');
+              var cn = cp.querySelector('.unified-address-inner');
+              var cs = cp.querySelector('.frame-street');
+              var cc = cp.querySelector('.frame-city');
+
+              // Replace flex layout with block so html2canvas doesn't misplace content
+              if (co) co.style.cssText += '; display:block !important; overflow:visible !important;';
+              // Position icon at its exact visual spot (relative to overlay)
+              if (ci) ci.style.cssText += '; position:absolute !important; top:' + pos.iconTop + 'px !important; left:' + pos.iconLeft + 'px !important; margin:0 !important; right:auto !important;';
+              // Position address text at its exact visual spot (relative to overlay)
+              if (cn) cn.style.cssText += '; position:absolute !important; top:' + pos.innerTop + 'px !important; left:' + pos.innerLeft + 'px !important; width:' + pos.innerWidth + 'px !important; right:auto !important;';
+              // Prevent text clipping
+              if (cs) cs.style.cssText += '; overflow:visible !important; text-overflow:unset !important;';
+              if (cc) cc.style.cssText += '; overflow:visible !important; text-overflow:unset !important;';
+            }
+
+            if (pos.hasLabels) {
+              var cl = cp.querySelector('.unified-labels-overlay');
+              // Convert bottom-based to top-based positioning for html2canvas
+              if (cl) cl.style.cssText += '; top:' + pos.labelsTop + 'px !important; bottom:auto !important; overflow:visible !important;';
+            }
+          }
         });
 
-        // Restore all original styles
-        if (_saved.overlay !== undefined) _overlay.style.cssText = _saved.overlay;
-        if (_saved.icon !== undefined) _icon.style.cssText = _saved.icon;
-        if (_saved.inner !== undefined) _inner.style.cssText = _saved.inner;
-        if (_saved.street !== undefined && _street) _street.style.cssText = _saved.street;
-        if (_saved.city !== undefined && _city) _city.style.cssText = _saved.city;
-        if (_saved.labels !== undefined) _labels.style.cssText = _saved.labels;
+        // No live DOM restore needed — we only modified the clone via onclone
         var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
         // Store in localStorage for Shopify cart thumbnail display
