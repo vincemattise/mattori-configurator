@@ -1595,14 +1595,10 @@
           var thisAlignX = getFloorAlignX(floorIdx);
           var thisAlignY = getFloorAlignY(floorIdx);
 
-          // Use pos.x/y from currentLayout (exact floats) instead of
-          // parseFloat(wrap.style.left/top) which the browser truncates
-          var posX = pos.x, posY = pos.y;
-
-          // Compute alignment line positions SNAPPED to actual grid crossings
-          var rawVx = thisAlignX === 'left' ? 0 : thisAlignX === 'right' ? w : w / 2;
-          var zoneVx = posX + rawVx;
-          var vx = snapToGrid(zoneVx, grid.cellPx) - posX;
+          // Draw alignment lines at the floor's alignment edge directly.
+          // No snapToGrid needed — computeFloorLayout already snapped the
+          // alignment edge to the grid. Re-snapping causes FP drift.
+          var vx = thisAlignX === 'left' ? 0 : thisAlignX === 'right' ? w : w / 2;
 
           var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           vLine.setAttribute('x1', vx); vLine.setAttribute('y1', 0);
@@ -1612,9 +1608,7 @@
           vLine.setAttribute('stroke-dasharray', '6 4');
           svg.appendChild(vLine);
 
-          var rawHy = thisAlignY === 'top' ? 0 : thisAlignY === 'bottom' ? h : h / 2;
-          var zoneHy = posY + rawHy;
-          var hy = snapToGrid(zoneHy, grid.cellPx) - posY;
+          var hy = thisAlignY === 'top' ? 0 : thisAlignY === 'bottom' ? h : h / 2;
 
           var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           hLine.setAttribute('x1', 0); hLine.setAttribute('y1', hy);
