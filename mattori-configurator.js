@@ -1561,8 +1561,9 @@
       var overlay = document.getElementById('unifiedFloorsOverlay');
       if (overlay) {
         overlay.classList.add('drag-enabled');
-        if (showGridOverlay) overlay.classList.add('zone-editing');
       }
+      // zone-editing outline on floorsGrid (not overlay) so it matches maxGridH
+      if (floorsGrid && showGridOverlay) floorsGrid.classList.add('zone-editing');
 
       // Don't create customPositions here — auto-layout positions are already
       // grid-snapped by computeFloorLayout(). This prevents ANY visual shift
@@ -1602,11 +1603,9 @@
       var overlay = document.getElementById('unifiedFloorsOverlay');
       if (overlay) {
         overlay.classList.remove('drag-enabled');
-        overlay.classList.remove('zone-editing');
-        // Reset cropped height (restore CSS-defined sizing)
-        overlay.style.height = '';
-        overlay.style.bottom = '';
       }
+      // zone-editing outline lives on floorsGrid, not overlay
+      if (floorsGrid) floorsGrid.classList.remove('zone-editing');
 
       var gridEl = floorsGrid ? floorsGrid.querySelector('.grid-overlay') : null;
       if (gridEl) gridEl.remove();
@@ -2101,15 +2100,11 @@
 
       if (zoneW < 10 || zoneH < 10 || includedIndices.length === 0) return;
 
-      // Make floorsGrid fill container; crop overlay to maxGridH (no partial bottom row)
+      // floorsGrid height = maxGridH (full rows only, no partial bottom row)
+      // Overlay stays at CSS height → stable source for getGridDimensions()
       floorsGrid.style.position = 'relative';
       floorsGrid.style.width = '100%';
-      floorsGrid.style.height = '100%';
-      var overlay = floorsGrid.parentElement;
-      if (overlay && grid.maxGridH < grid.zoneH) {
-        overlay.style.height = grid.maxGridH + 'px';
-        overlay.style.bottom = 'auto';
-      }
+      floorsGrid.style.height = grid.maxGridH + 'px';
       floorsGrid.style.display = 'block';
 
       // Compute layout
@@ -2506,7 +2501,8 @@
 
         // Toggle dashed border on the active editing zone
         if (unifiedAddressOverlay) unifiedAddressOverlay.classList.toggle('zone-editing', n === 2);
-        if (unifiedFloorsOverlay) unifiedFloorsOverlay.classList.toggle('zone-editing', n === 4 && gridEditMode);
+        // floors zone-editing goes on floorsGrid (matches maxGridH), not the overlay
+        if (floorsGrid) floorsGrid.classList.toggle('zone-editing', n === 4 && gridEditMode && showGridOverlay);
         if (unifiedLabelsOverlay) unifiedLabelsOverlay.classList.toggle('zone-editing', n === 5);
 
         // Switch between hero image (step 1) and unified frame preview (step 2+)
@@ -3312,9 +3308,8 @@
       if (chkShowGrid) {
         chkShowGrid.onchange = function() {
           showGridOverlay = this.checked;
-          // Also toggle the zone-editing dashed border
-          var overlay = document.getElementById('unifiedFloorsOverlay');
-          if (overlay) overlay.classList.toggle('zone-editing', showGridOverlay);
+          // zone-editing outline on floorsGrid (matches maxGridH)
+          if (floorsGrid) floorsGrid.classList.toggle('zone-editing', showGridOverlay);
           if (showGridOverlay) {
             renderGridOverlay();
             addGridFloorButtons();
