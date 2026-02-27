@@ -4896,25 +4896,55 @@
         // ── PASS 2: Draw icon + text manually on canvas (bypasses html2canvas) ──
         var ctx = canvas.getContext('2d');
 
-        // DEBUG: draw diagnostic info on the canvas (TEMPORARY)
+        // DEBUG: draw diagnostic info at CENTER of canvas with yellow background (TEMPORARY)
         ctx.save();
-        ctx.font = '22px monospace';
-        ctx.fillStyle = 'red';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        var dbgY = 10;
-        ctx.fillText('draws:' + textDraws.length + ' icon:' + (iconDraw ? 'Y' : 'N'), 10, dbgY); dbgY += 26;
-        ctx.fillText('overlay:' + (_overlay ? _overlay.style.display || 'visible' : 'NULL'), 10, dbgY); dbgY += 26;
-        ctx.fillText('street:' + (_street ? JSON.stringify(_street.textContent.substring(0,15)) : 'NULL'), 10, dbgY); dbgY += 26;
-        ctx.fillText('city:' + (_city ? JSON.stringify(_city.textContent.substring(0,15)) : 'NULL'), 10, dbgY); dbgY += 26;
-        ctx.fillText('icon complete:' + (_icon ? _icon.complete : 'NULL') + ' nw:' + (_icon ? _icon.naturalWidth : '?'), 10, dbgY); dbgY += 26;
+        var dbgX = Math.round(canvas.width * 0.22);
+        var dbgTop = Math.round(canvas.height * 0.22);
+        var dbgLineH = 22;
+        var dbgLines = [
+          'v49.24 canvas:' + canvas.width + 'x' + canvas.height,
+          'pRect:' + Math.round(previewRect.width) + 'x' + Math.round(previewRect.height) + ' @' + Math.round(previewRect.left) + ',' + Math.round(previewRect.top),
+          'draws:' + textDraws.length + ' icon:' + (iconDraw ? 'Y x=' + Math.round(iconDraw.x) + ' y=' + Math.round(iconDraw.y) : 'N'),
+          'street:' + (_street ? '"' + _street.textContent.substring(0,18) + '"' : 'NULL'),
+          'city:' + (_city ? '"' + _city.textContent.substring(0,18) + '"' : 'NULL'),
+          'icon:' + (_icon ? 'c=' + _icon.complete + ' nw=' + _icon.naturalWidth : 'NULL')
+        ];
         for (var di = 0; di < textDraws.length; di++) {
           var dd = textDraws[di];
-          ctx.fillText(di + ': "' + dd.text.substring(0,12) + '" cx=' + Math.round(dd.cx) + ' y=' + Math.round(dd.y) + ' h=' + Math.round(dd.h), 10, dbgY);
-          dbgY += 26;
-          // Draw red crosshair at each text position
+          dbgLines.push(di + ':' + dd.text.substring(0,12) + ' cx=' + Math.round(dd.cx) + ' y=' + Math.round(dd.y) + ' h=' + Math.round(dd.h) + ' fs=' + Math.round(dd.fontSize));
+        }
+        // Yellow background
+        ctx.fillStyle = 'rgba(255,255,0,0.85)';
+        ctx.fillRect(dbgX - 6, dbgTop - 4, canvas.width * 0.58, dbgLines.length * dbgLineH + 8);
+        // Text
+        ctx.font = 'bold 18px monospace';
+        ctx.fillStyle = '#000';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        for (var dli = 0; dli < dbgLines.length; dli++) {
+          ctx.fillText(dbgLines[dli], dbgX, dbgTop + dli * dbgLineH);
+        }
+        // Red crosshairs at each text draw position
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 2;
+        for (var dci = 0; dci < textDraws.length; dci++) {
+          var dcd = textDraws[dci];
           ctx.beginPath();
-          ctx.arc(dd.cx, dd.y + dd.h / 2, 8, 0, Math.PI * 2);
+          ctx.arc(dcd.cx, dcd.y + dcd.h / 2, 12, 0, Math.PI * 2);
+          ctx.stroke();
+          // Also draw a crosshair line
+          ctx.beginPath();
+          ctx.moveTo(dcd.cx - 16, dcd.y + dcd.h / 2);
+          ctx.lineTo(dcd.cx + 16, dcd.y + dcd.h / 2);
+          ctx.moveTo(dcd.cx, dcd.y + dcd.h / 2 - 16);
+          ctx.lineTo(dcd.cx, dcd.y + dcd.h / 2 + 16);
+          ctx.stroke();
+        }
+        // Blue crosshair for icon
+        if (iconDraw) {
+          ctx.strokeStyle = 'blue';
+          ctx.beginPath();
+          ctx.arc(iconDraw.x + iconDraw.w / 2, iconDraw.y + iconDraw.h / 2, 12, 0, Math.PI * 2);
           ctx.stroke();
         }
         ctx.restore();
