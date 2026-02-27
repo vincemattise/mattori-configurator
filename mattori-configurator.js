@@ -4814,11 +4814,29 @@
             var style = clonedDoc.createElement('style');
             style.textContent = "@font-face { font-family: 'Nexa Bold'; src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v48.4/NexaBold.otf') format('opentype'); font-weight: 700; font-style: normal; }";
             clonedDoc.head.appendChild(style);
-            // Prevent text clipping — html2canvas renders fonts with slightly different metrics
-            var addrOverlay = clonedDoc.querySelector('.unified-address-overlay');
-            if (addrOverlay) addrOverlay.style.overflow = 'visible';
+
+            // Fix address position: html2canvas doesn't handle justify-content:flex-end
+            // combined with position:relative + negative top offsets correctly.
+            // Solution: read the actual visual position from the live DOM, then set the
+            // clone overlay to that exact pixel position with a simpler layout.
+            var parentRect = previewEl.getBoundingClientRect();
+            var liveIcon = previewEl.querySelector('.frame-house-icon');
+            var cloneOverlay = clonedDoc.querySelector('.unified-address-overlay');
+            if (cloneOverlay) {
+              if (liveIcon) {
+                var iconTop = liveIcon.getBoundingClientRect().top - parentRect.top;
+                cloneOverlay.style.top = iconTop + 'px';
+              }
+              cloneOverlay.style.height = 'auto';
+              cloneOverlay.style.justifyContent = 'flex-start';
+              cloneOverlay.style.overflow = 'visible';
+            }
+            // Remove negative offsets from children (already accounted for in container top)
+            var cloneIcon = clonedDoc.querySelector('.frame-house-icon');
+            if (cloneIcon) { cloneIcon.style.top = '0'; cloneIcon.style.marginBottom = '2px'; }
             var addrInner = clonedDoc.querySelector('.unified-address-inner');
-            if (addrInner) addrInner.style.overflow = 'visible';
+            if (addrInner) { addrInner.style.top = '0'; addrInner.style.overflow = 'visible'; }
+            // Prevent text clipping
             var fStreet = clonedDoc.querySelector('.frame-street');
             if (fStreet) { fStreet.style.overflow = 'visible'; fStreet.style.textOverflow = 'unset'; }
             var fCity = clonedDoc.querySelector('.frame-city');
