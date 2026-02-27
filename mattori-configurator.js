@@ -4791,13 +4791,12 @@
     }
 
     // Order button — adds product to Shopify cart via Cart API
-    // Capture screenshot of unified frame preview using html2canvas → localStorage
-    // Stores per Funda link so multiple cart items each keep their own preview
-    async function capturePreviewToLocalStorage(fundaLink) {
+    // Capture screenshot of unified frame preview → upload to Railway → return URL
+    async function captureAndUploadPreview() {
       var previewEl = document.getElementById('unifiedFramePreview');
-      if (!previewEl || typeof html2canvas === 'undefined' || !fundaLink) {
-        console.warn('[Mattori] Screenshot overgeslagen:', !previewEl ? 'geen preview element' : !fundaLink ? 'geen Funda link' : 'html2canvas niet geladen');
-        return;
+      if (!previewEl || typeof html2canvas === 'undefined') {
+        console.warn('[Mattori] Screenshot overgeslagen:', !previewEl ? 'geen preview element' : 'html2canvas niet geladen');
+        return null;
       }
       try {
         var canvas = await html2canvas(previewEl, {
@@ -4807,23 +4806,23 @@
           scale: 0.75
         });
         var dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-        try {
-          // Clean up old single-preview key from previous versions
-          localStorage.removeItem('mattori_preview');
-          var previews = JSON.parse(localStorage.getItem('mattori_previews') || '{}');
-          previews[fundaLink] = dataUrl;
-          localStorage.setItem('mattori_previews', JSON.stringify(previews));
-        } catch (e) {
-          console.warn('[Mattori] localStorage vol, probeer met alleen deze preview:', e);
-          // Quota exceeded — try storing just this one preview (discard older ones)
-          try {
-            var fresh = {};
-            fresh[fundaLink] = dataUrl;
-            localStorage.setItem('mattori_previews', JSON.stringify(fresh));
-          } catch (e2) { console.warn('[Mattori] localStorage opslag mislukt:', e2); }
+
+        // Upload to Railway backend
+        var resp = await fetch('https://web-production-89353.up.railway.app/upload-preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: dataUrl })
+        });
+        if (!resp.ok) throw new Error('Upload status ' + resp.status);
+        var result = await resp.json();
+        if (result.url) {
+          console.log('[Mattori] Preview uploaded:', result.url);
+          return result.url;
         }
+        return null;
       } catch (e) {
-        console.warn('[Mattori] Screenshot mislukt:', e);
+        console.warn('[Mattori] Preview upload mislukt:', e);
+        return null;
       }
     }
 
@@ -4917,9 +4916,10 @@
       if (_gridOverlayEl) _gridOverlayEl.style.display = 'none';
       if (_alignOverlayEl) _alignOverlayEl.style.display = 'none';
 
-      // Save preview screenshot to localStorage keyed by Funda link (skip in noFloorsMode)
-      if (!noFloorsMode && fundaLink) {
-        await capturePreviewToLocalStorage(fundaLink);
+      // Upload preview screenshot to Railway and add URL to cart properties
+      if (!noFloorsMode) {
+        var previewUrl = await captureAndUploadPreview();
+        if (previewUrl) itemProperties['Preview'] = previewUrl;
       }
 
       // Restore grid + alignment overlays
