@@ -1554,27 +1554,36 @@
 
       var lineColor = 'rgba(0, 0, 0, 0.55)';
       var lineWidth = '1.5';
+      var cp = grid.cellPx;
+      // Helper: snap to nearest grid crossing so alignment lines sit
+      // exactly on grid lines (eliminates floating-point drift)
+      function snapLine(v) { return Math.round(v / cp) * cp; }
+
       for (var ai = 0; ai < currentLayout.positions.length; ai++) {
         var pos = currentLayout.positions[ai];
         var floorIdx = pos.index;
         var thisAlignX = getFloorAlignX(floorIdx);
         var thisAlignY = getFloorAlignY(floorIdx);
 
-        // Vertical alignment line in zone coordinates
-        var vx = thisAlignX === 'left' ? pos.x : thisAlignX === 'right' ? (pos.x + pos.w) : (pos.x + pos.w / 2);
+        var sx = snapLine(pos.x), sy = snapLine(pos.y);
+        var sw = snapLine(pos.x + pos.w) - sx;
+        var sh = snapLine(pos.y + pos.h) - sy;
+
+        // Vertical alignment line snapped to grid crossing
+        var vx = thisAlignX === 'left' ? sx : thisAlignX === 'right' ? (sx + sw) : snapLine(pos.x + pos.w / 2);
         var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        vLine.setAttribute('x1', vx); vLine.setAttribute('y1', pos.y);
-        vLine.setAttribute('x2', vx); vLine.setAttribute('y2', pos.y + pos.h);
+        vLine.setAttribute('x1', vx); vLine.setAttribute('y1', sy);
+        vLine.setAttribute('x2', vx); vLine.setAttribute('y2', sy + sh);
         vLine.setAttribute('stroke', lineColor);
         vLine.setAttribute('stroke-width', lineWidth);
         vLine.setAttribute('stroke-dasharray', '6 4');
         alignSvg.appendChild(vLine);
 
-        // Horizontal alignment line in zone coordinates
-        var hy = thisAlignY === 'top' ? pos.y : thisAlignY === 'bottom' ? (pos.y + pos.h) : (pos.y + pos.h / 2);
+        // Horizontal alignment line snapped to grid crossing
+        var hy = thisAlignY === 'top' ? sy : thisAlignY === 'bottom' ? (sy + sh) : snapLine(pos.y + pos.h / 2);
         var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        hLine.setAttribute('x1', pos.x); hLine.setAttribute('y1', hy);
-        hLine.setAttribute('x2', pos.x + pos.w); hLine.setAttribute('y2', hy);
+        hLine.setAttribute('x1', sx); hLine.setAttribute('y1', hy);
+        hLine.setAttribute('x2', sx + sw); hLine.setAttribute('y2', hy);
         hLine.setAttribute('stroke', lineColor);
         hLine.setAttribute('stroke-width', lineWidth);
         hLine.setAttribute('stroke-dasharray', '6 4');
