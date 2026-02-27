@@ -1399,23 +1399,24 @@
     var GRID_CELL_MM = 5;         // grid cell size in mm
 
     var gridEditMode = false;     // true when user activated drag-to-reposition
-    var customPositions = null;   // null = auto-layout, or [{index, gridX, gridY}] (gridX/gridY=null means auto)
+    var customPositions = null;   // null = auto-layout, or [{index, anchorCellX, anchorCellY}] (null = auto)
     var layoutCalculated = false; // true after user clicks "Bereken indeling" in step 4
     var _dragCleanups = [];       // cleanup functions for drag event listeners
 
+    var GRID_COLS = Math.floor(ZONE_PHYSICAL_W_MM / GRID_CELL_MM); // 34
+    var GRID_ROWS = Math.floor(ZONE_PHYSICAL_H_MM / GRID_CELL_MM); // 26
+
     function getGridDimensions() {
       var overlay = floorsGrid ? floorsGrid.parentElement : null;
-      if (!overlay) return { cols: 34, rows: 26, cellPx: 10, pxPerMm: 2, zoneW: 340, zoneH: 260 };
+      if (!overlay) return { cols: GRID_COLS, rows: GRID_ROWS, cellPx: 10, pxPerMm: 2, zoneW: 340, zoneH: 260 };
       var overlayRect = overlay.getBoundingClientRect();
-      var zoneW = overlayRect.width;
-      var zoneH = overlayRect.height;
-      // Use the cellPx from the latest layout computation to avoid
-      // floating-point drift between layout snap and grid rendering
-      var cellPx = (currentLayout && currentLayout.cellPx) ? currentLayout.cellPx : (GRID_CELL_MM * (zoneW / ZONE_PHYSICAL_W_MM));
+      // cellPx = smallest of width/34 and height/26 so grid fits fully
+      var cellPx = Math.min(overlayRect.width / GRID_COLS, overlayRect.height / GRID_ROWS);
+      // Zone is exactly cols × rows cells — no partial rows
+      var zoneW = GRID_COLS * cellPx;
+      var zoneH = GRID_ROWS * cellPx;
       var pxPerMm = cellPx / GRID_CELL_MM;
-      var cols = Math.floor(ZONE_PHYSICAL_W_MM / GRID_CELL_MM);
-      var rows = Math.floor(ZONE_PHYSICAL_H_MM / GRID_CELL_MM);
-      return { cols: cols, rows: rows, cellPx: cellPx, pxPerMm: pxPerMm, zoneW: zoneW, zoneH: zoneH };
+      return { cols: GRID_COLS, rows: GRID_ROWS, cellPx: cellPx, pxPerMm: pxPerMm, zoneW: zoneW, zoneH: zoneH };
     }
 
     function snapToGrid(px, cellPx) {
@@ -1435,57 +1436,20 @@
       if (!customPositions) return;
       var cp = customPositions.find(function(c) { return c.index === floorIdx; });
       if (cp) {
-        cp.gridX = null;
-        cp.gridY = null;
+        cp.anchorCellX = null;
+        cp.anchorCellY = null;
       }
       // If ALL floors are now null, clean up customPositions entirely
-      var anyCustom = customPositions.some(function(c) { return c.gridX !== null; });
+      var anyCustom = customPositions.some(function(c) { return c.anchorCellX !== null; });
       if (!anyCustom) customPositions = null;
     }
 
-    // Re-snap a floor in-place after alignment change (stay near current position)
+    // Re-snap a floor after alignment change.
+    // The anchor cell stays the same — only the interpretation changes.
+    // renderPreviewThumbnails will recompute pos.x/y from the anchor.
     function reSnapFloorAlignment(floorIdx) {
-      if (!customPositions || !currentLayout) return;
-      var cp = customPositions.find(function(c) { return c.index === floorIdx; });
-      if (!cp || cp.gridX === null) return; // auto-positioned → auto will handle it
-      var grid = getGridDimensions();
-      // Find this floor's dimensions from current layout
-      var pos = null;
-      for (var i = 0; i < currentLayout.positions.length; i++) {
-        if (currentLayout.positions[i].index === floorIdx) { pos = currentLayout.positions[i]; break; }
-      }
-      if (!pos) return;
-      var currentLeft = cp.gridX * grid.cellPx;
-      var currentTop = cp.gridY * grid.cellPx;
-      var w = pos.w, h = pos.h;
-      var alignX = getFloorAlignX(floorIdx);
-      var alignY = getFloorAlignY(floorIdx);
-      // Re-snap X: move alignment edge to nearest grid crossing
-      var newLeft;
-      if (alignX === 'left') {
-        newLeft = snapToGrid(currentLeft, grid.cellPx);
-      } else if (alignX === 'right') {
-        newLeft = snapToGrid(currentLeft + w, grid.cellPx) - w;
-      } else {
-        newLeft = snapToGrid(currentLeft + w / 2, grid.cellPx) - w / 2;
-      }
-      // Re-snap Y: move alignment edge to nearest grid crossing
-      var newTop;
-      if (alignY === 'top') {
-        newTop = snapToGrid(currentTop, grid.cellPx);
-      } else if (alignY === 'bottom') {
-        newTop = snapToGrid(currentTop + h, grid.cellPx) - h;
-      } else {
-        newTop = snapToGrid(currentTop + h / 2, grid.cellPx) - h / 2;
-      }
-      // Clamp within zone
-      newLeft = Math.max(0, Math.min(grid.zoneW - w, newLeft));
-      newTop = Math.max(0, Math.min(grid.zoneH - h, newTop));
-      // Store re-snapped position as precise float (don't round —
-      // the alignment edge must stay on the grid crossing, even if
-      // the top-left corner isn't on one)
-      cp.gridX = newLeft / grid.cellPx;
-      cp.gridY = newTop / grid.cellPx;
+      // Nothing to do — anchor cells are alignment-independent.
+      // The position is derived from anchor + alignment in renderPreviewThumbnails.
     }
 
     // --- Grid overlay (SVG) ---
@@ -1507,12 +1471,10 @@
       svg.setAttribute('height', grid.zoneH);
       svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:1;';
 
-      var actualCols = Math.ceil(grid.zoneW / grid.cellPx);
-      var actualRows = Math.ceil(grid.zoneH / grid.cellPx);
-      var midCol = Math.floor(actualCols / 2);
-      var midRow = Math.floor(actualRows / 2);
-      // Skip outermost lines (x=0, x=max, y=0, y=max) to avoid border rectangle
-      for (var x = 1; x < actualCols; x++) {
+      var midCol = Math.floor(GRID_COLS / 2);
+      var midRow = Math.floor(GRID_ROWS / 2);
+      // Exact 34×26 grid — no partial rows
+      for (var x = 1; x < GRID_COLS; x++) {
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         var px = x * grid.cellPx;
         line.setAttribute('x1', px); line.setAttribute('y1', 0);
@@ -1522,7 +1484,7 @@
         line.setAttribute('stroke-width', isMid ? '1.5' : '0.5');
         svg.appendChild(line);
       }
-      for (var y = 1; y < actualRows; y++) {
+      for (var y = 1; y < GRID_ROWS; y++) {
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         var py = y * grid.cellPx;
         line.setAttribute('x1', 0); line.setAttribute('y1', py);
@@ -1554,19 +1516,14 @@
 
       var lineColor = 'rgba(0, 0, 0, 0.55)';
       var lineWidth = '1.5';
-      var _cp = grid.cellPx;
-      // Edges are already grid-snapped. Center may land between grid
-      // lines when floor spans an odd number of cells → snap to nearest.
-      function snapGrid(v) { return Math.round(v / _cp) * _cp; }
+      var cp = grid.cellPx;
 
       for (var ai = 0; ai < currentLayout.positions.length; ai++) {
         var pos = currentLayout.positions[ai];
-        var floorIdx = pos.index;
-        var thisAlignX = getFloorAlignX(floorIdx);
-        var thisAlignY = getFloorAlignY(floorIdx);
+        // anchorCellX/Y are integers → integer × cellPx = pixel-perfect grid crossing
+        if (pos.anchorCellX == null || pos.anchorCellY == null) continue;
 
-        // Vertical alignment line — center snapped to nearest grid crossing
-        var vx = thisAlignX === 'left' ? pos.x : thisAlignX === 'right' ? (pos.x + pos.w) : snapGrid(pos.x + pos.w / 2);
+        var vx = pos.anchorCellX * cp;
         var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         vLine.setAttribute('x1', vx); vLine.setAttribute('y1', pos.y);
         vLine.setAttribute('x2', vx); vLine.setAttribute('y2', pos.y + pos.h);
@@ -1575,8 +1532,7 @@
         vLine.setAttribute('stroke-dasharray', '6 4');
         alignSvg.appendChild(vLine);
 
-        // Horizontal alignment line — center snapped to nearest grid crossing
-        var hy = thisAlignY === 'top' ? pos.y : thisAlignY === 'bottom' ? (pos.y + pos.h) : snapGrid(pos.y + pos.h / 2);
+        var hy = pos.anchorCellY * cp;
         var hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         hLine.setAttribute('x1', pos.x); hLine.setAttribute('y1', hy);
         hLine.setAttribute('x2', pos.x + pos.w); hLine.setAttribute('y2', hy);
@@ -1673,14 +1629,25 @@
         var dy = point.clientY - startY;
 
         var grid = getGridDimensions();
+        var cp = grid.cellPx;
         var wrapW = parseFloat(wrap.style.width) || 0;
         var wrapH = parseFloat(wrap.style.height) || 0;
         var rawLeft = origLeft + dx;
         var rawTop = origTop + dy;
 
-        // Snap by top-left corner (per-floor independent positioning)
-        var newLeft = snapToGrid(rawLeft, grid.cellPx);
-        var newTop = snapToGrid(rawTop, grid.cellPx);
+        // Snap by ANCHOR edge (not top-left) so alignment stays on grid
+        var floorIdx = (currentLayout && currentLayout.positions[posIndex]) ? currentLayout.positions[posIndex].index : 0;
+        var alignX = getFloorAlignX(floorIdx);
+        var alignY = getFloorAlignY(floorIdx);
+
+        var newLeft, newTop;
+        if (alignX === 'right')       newLeft = snapToGrid(rawLeft + wrapW, cp) - wrapW;
+        else if (alignX === 'center') newLeft = snapToGrid(rawLeft + wrapW / 2, cp) - wrapW / 2;
+        else                          newLeft = snapToGrid(rawLeft, cp);
+
+        if (alignY === 'bottom')      newTop = snapToGrid(rawTop + wrapH, cp) - wrapH;
+        else if (alignY === 'center') newTop = snapToGrid(rawTop + wrapH / 2, cp) - wrapH / 2;
+        else                          newTop = snapToGrid(rawTop, cp);
 
         // Clamp within zone
         newLeft = Math.max(0, Math.min(grid.zoneW - wrapW, newLeft));
@@ -1689,13 +1656,17 @@
         wrap.style.left = newLeft + 'px';
         wrap.style.top = newTop + 'px';
 
-        // Update layout positions + redraw alignment overlay during drag
+        // Update layout positions + anchor cells, redraw alignment overlay
         if (currentLayout && currentLayout.positions[posIndex]) {
-          var prevX = currentLayout.positions[posIndex].x;
-          var prevY = currentLayout.positions[posIndex].y;
-          if (prevX !== newLeft || prevY !== newTop) {
-            currentLayout.positions[posIndex].x = newLeft;
-            currentLayout.positions[posIndex].y = newTop;
+          var pos = currentLayout.positions[posIndex];
+          if (pos.x !== newLeft || pos.y !== newTop) {
+            pos.x = newLeft;
+            pos.y = newTop;
+            // Recompute anchor cell from new position
+            var edgeX = alignX === 'right' ? (newLeft + wrapW) : alignX === 'center' ? (newLeft + wrapW / 2) : newLeft;
+            var edgeY = alignY === 'bottom' ? (newTop + wrapH) : alignY === 'center' ? (newTop + wrapH / 2) : newTop;
+            pos.anchorCellX = Math.round(edgeX / cp);
+            pos.anchorCellY = Math.round(edgeY / cp);
             renderAlignOverlay();
           }
         }
@@ -1706,23 +1677,20 @@
         isDragging = false;
         wrap.classList.remove('dragging');
 
-        // Store top-left grid coords (per-floor independent)
-        var grid = getGridDimensions();
-        var finalLeft = parseFloat(wrap.style.left) || 0;
-        var finalTop = parseFloat(wrap.style.top) || 0;
-
+        // Store anchor cell coords (integer, alignment-aware)
         if (currentLayout && currentLayout.positions[posIndex]) {
-          var floorIdx = currentLayout.positions[posIndex].index;
+          var pos = currentLayout.positions[posIndex];
+          var floorIdx = pos.index;
           // Create customPositions on first drag (null entries = use auto-layout)
           if (!customPositions) {
-            customPositions = currentLayout.positions.map(function(pos) {
-              return { index: pos.index, gridX: null, gridY: null };
+            customPositions = currentLayout.positions.map(function(p) {
+              return { index: p.index, anchorCellX: null, anchorCellY: null };
             });
           }
-          var cp = customPositions.find(function(c) { return c.index === floorIdx; });
-          if (cp) {
-            cp.gridX = pxToGridCoord(finalLeft, grid.cellPx);
-            cp.gridY = pxToGridCoord(finalTop, grid.cellPx);
+          var cpo = customPositions.find(function(c) { return c.index === floorIdx; });
+          if (cpo) {
+            cpo.anchorCellX = pos.anchorCellX;
+            cpo.anchorCellY = pos.anchorCellY;
           }
           // Check for overlaps after every drag
           checkFloorOverlaps();
@@ -1817,7 +1785,7 @@
         var cp = customPositions[i];
         var floor = floors[cp.index];
         var floorName = floor ? floor.name : ('Verdieping ' + (cp.index + 1));
-        props['Positie ' + floorName] = 'X=' + cp.gridX + ', Y=' + cp.gridY;
+        props['Positie ' + floorName] = 'X=' + cp.anchorCellX + ', Y=' + cp.anchorCellY;
       }
       return props;
     }
@@ -1924,46 +1892,27 @@
         });
       }
 
-      // ── Grid-native snap ──
-      // Snap all positions to the 5mm physical grid so there is never a
-      // visible shift when the user starts dragging.
-      var pxPerMm = zoneW / ZONE_PHYSICAL_W_MM;
-      var cellPx  = GRID_CELL_MM * pxPerMm;
+      // ── Anchor-cell snap ──
+      // Each floor gets an anchor cell (integer grid coord) per axis.
+      // The alignment line is drawn at anchorCell × cellPx (pixel-perfect).
+      // The floor position is derived from the anchor.
+      var cellPx = zoneW / GRID_COLS;
 
       for (var ri = 0; ri < result.length; ri++) {
         var r = result[ri];
-
-        // Determine the anchor point per axis based on per-floor alignment
         var floorAlignX = getFloorAlignX(r.index);
         var floorAlignY = getFloorAlignY(r.index);
 
-        // X-axis
-        if (floorAlignX === 'left') {
-          r.x = snapToGrid(r.x, cellPx);
-        } else if (floorAlignX === 'right') {
-          // Snap right edge, then derive x
-          var rightSnapped = snapToGrid(r.x + r.w, cellPx);
-          r.x = rightSnapped - r.w;
-        } else {
-          // center — snap the center point, then derive x
-          var cx = r.x + r.w / 2;
-          var cxSnapped = snapToGrid(cx, cellPx);
-          r.x = cxSnapped - r.w / 2;
-        }
+        // X-axis: snap alignment edge to nearest grid cell → store as integer
+        var edgeX = floorAlignX === 'left' ? r.x : floorAlignX === 'right' ? (r.x + r.w) : (r.x + r.w / 2);
+        r.anchorCellX = Math.round(edgeX / cellPx);
+        // Derive position from anchor (exact integer × cellPx, no FP drift)
+        r.x = r.anchorCellX * cellPx - (floorAlignX === 'right' ? r.w : floorAlignX === 'center' ? r.w / 2 : 0);
 
-        // Y-axis
-        if (floorAlignY === 'top') {
-          r.y = snapToGrid(r.y, cellPx);
-        } else if (floorAlignY === 'bottom') {
-          // Snap bottom edge, then derive y
-          var bottomSnapped = snapToGrid(r.y + r.h, cellPx);
-          r.y = bottomSnapped - r.h;
-        } else {
-          // center — snap the center point, then derive y
-          var cy = r.y + r.h / 2;
-          var cySnapped = snapToGrid(cy, cellPx);
-          r.y = cySnapped - r.h / 2;
-        }
+        // Y-axis: same logic
+        var edgeY = floorAlignY === 'top' ? r.y : floorAlignY === 'bottom' ? (r.y + r.h) : (r.y + r.h / 2);
+        r.anchorCellY = Math.round(edgeY / cellPx);
+        r.y = r.anchorCellY * cellPx - (floorAlignY === 'bottom' ? r.h : floorAlignY === 'center' ? r.h / 2 : 0);
       }
 
       return { scale: finalScale, positions: result, type: best.type, cellPx: cellPx };
@@ -2131,31 +2080,36 @@
         includedIndices = floorOrder.slice();
       }
 
-      // Get overlay zone dimensions
-      var overlayRect = floorsGrid.parentElement.getBoundingClientRect();
-      var zoneW = overlayRect.width;
-      var zoneH = overlayRect.height;
+      // Get exact grid-native zone dimensions (no partial rows)
+      var grid = getGridDimensions();
+      var zoneW = grid.zoneW;
+      var zoneH = grid.zoneH;
 
       if (zoneW < 10 || zoneH < 10 || includedIndices.length === 0) return;
 
-      // Make floorsGrid a positioning container
+      // Make floorsGrid exact grid size, centered in container
       floorsGrid.style.position = 'relative';
-      floorsGrid.style.width = '100%';
-      floorsGrid.style.height = '100%';
+      floorsGrid.style.width = zoneW + 'px';
+      floorsGrid.style.height = zoneH + 'px';
       floorsGrid.style.display = 'block';
+      floorsGrid.style.margin = '0 auto';
 
       // Compute layout
       currentLayout = computeFloorLayout(zoneW, zoneH, includedIndices);
 
-      // Apply custom positions if user has dragged floors
-      // Grid coords store top-left corner (null = use auto-layout position)
+      // Apply custom anchor positions if user has dragged floors
       if (customPositions) {
-        var _grid = getGridDimensions();
+        var _cp_cellPx = grid.cellPx;
         for (var ci = 0; ci < currentLayout.positions.length; ci++) {
-          var _cp = customPositions.find(function(c) { return c.index === currentLayout.positions[ci].index; });
-          if (_cp && _cp.gridX !== null) {
-            currentLayout.positions[ci].x = _cp.gridX * _grid.cellPx;
-            currentLayout.positions[ci].y = _cp.gridY * _grid.cellPx;
+          var _pos = currentLayout.positions[ci];
+          var _cp = customPositions.find(function(c) { return c.index === _pos.index; });
+          if (_cp && _cp.anchorCellX !== null) {
+            var _alignX = getFloorAlignX(_pos.index);
+            var _alignY = getFloorAlignY(_pos.index);
+            _pos.anchorCellX = _cp.anchorCellX;
+            _pos.anchorCellY = _cp.anchorCellY;
+            _pos.x = _cp.anchorCellX * _cp_cellPx - (_alignX === 'right' ? _pos.w : _alignX === 'center' ? _pos.w / 2 : 0);
+            _pos.y = _cp.anchorCellY * _cp_cellPx - (_alignY === 'bottom' ? _pos.h : _alignY === 'center' ? _pos.h / 2 : 0);
           }
         }
       }
