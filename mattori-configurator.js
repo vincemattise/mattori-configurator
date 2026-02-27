@@ -4794,20 +4794,21 @@
 
     // Order button — adds product to Shopify cart via Cart API
     // Capture screenshot of unified frame preview → upload to Railway + store in localStorage
-    // Uses html-to-image (SVG foreignObject) for pixel-perfect 1:1 capture
     async function captureAndUploadPreview(fundaLink) {
       var previewEl = document.getElementById('unifiedFramePreview');
-      if (!previewEl || typeof htmlToImage === 'undefined') {
-        console.warn('[Mattori] Screenshot overgeslagen:', !previewEl ? 'geen preview element' : 'html-to-image niet geladen');
+      if (!previewEl || typeof html2canvas === 'undefined') {
+        console.warn('[Mattori] Screenshot overgeslagen:', !previewEl ? 'geen preview element' : 'html2canvas niet geladen');
         return null;
       }
       try {
         await document.fonts.ready;
-        var dataUrl = await htmlToImage.toJpeg(previewEl, {
-          quality: 0.85,
-          pixelRatio: 2,
-          backgroundColor: '#ffffff'
+        var canvas = await html2canvas(previewEl, {
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: '#ffffff',
+          scale: 2
         });
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
         // Store in localStorage for Shopify cart thumbnail display
         if (fundaLink) {
@@ -4937,7 +4938,7 @@
       // Upload preview screenshot to Railway + save to localStorage for cart thumbnail
       if (!noFloorsMode) {
         var previewUrl = await captureAndUploadPreview(fundaLink);
-        if (previewUrl) itemProperties['Preview'] = previewUrl;
+        if (previewUrl) itemProperties['Ontwerp'] = previewUrl;
       }
 
       // Restore grid + alignment overlays
