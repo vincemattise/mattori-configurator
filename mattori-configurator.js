@@ -1802,6 +1802,8 @@
       if (!customPositions) return props;
       for (var i = 0; i < customPositions.length; i++) {
         var cp = customPositions[i];
+        // Skip floors that haven't been manually positioned (still at auto-layout)
+        if (cp.anchorCellX == null || cp.anchorCellY == null) continue;
         var floor = floors[cp.index];
         var floorName = floor ? floor.name : ('Verdieping ' + (cp.index + 1));
         props['Positie ' + floorName] = 'X=' + cp.anchorCellX + ', Y=' + cp.anchorCellY;
@@ -4791,42 +4793,59 @@
     }
 
     // Order button — adds product to Shopify cart via Cart API
-    // Capture screenshot of unified frame preview → upload to Railway → return URL
-    async function captureAndUploadPreview() {
+    // Capture screenshot of unified frame preview → upload to Railway + store in localStorage
+    async function captureAndUploadPreview(fundaLink) {
       var previewEl = document.getElementById('unifiedFramePreview');
       if (!previewEl || typeof html2canvas === 'undefined') {
         console.warn('[Mattori] Screenshot overgeslagen:', !previewEl ? 'geen preview element' : 'html2canvas niet geladen');
         return null;
       }
       try {
-        console.log('[Mattori] Screenshot starten...');
+        // Wait for all fonts (especially Nexa Bold) to be fully loaded before capturing
+        await document.fonts.ready;
+
         var canvas = await html2canvas(previewEl, {
           useCORS: true,
           allowTaint: false,
           backgroundColor: '#ffffff',
-          scale: 0.75
+          scale: 2,
+          onclone: function(clonedDoc) {
+            // Ensure Nexa Bold font-face is defined in the cloned document
+            var style = clonedDoc.createElement('style');
+            style.textContent = "@font-face { font-family: 'Nexa Bold'; src: url('https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v48.4/NexaBold.otf') format('opentype'); font-weight: 700; font-style: normal; }";
+            clonedDoc.head.appendChild(style);
+          }
         });
-        var dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-        console.log('[Mattori] Screenshot gemaakt, grootte:', Math.round(dataUrl.length / 1024) + 'KB, uploaden...');
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
 
-        // Upload to Railway backend
+        // Store in localStorage for Shopify cart thumbnail display
+        if (fundaLink) {
+          try {
+            localStorage.removeItem('mattori_preview');
+            var previews = JSON.parse(localStorage.getItem('mattori_previews') || '{}');
+            previews[fundaLink] = dataUrl;
+            localStorage.setItem('mattori_previews', JSON.stringify(previews));
+          } catch (e) {
+            try {
+              var fresh = {};
+              fresh[fundaLink] = dataUrl;
+              localStorage.setItem('mattori_previews', JSON.stringify(fresh));
+            } catch (e2) { /* localStorage full, skip */ }
+          }
+        }
+
+        // Upload to Railway backend for persistent URL
         var resp = await fetch('https://web-production-89353.up.railway.app/upload-preview', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: dataUrl })
         });
-        console.log('[Mattori] Upload response status:', resp.status);
-        if (!resp.ok) {
-          var errText = await resp.text();
-          console.error('[Mattori] Upload fout:', resp.status, errText);
-          throw new Error('Upload status ' + resp.status);
-        }
+        if (!resp.ok) throw new Error('Upload status ' + resp.status);
         var result = await resp.json();
         if (result.url) {
           console.log('[Mattori] Preview uploaded:', result.url);
           return result.url;
         }
-        console.warn('[Mattori] Geen URL in response:', result);
         return null;
       } catch (e) {
         console.error('[Mattori] Preview upload mislukt:', e);
@@ -4924,9 +4943,9 @@
       if (_gridOverlayEl) _gridOverlayEl.style.display = 'none';
       if (_alignOverlayEl) _alignOverlayEl.style.display = 'none';
 
-      // Upload preview screenshot to Railway and add URL to cart properties
+      // Upload preview screenshot to Railway + save to localStorage for cart thumbnail
       if (!noFloorsMode) {
-        var previewUrl = await captureAndUploadPreview();
+        var previewUrl = await captureAndUploadPreview(fundaLink);
         if (previewUrl) itemProperties['Preview'] = previewUrl;
       }
 
