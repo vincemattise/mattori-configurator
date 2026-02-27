@@ -4725,7 +4725,6 @@
       }
 
       setFundaStatus('loading', 'Plattegrond ophalen...');
-      showLoading();
       btnFunda.disabled = true;
 
       try {
@@ -4787,7 +4786,6 @@
         }
         btnWizardNext.style.display = 'none';
       } finally {
-        hideLoading();
         if (btnFunda.style.display !== 'none') btnFunda.disabled = false;
       }
     }
