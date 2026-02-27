@@ -4814,83 +4814,74 @@
         var _labels = previewEl.querySelector('.unified-labels-overlay');
         var _container = previewEl.querySelector('.unified-frame-container');
 
-        var pos = {};
+        var _saved = {};
         var contRect = _container ? _container.getBoundingClientRect() : previewEl.getBoundingClientRect();
 
+        // ── Modify LIVE DOM before html2canvas clones it ──
+        // (onclone doesn't work — html2canvas ignores clone modifications)
         if (_icon && _inner && _overlay) {
           var overlayRect = _overlay.getBoundingClientRect();
           var iconRect = _icon.getBoundingClientRect();
           var innerRect = _inner.getBoundingClientRect();
           // Where the icon visually starts, relative to overlay top
-          pos.iconTop = iconRect.top - overlayRect.top;
-          // Gap between icon bottom and inner text top (accounts for margin-bottom: -15px)
-          pos.gapIconInner = innerRect.top - iconRect.bottom;
-          pos.hasAddr = true;
+          var iconTop = iconRect.top - overlayRect.top;
+          // Gap between icon bottom and inner text top
+          var gapIconInner = innerRect.top - iconRect.bottom;
+
+          _saved.overlay = _overlay.style.cssText;
+          _saved.icon = _icon.style.cssText;
+          _saved.inner = _inner.style.cssText;
+
+          // Replace flex-end with flex-start + padding-top (html2canvas-friendly)
+          _overlay.style.setProperty('justify-content', 'flex-start', 'important');
+          _overlay.style.setProperty('padding-top', iconTop + 'px', 'important');
+          _overlay.style.setProperty('overflow', 'visible', 'important');
+          // Remove problematic negative offsets — padding-top compensates
+          _icon.style.setProperty('position', 'static', 'important');
+          _icon.style.setProperty('margin-bottom', gapIconInner + 'px', 'important');
+          _inner.style.setProperty('position', 'static', 'important');
+
+          var _street = previewEl.querySelector('.frame-street');
+          var _city = previewEl.querySelector('.frame-city');
+          _saved.street = _street ? _street.style.cssText : '';
+          _saved.city = _city ? _city.style.cssText : '';
+          if (_street) {
+            _street.style.setProperty('overflow', 'visible', 'important');
+            _street.style.setProperty('text-overflow', 'unset', 'important');
+          }
+          if (_city) {
+            _city.style.setProperty('overflow', 'visible', 'important');
+            _city.style.setProperty('text-overflow', 'unset', 'important');
+          }
         }
         if (_labels) {
           var labelsRect = _labels.getBoundingClientRect();
-          // Labels overlay is a direct child of container, so relative to container
-          pos.labelsTop = labelsRect.top - contRect.top;
-          pos.hasLabels = true;
+          _saved.labels = _labels.style.cssText;
+          _labels.style.setProperty('top', (labelsRect.top - contRect.top) + 'px', 'important');
+          _labels.style.setProperty('bottom', 'auto', 'important');
+          _labels.style.setProperty('overflow', 'visible', 'important');
         }
 
         var canvas = await html2canvas(previewEl, {
           useCORS: true,
           allowTaint: false,
           backgroundColor: '#ffffff',
-          scale: 2,
-          onclone: function(clonedDoc) {
-            var cp = clonedDoc.getElementById('unifiedFramePreview');
-            if (!cp) return;
-
-            if (pos.hasAddr) {
-              var co = cp.querySelector('.unified-address-overlay');
-              var ci = cp.querySelector('.frame-house-icon');
-              var cn = cp.querySelector('.unified-address-inner');
-              var cs = cp.querySelector('.frame-street');
-              var cc = cp.querySelector('.frame-city');
-
-              // STRATEGY: Keep flex layout (html2canvas handles flex-start well)
-              // but replace the problematic properties:
-              //   justify-content: flex-end → flex-start + padding-top
-              //   icon position: relative; top: -28px → static (padding compensates)
-              //   icon margin-bottom: -15px → measured gap value
-              //   inner position: relative; top: -5px → static
-              if (co) {
-                co.style.setProperty('justify-content', 'flex-start', 'important');
-                co.style.setProperty('padding-top', pos.iconTop + 'px', 'important');
-                co.style.setProperty('overflow', 'visible', 'important');
-              }
-              if (ci) {
-                ci.style.setProperty('position', 'static', 'important');
-                ci.style.setProperty('margin-bottom', pos.gapIconInner + 'px', 'important');
-              }
-              if (cn) {
-                cn.style.setProperty('position', 'static', 'important');
-              }
-              if (cs) {
-                cs.style.setProperty('overflow', 'visible', 'important');
-                cs.style.setProperty('text-overflow', 'unset', 'important');
-              }
-              if (cc) {
-                cc.style.setProperty('overflow', 'visible', 'important');
-                cc.style.setProperty('text-overflow', 'unset', 'important');
-              }
-            }
-
-            if (pos.hasLabels) {
-              var cl = cp.querySelector('.unified-labels-overlay');
-              if (cl) {
-                // Convert bottom-based to top-based positioning
-                cl.style.setProperty('top', pos.labelsTop + 'px', 'important');
-                cl.style.setProperty('bottom', 'auto', 'important');
-                cl.style.setProperty('overflow', 'visible', 'important');
-              }
-            }
-          }
+          scale: 2
         });
 
-        // No live DOM restore needed — we only modified the clone via onclone
+        // ── Restore all original styles ──
+        if (_saved.overlay !== undefined) _overlay.style.cssText = _saved.overlay;
+        if (_saved.icon !== undefined) _icon.style.cssText = _saved.icon;
+        if (_saved.inner !== undefined) _inner.style.cssText = _saved.inner;
+        if (_saved.street !== undefined) {
+          var _s = previewEl.querySelector('.frame-street');
+          if (_s) _s.style.cssText = _saved.street;
+        }
+        if (_saved.city !== undefined) {
+          var _c = previewEl.querySelector('.frame-city');
+          if (_c) _c.style.cssText = _saved.city;
+        }
+        if (_saved.labels !== undefined) _labels.style.cssText = _saved.labels;
         var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
         // Store in localStorage for Shopify cart thumbnail display
