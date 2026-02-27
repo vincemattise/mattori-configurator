@@ -4821,12 +4821,10 @@
           var overlayRect = _overlay.getBoundingClientRect();
           var iconRect = _icon.getBoundingClientRect();
           var innerRect = _inner.getBoundingClientRect();
-          // Positions relative to the OVERLAY (their positioned ancestor)
+          // Where the icon visually starts, relative to overlay top
           pos.iconTop = iconRect.top - overlayRect.top;
-          pos.iconLeft = iconRect.left - overlayRect.left;
-          pos.innerTop = innerRect.top - overlayRect.top;
-          pos.innerLeft = innerRect.left - overlayRect.left;
-          pos.innerWidth = innerRect.width;
+          // Gap between icon bottom and inner text top (accounts for margin-bottom: -15px)
+          pos.gapIconInner = innerRect.top - iconRect.bottom;
           pos.hasAddr = true;
         }
         if (_labels) {
@@ -4852,21 +4850,42 @@
               var cs = cp.querySelector('.frame-street');
               var cc = cp.querySelector('.frame-city');
 
-              // Replace flex layout with block so html2canvas doesn't misplace content
-              if (co) co.style.cssText += '; display:block !important; overflow:visible !important;';
-              // Position icon at its exact visual spot (relative to overlay)
-              if (ci) ci.style.cssText += '; position:absolute !important; top:' + pos.iconTop + 'px !important; left:' + pos.iconLeft + 'px !important; margin:0 !important; right:auto !important;';
-              // Position address text at its exact visual spot (relative to overlay)
-              if (cn) cn.style.cssText += '; position:absolute !important; top:' + pos.innerTop + 'px !important; left:' + pos.innerLeft + 'px !important; width:' + pos.innerWidth + 'px !important; right:auto !important;';
-              // Prevent text clipping
-              if (cs) cs.style.cssText += '; overflow:visible !important; text-overflow:unset !important;';
-              if (cc) cc.style.cssText += '; overflow:visible !important; text-overflow:unset !important;';
+              // STRATEGY: Keep flex layout (html2canvas handles flex-start well)
+              // but replace the problematic properties:
+              //   justify-content: flex-end → flex-start + padding-top
+              //   icon position: relative; top: -28px → static (padding compensates)
+              //   icon margin-bottom: -15px → measured gap value
+              //   inner position: relative; top: -5px → static
+              if (co) {
+                co.style.setProperty('justify-content', 'flex-start', 'important');
+                co.style.setProperty('padding-top', pos.iconTop + 'px', 'important');
+                co.style.setProperty('overflow', 'visible', 'important');
+              }
+              if (ci) {
+                ci.style.setProperty('position', 'static', 'important');
+                ci.style.setProperty('margin-bottom', pos.gapIconInner + 'px', 'important');
+              }
+              if (cn) {
+                cn.style.setProperty('position', 'static', 'important');
+              }
+              if (cs) {
+                cs.style.setProperty('overflow', 'visible', 'important');
+                cs.style.setProperty('text-overflow', 'unset', 'important');
+              }
+              if (cc) {
+                cc.style.setProperty('overflow', 'visible', 'important');
+                cc.style.setProperty('text-overflow', 'unset', 'important');
+              }
             }
 
             if (pos.hasLabels) {
               var cl = cp.querySelector('.unified-labels-overlay');
-              // Convert bottom-based to top-based positioning for html2canvas
-              if (cl) cl.style.cssText += '; top:' + pos.labelsTop + 'px !important; bottom:auto !important; overflow:visible !important;';
+              if (cl) {
+                // Convert bottom-based to top-based positioning
+                cl.style.setProperty('top', pos.labelsTop + 'px', 'important');
+                cl.style.setProperty('bottom', 'auto', 'important');
+                cl.style.setProperty('overflow', 'visible', 'important');
+              }
             }
           }
         });
