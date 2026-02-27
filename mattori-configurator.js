@@ -1812,6 +1812,17 @@
       return props;
     }
 
+    // --- Resize handler for per-floor labels ---
+    var _labelResizeTimer = null;
+    window.addEventListener('resize', function() {
+      if (labelMode !== 'per-floor') return;
+      if (!unifiedLabelsOverlay || unifiedLabelsOverlay.style.display === 'none') return;
+      clearTimeout(_labelResizeTimer);
+      _labelResizeTimer = setTimeout(function() {
+        updateLabelsOverlayOnly();
+      }, 200);
+    });
+
     // --- Resize handler for grid mode ---
     var _gridResizeTimer = null;
     window.addEventListener('resize', function() {
@@ -2333,41 +2344,78 @@
       return labels;
     }
 
-    function updateFloorLabels() {
-      floorLabels = getIncludedFloorLabels();
+    // Compute label X positions by mapping floor centers to labels overlay coordinates
+    function computeLabelPositions() {
+      if (!currentLayout || !currentLayout.positions) return null;
+      if (!unifiedFloorsOverlay || !unifiedLabelsOverlay) return null;
 
-      // Update unified preview labels overlay
+      var floorsRect = unifiedFloorsOverlay.getBoundingClientRect();
+      var labelsRect = unifiedLabelsOverlay.getBoundingClientRect();
+      if (labelsRect.width <= 0 || floorsRect.width <= 0) return null;
+
+      var positions = [];
+      for (var i = 0; i < floorLabels.length; i++) {
+        // Match floor by index (safe against order differences)
+        var pos = null;
+        for (var j = 0; j < currentLayout.positions.length; j++) {
+          if (currentLayout.positions[j].index === floorLabels[i].index) {
+            pos = currentLayout.positions[j];
+            break;
+          }
+        }
+        if (!pos) { positions.push(null); continue; }
+
+        // Floor center in viewport space → labels overlay local X → percentage
+        var floorCenterVP = floorsRect.left + pos.x + pos.w / 2;
+        var labelLocalX = floorCenterVP - labelsRect.left;
+        var pct = Math.max(5, Math.min(95, (labelLocalX / labelsRect.width) * 100));
+        positions.push({ centerPct: pct });
+      }
+      return positions;
+    }
+
+    // Shared helper: build label DOM elements into the overlay
+    function _buildLabelElements() {
       unifiedLabelsOverlay.innerHTML = '';
+
       if (labelMode === 'single') {
+        // Single mode: flex-centered (CSS handles it)
+        unifiedLabelsOverlay.style.justifyContent = 'space-evenly';
         var el = document.createElement('div');
         el.className = 'label-item';
         el.textContent = singleLabelText;
         unifiedLabelsOverlay.appendChild(el);
       } else {
-        for (const item of floorLabels) {
+        // Per-floor mode: absolutely position each label under its floor
+        unifiedLabelsOverlay.style.justifyContent = '';
+        var labelPositions = computeLabelPositions();
+
+        for (var i = 0; i < floorLabels.length; i++) {
           var el = document.createElement('div');
           el.className = 'label-item';
-          el.textContent = item.label;
+          el.textContent = floorLabels[i].label;
+
+          if (labelPositions && labelPositions[i]) {
+            el.classList.add('label-positioned');
+            el.style.position = 'absolute';
+            el.style.left = labelPositions[i].centerPct + '%';
+            el.style.transform = 'translateX(-50%)';
+            el.style.top = '50%';
+            el.style.marginTop = '-0.6em';
+          }
+
           unifiedLabelsOverlay.appendChild(el);
         }
       }
     }
 
+    function updateFloorLabels() {
+      floorLabels = getIncludedFloorLabels();
+      _buildLabelElements();
+    }
+
     function updateLabelsOverlayOnly() {
-      unifiedLabelsOverlay.innerHTML = '';
-      if (labelMode === 'single') {
-        var el = document.createElement('div');
-        el.className = 'label-item';
-        el.textContent = singleLabelText;
-        unifiedLabelsOverlay.appendChild(el);
-      } else {
-        for (var i = 0; i < floorLabels.length; i++) {
-          var el = document.createElement('div');
-          el.className = 'label-item';
-          el.textContent = floorLabels[i].label;
-          unifiedLabelsOverlay.appendChild(el);
-        }
-      }
+      _buildLabelElements();
     }
 
     // ============================================================
