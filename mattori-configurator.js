@@ -4825,6 +4825,8 @@
             if (cloneOverlay) {
               if (liveIcon) {
                 var iconTop = liveIcon.getBoundingClientRect().top - parentRect.top;
+                // Nudge address 3% up to match visual preview
+                iconTop -= parentRect.height * 0.03;
                 cloneOverlay.style.top = iconTop + 'px';
               }
               cloneOverlay.style.height = 'auto';
