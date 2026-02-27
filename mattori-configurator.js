@@ -1603,6 +1603,9 @@
       if (overlay) {
         overlay.classList.remove('drag-enabled');
         overlay.classList.remove('zone-editing');
+        // Reset cropped height (restore CSS-defined sizing)
+        overlay.style.height = '';
+        overlay.style.bottom = '';
       }
 
       var gridEl = floorsGrid ? floorsGrid.querySelector('.grid-overlay') : null;
@@ -2098,10 +2101,15 @@
 
       if (zoneW < 10 || zoneH < 10 || includedIndices.length === 0) return;
 
-      // Make floorsGrid fill container
+      // Make floorsGrid fill container; crop overlay to maxGridH (no partial bottom row)
       floorsGrid.style.position = 'relative';
       floorsGrid.style.width = '100%';
       floorsGrid.style.height = '100%';
+      var overlay = floorsGrid.parentElement;
+      if (overlay && grid.maxGridH < grid.zoneH) {
+        overlay.style.height = grid.maxGridH + 'px';
+        overlay.style.bottom = 'auto';
+      }
       floorsGrid.style.display = 'block';
 
       // Compute layout
