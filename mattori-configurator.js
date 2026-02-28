@@ -1389,7 +1389,7 @@
     var layoutGapFactor = 0.08; // gap as fraction of largest floor dimension (0..0.3)
     var layoutScaleFactor = 1.0; // user scale: 0.82 (klein), 1.0 (normaal), 1.1 (groot)
     var showGridOverlay = true; // user toggle for grid + alignment lines
-    var adminGridOverlay = true;  // default ON for admin // admin-only: show grid on step 5 preview
+    var adminGridOverlay = false;  // enabled when Frame Code is loaded // admin-only: show grid on step 5 preview
     var floorSettings = {}; // per-floor: { rotate: 0|90|180|270 }
 
     // ============================================================
@@ -4919,6 +4919,11 @@
 
       // Mark layout as calculated so step 4 shows the result
       layoutCalculated = true;
+
+      // Enable admin grid overlay when loading Frame Code
+      adminGridOverlay = true;
+      var adminCb = document.getElementById('adminShowGrid');
+      if (adminCb) adminCb.checked = true;
 
       // Ensure preview containers are visible BEFORE rendering
       // (getGridDimensions needs non-zero dimensions)
