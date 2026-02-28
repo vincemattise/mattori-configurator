@@ -4735,16 +4735,17 @@
         var noValidFloors = !data?.floors?.length || !(data.floors ?? []).some(f => f?.designs?.[0]);
 
         if (noPlattegrond || (data.floors && noValidFloors)) {
-          // noFloorsMode: Funda link valid but no interactive floor plans
+          // Case 1: Funda link herkend, maar geen interactieve plattegronden (verkocht)
           noFloorsMode = true;
           lastFundaUrl = url;
-          setFundaStatus('error', '<strong>✗ Geen interactieve plattegronden beschikbaar</strong><span>Deze woning is waarschijnlijk verkocht of van Funda verwijderd. Hierdoor zijn de interactieve plattegronden niet meer beschikbaar en kan de configurator momenteel niet gebruikt worden.</span><span style="margin-top:6px;display:block;">We werken aan een oplossing hiervoor. Bestel in de tussentijd het <a href="https://mattori.nl/products/mattori-frame" style="color:#1a73e8;text-decoration:underline;">standaard Frame\u00B3 product</a> — wij bouwen de plattegrond dan handmatig voor je op.</span>');
+          setFundaStatus('error', '<strong>Geen interactieve plattegronden beschikbaar</strong><span>Deze woning is waarschijnlijk verkocht of van Funda verwijderd. Hierdoor kan de configurator momenteel niet gebruikt worden.</span><span style="margin-top:6px;display:block;">We werken aan een oplossing hiervoor. Bestel in de tussentijd het <a href="https://mattori.nl/products/mattori-frame" style="color:#1a73e8;text-decoration:underline;">standaard Frame\u00B3 product</a> \u2014 wij bouwen de plattegrond dan handmatig voor je op.</span>');
           btnWizardNext.style.display = 'none';
           return;
         }
 
         if (data.error) {
-          setFundaStatus('error', '<strong>Funda link niet geldig</strong><span>Controleer de link en probeer het opnieuw, of neem contact op.</span>');
+          // Case 2: Funda link helemaal niet geldig / niet bereikbaar
+          setFundaStatus('error', '<strong>Funda link niet beschikbaar</strong><span>Deze link is niet meer geldig of de woning is volledig van Funda verwijderd.</span><span style="margin-top:6px;display:block;">Helaas kunnen we op dit moment niets met deze link. Neem contact met ons op zodat we je verder kunnen helpen.</span>');
           showContactEmail(url);
           btnWizardNext.style.display = 'none';
           return;
