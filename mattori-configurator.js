@@ -4712,6 +4712,72 @@
     }
 
     // ============================================================
+    // QUICK TEST — load cached FML directly, skip Funda, jump to step 3
+    // ============================================================
+    var _fmlCache = {};
+    var _quickTestLoading = false;
+
+    window.quickTestLoad = async function(n) {
+      if (_quickTestLoading) return;
+      _quickTestLoading = true;
+      try {
+        ensureDomRefs();
+
+        // Load from CDN cache if not already in memory
+        if (!_fmlCache[n]) {
+          var scriptEl = document.querySelector('script[src*="mattori-configurator"]');
+          var cdnBase = scriptEl ? scriptEl.src.replace('mattori-configurator.js', '') : '';
+          var url = cdnBase + 'fml-cache/test-' + n + '.json';
+          var resp = await fetch(url);
+          var data = await resp.json();
+          if (data.error) {
+            alert('Quick Test ' + n + ': ' + data.error);
+            return;
+          }
+          _fmlCache[n] = data;
+        }
+
+        var data = _fmlCache[n];
+        originalFmlData = data;
+        originalFileName = 'quick-test-' + n + '.fml';
+
+        // Fast-start configurator if not yet started (skip animations)
+        if (!configuratorStarted) {
+          configuratorStarted = true;
+          var btnStart = document.getElementById('btnStartConfigurator');
+          if (btnStart) btnStart.style.display = 'none';
+          var collapsibles = document.querySelectorAll('.mattori-configurator .collapsible-info');
+          collapsibles.forEach(function(el) { el.style.display = 'none'; });
+          var buyBlock = document.querySelector('.mattori-configurator .buy-buttons-block');
+          if (buyBlock) buyBlock.style.display = 'none';
+          var stickyBar = document.querySelector('sticky-add-to-cart');
+          if (stickyBar) stickyBar.style.display = 'none';
+          wizard.style.display = '';
+          initWizard();
+        }
+
+        // Reset state for clean load
+        excludedFloors = new Set();
+        viewedFloors = new Set();
+        floorReviewStatus = {};
+        floorIssues = {};
+        currentFloorReviewIndex = 0;
+
+        // Process floors
+        processFloors(data);
+
+        // Jump directly to step 3
+        showWizardStep(3);
+
+      } catch (e) {
+        console.error('Quick test ' + n + ' error:', e);
+        alert('Quick Test ' + n + ' fout: ' + e.message);
+      } finally {
+        _quickTestLoading = false;
+      }
+    };
+
+    // ============================================================
     // FRAME CODE — encode/decode full configuration
     // ============================================================
     function generateFrameCode() {
