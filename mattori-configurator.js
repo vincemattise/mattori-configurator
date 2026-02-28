@@ -5233,7 +5233,17 @@
         return;
       }
 
-      setFundaStatus('loading', 'Plattegrond ophalen...');
+      var _progressBar = '<div class="funda-progress-bar"><div class="funda-progress-fill"></div></div>';
+      var _loadPhases = ['Funda pagina ophalen...', 'Plattegronden zoeken...', 'Gegevens verwerken...'];
+      var _loadPhaseIdx = 0;
+      setFundaStatus('loading', _progressBar + _loadPhases[0]);
+      var _loadTimer = setInterval(function() {
+        _loadPhaseIdx++;
+        if (_loadPhaseIdx < _loadPhases.length) {
+          var _txt = document.getElementById('fundaStatusText');
+          if (_txt) _txt.innerHTML = _progressBar + _loadPhases[_loadPhaseIdx];
+        }
+      }, 3000);
       btnFunda.disabled = true;
 
       try {
@@ -5319,6 +5329,7 @@
         }
         btnWizardNext.style.display = 'none';
       } finally {
+        clearInterval(_loadTimer);
         if (btnFunda.style.display !== 'none') btnFunda.disabled = false;
       }
     }
