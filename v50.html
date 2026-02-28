@@ -2,7 +2,7 @@
 <script>
 (function(){
   var sheets = [
-    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v64/mattori-configurator.css'
+    'https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v65/mattori-configurator.css'
   ];
   sheets.forEach(function(href){
     var l = document.createElement('link');
@@ -23,7 +23,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel" style="display:none;">
-    <div class="admin-panel-label">Admin &middot; v50.5</div>
+    <div class="admin-panel-label">Admin &middot; v50.6</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
@@ -71,6 +71,13 @@
       <div class="error-msg" id="errorMsg"></div>
       <div class="admin-floor-dims" id="adminFloorDims" style="display:none;"></div>
       <!-- Layout controls moved to step 4 per-floor cards -->
+      <div style="margin-top:10px;border-top:1px solid rgba(0,0,0,0.1);padding-top:10px;">
+        <div style="font-size:11px;font-weight:600;margin-bottom:4px;opacity:0.6;">Frame Code</div>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="frameCodeInput" placeholder="F3-..." style="flex:1;font-size:11px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-family:monospace;">
+          <button class="btn-admin" id="btnApplyFrameCode">Laden</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -354,4 +361,4 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v64/mattori-configurator.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/vincemattise/mattori-configurator@v65/mattori-configurator.js"></script>

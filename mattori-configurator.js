@@ -1170,6 +1170,8 @@
           updateFloorLabels();
           if (floorsLoading) floorsLoading.classList.add('hidden');
           updateWizardUI();
+          // Apply pending Frame Code config if present
+          if (pendingFrameConfig) applyPendingConfig();
         }, 100);
       });
     }
@@ -4656,6 +4658,213 @@
       if (btn) btn.addEventListener('click', () => pasteTestLink(n));
     }
 
+    // ============================================================
+    // FRAME CODE — encode/decode full configuration
+    // ============================================================
+    function generateFrameCode() {
+      try {
+        var street = addressStreet ? addressStreet.value.trim() : '';
+        var city = addressCity ? addressCity.value.trim() : '';
+        var fundaLink = fundaUrlInput ? fundaUrlInput.value.trim() : '';
+
+        var floorConfigs = [];
+        for (var i = 0; i < floors.length; i++) {
+          var fs = floorSettings[i] || {};
+          var pos = null;
+          if (currentLayout && currentLayout.positions) {
+            pos = currentLayout.positions.find(function(p) { return p.index === i; });
+          }
+          floorConfigs.push({
+            n: floors[i].name,
+            x: excludedFloors.has(i) ? 1 : 0,
+            ax: fs.alignX || layoutAlignX,
+            ay: fs.alignY || layoutAlignY,
+            r: fs.rotate || 0,
+            px: pos ? pos.anchorCellX : null,
+            py: pos ? pos.anchorCellY : null
+          });
+        }
+
+        var currentLabels = getIncludedFloorLabels();
+        var labelsData;
+        if (labelMode === 'single') {
+          labelsData = singleLabelText;
+        } else {
+          labelsData = currentLabels.map(function(item) {
+            return { i: item.index, l: item.label };
+          });
+        }
+
+        var config = {
+          u: fundaLink,
+          i: selectedHouseIcon,
+          s: layoutScaleFactor,
+          a: [street, city],
+          ax: layoutAlignX,
+          ay: layoutAlignY,
+          m: labelMode === 'single' ? 's' : 'p',
+          t: labelsData,
+          c: labelComments || '',
+          f: floorConfigs
+        };
+
+        var json = JSON.stringify(config);
+        return 'F3-' + btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      } catch (e) {
+        console.error('[Mattori] Frame Code genereren mislukt:', e);
+        return null;
+      }
+    }
+
+    function decodeFrameCode(code) {
+      try {
+        if (!code || !code.startsWith('F3-')) return null;
+        var b64 = code.substring(3).replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        var json = decodeURIComponent(escape(atob(b64)));
+        return JSON.parse(json);
+      } catch (e) {
+        console.error('[Mattori] Frame Code decoderen mislukt:', e);
+        return null;
+      }
+    }
+
+    var pendingFrameConfig = null;
+
+    function applyFrameCode(code) {
+      var config = decodeFrameCode(code);
+      if (!config) {
+        showToast('Ongeldige Frame Code');
+        return;
+      }
+
+      // Store config — will be applied after FML loads
+      pendingFrameConfig = config;
+
+      // Set address
+      if (config.a && config.a.length >= 2) {
+        if (addressStreet) addressStreet.value = config.a[0];
+        if (addressCity) addressCity.value = config.a[1];
+        currentAddress = { street: config.a[0], city: config.a[1] };
+      }
+
+      // Set house icon
+      if (config.i) {
+        selectedHouseIcon = config.i;
+        updateHouseIcon();
+      }
+
+      // Set scale
+      if (config.s != null) {
+        layoutScaleFactor = config.s;
+        var slider = document.getElementById('scaleSlider');
+        if (slider) slider.value = config.s;
+      }
+
+      // Set global alignment
+      if (config.ax) layoutAlignX = config.ax;
+      if (config.ay) layoutAlignY = config.ay;
+
+      // Load FML via Funda link
+      if (config.u && fundaUrlInput) {
+        fundaUrlInput.value = config.u;
+        loadFromFunda();
+      }
+
+      showToast('Frame Code geladen — plattegronden worden opgehaald...');
+    }
+
+    function applyPendingConfig() {
+      if (!pendingFrameConfig || !floors.length) return;
+      var config = pendingFrameConfig;
+      pendingFrameConfig = null;
+
+      // Apply floor exclusions
+      excludedFloors.clear();
+      if (config.f) {
+        for (var i = 0; i < config.f.length && i < floors.length; i++) {
+          if (config.f[i].x) excludedFloors.add(i);
+        }
+      }
+
+      // Apply per-floor settings (alignment + rotation)
+      if (config.f) {
+        for (var i = 0; i < config.f.length && i < floors.length; i++) {
+          var fc = config.f[i];
+          if (!floorSettings[i]) floorSettings[i] = {};
+          if (fc.ax) floorSettings[i].alignX = fc.ax;
+          if (fc.ay) floorSettings[i].alignY = fc.ay;
+          if (fc.r) floorSettings[i].rotate = fc.r;
+        }
+      }
+
+      // Apply labels
+      if (config.m === 's') {
+        labelMode = 'single';
+        singleLabelText = config.t || 'plattegrond';
+      } else if (config.m === 'p' && Array.isArray(config.t)) {
+        labelMode = 'per-floor';
+        floorLabels = getIncludedFloorLabels();
+        for (var li = 0; li < config.t.length; li++) {
+          var labelItem = config.t[li];
+          var match = floorLabels.find(function(fl) { return fl.index === labelItem.i; });
+          if (match) match.label = labelItem.l;
+        }
+      }
+
+      if (config.c) labelComments = config.c;
+
+      // Re-render layout with new settings
+      renderPreviewThumbnails();
+
+      // After layout, apply custom grid positions from code
+      setTimeout(function() {
+        if (config.f && currentLayout && currentLayout.positions) {
+          var hasPositions = config.f.some(function(fc) { return fc.px != null; });
+          if (hasPositions) {
+            // Initialize customPositions from code
+            customPositions = currentLayout.positions.map(function(p) {
+              return { index: p.index, anchorCellX: null, anchorCellY: null };
+            });
+            for (var i = 0; i < config.f.length && i < floors.length; i++) {
+              var fc = config.f[i];
+              if (fc.px != null && fc.py != null) {
+                var cp = customPositions.find(function(c) { return c.index === i; });
+                if (cp) {
+                  cp.anchorCellX = fc.px;
+                  cp.anchorCellY = fc.py;
+                }
+              }
+            }
+            renderPreviewThumbnails();
+          }
+        }
+
+        // Update labels + address in preview
+        updateFloorLabels();
+        updateFrameAddress();
+
+        // Auto-confirm all floors for review
+        for (var ri = 0; ri < floors.length; ri++) {
+          if (!excludedFloors.has(ri)) floorReviewStatus[ri] = 'confirmed';
+        }
+
+        // Jump to last step
+        goToStep(TOTAL_WIZARD_STEPS);
+        showToast('Frame Code toegepast!');
+      }, 500);
+    }
+
+    // Attach Frame Code import button
+    var btnFrameCode = document.getElementById('btnApplyFrameCode');
+    var frameCodeInput = document.getElementById('frameCodeInput');
+    if (btnFrameCode && frameCodeInput) {
+      btnFrameCode.addEventListener('click', function() {
+        var code = frameCodeInput.value.trim();
+        if (code) applyFrameCode(code);
+      });
+    }
+
     // Funda status checker
     function setFundaStatus(state, html) {
       var box = document.getElementById('fundaStatus');
@@ -5104,6 +5313,10 @@
           console.error('[Mattori] FML upload mislukt:', e);
         }
       }
+
+      // Generate Frame Code
+      var frameCode = generateFrameCode();
+      if (frameCode) itemProperties['_Frame Code'] = frameCode;
 
       // Restore grid + alignment overlays
       if (_gridOverlayEl) _gridOverlayEl.style.display = '';
