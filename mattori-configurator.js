@@ -4710,10 +4710,18 @@
 
     function decodeFrameCode(code) {
       try {
-        if (!code || !code.startsWith('F3-')) return null;
+        if (!code) return null;
+        code = code.trim();
+        // Accept F3- or f3- prefix
+        if (!/^F3-/i.test(code)) {
+          console.warn('[Mattori] Frame Code moet beginnen met F3-. Ontvangen:', code.substring(0, 10));
+          return null;
+        }
         var b64 = code.substring(3).replace(/-/g, '+').replace(/_/g, '/');
         while (b64.length % 4) b64 += '=';
+        console.log('[Mattori] Frame Code base64 lengte:', b64.length);
         var json = decodeURIComponent(escape(atob(b64)));
+        console.log('[Mattori] Frame Code decoded JSON:', json.substring(0, 100));
         var config = JSON.parse(json);
         // Fill in defaults for compact codes
         if (!config.i) config.i = 'huisje1';
@@ -4743,9 +4751,10 @@
 
     function applyFrameCode(code) {
       ensureDomRefs();
+      console.log('[Mattori] applyFrameCode aangeroepen met:', code ? code.substring(0, 20) + '...' : code);
       var config = decodeFrameCode(code);
       if (!config) {
-        showToast('Ongeldige Frame Code');
+        showToast('Ongeldige Frame Code — check console (F12) voor details');
         return;
       }
 
