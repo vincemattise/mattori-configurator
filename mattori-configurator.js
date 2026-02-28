@@ -4667,46 +4667,38 @@
         var city = addressCity ? addressCity.value.trim() : '';
         var fundaLink = fundaUrlInput ? fundaUrlInput.value.trim() : '';
 
+        // Compact floor configs — only include non-default values
         var floorConfigs = [];
         for (var i = 0; i < floors.length; i++) {
+          var fc = {};
           var fs = floorSettings[i] || {};
-          var pos = null;
-          if (currentLayout && currentLayout.positions) {
-            pos = currentLayout.positions.find(function(p) { return p.index === i; });
-          }
-          floorConfigs.push({
-            n: floors[i].name,
-            x: excludedFloors.has(i) ? 1 : 0,
-            ax: fs.alignX || layoutAlignX,
-            ay: fs.alignY || layoutAlignY,
-            r: fs.rotate || 0,
-            px: pos ? pos.anchorCellX : null,
-            py: pos ? pos.anchorCellY : null
-          });
+          if (excludedFloors.has(i)) { fc.x = 1; }
+          var ax = fs.alignX || layoutAlignX;
+          var ay = fs.alignY || layoutAlignY;
+          if (ax !== 'center') fc.ax = ax;
+          if (ay !== 'bottom') fc.ay = ay;
+          if (fs.rotate) fc.r = fs.rotate;
+          var pos = currentLayout && currentLayout.positions ?
+            currentLayout.positions.find(function(p) { return p.index === i; }) : null;
+          if (pos && pos.anchorCellX != null) { fc.px = pos.anchorCellX; fc.py = pos.anchorCellY; }
+          floorConfigs.push(fc);
         }
 
-        var currentLabels = getIncludedFloorLabels();
-        var labelsData;
-        if (labelMode === 'single') {
-          labelsData = singleLabelText;
-        } else {
-          labelsData = currentLabels.map(function(item) {
+        // Compact config — only include non-default values
+        var config = { u: fundaLink, a: [street, city], f: floorConfigs };
+        if (selectedHouseIcon !== 'huisje1') config.i = selectedHouseIcon;
+        if (layoutScaleFactor !== 1) config.s = layoutScaleFactor;
+        if (layoutAlignX !== 'center') config.ax = layoutAlignX;
+        if (layoutAlignY !== 'bottom') config.ay = layoutAlignY;
+        if (labelMode !== 'single') {
+          config.m = 'p';
+          config.t = getIncludedFloorLabels().map(function(item) {
             return { i: item.index, l: item.label };
           });
+        } else if (singleLabelText !== 'plattegrond') {
+          config.t = singleLabelText;
         }
-
-        var config = {
-          u: fundaLink,
-          i: selectedHouseIcon,
-          s: layoutScaleFactor,
-          a: [street, city],
-          ax: layoutAlignX,
-          ay: layoutAlignY,
-          m: labelMode === 'single' ? 's' : 'p',
-          t: labelsData,
-          c: labelComments || '',
-          f: floorConfigs
-        };
+        if (labelComments) config.c = labelComments;
 
         var json = JSON.stringify(config);
         return 'F3-' + btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -4722,7 +4714,25 @@
         var b64 = code.substring(3).replace(/-/g, '+').replace(/_/g, '/');
         while (b64.length % 4) b64 += '=';
         var json = decodeURIComponent(escape(atob(b64)));
-        return JSON.parse(json);
+        var config = JSON.parse(json);
+        // Fill in defaults for compact codes
+        if (!config.i) config.i = 'huisje1';
+        if (config.s == null) config.s = 1;
+        if (!config.ax) config.ax = 'center';
+        if (!config.ay) config.ay = 'bottom';
+        if (!config.m) config.m = 's';
+        if (!config.t) config.t = 'plattegrond';
+        if (!config.c) config.c = '';
+        if (config.f) {
+          for (var fi = 0; fi < config.f.length; fi++) {
+            var fc = config.f[fi];
+            if (!fc.ax) fc.ax = config.ax;
+            if (!fc.ay) fc.ay = config.ay;
+            if (!fc.r) fc.r = 0;
+            if (!fc.x) fc.x = 0;
+          }
+        }
+        return config;
       } catch (e) {
         console.error('[Mattori] Frame Code decoderen mislukt:', e);
         return null;
@@ -5204,15 +5214,15 @@
       var itemProperties = {};
       if (fundaLink) itemProperties['Funda link'] = fundaLink;
 
+      // House icon (before address for readability)
+      var houseOpt = houseIconOptions.find(function(o) { return o.id === selectedHouseIcon; });
+      if (houseOpt) itemProperties['Huisje'] = houseOpt.label;
+
       // Address fields
       var street = addressStreet ? addressStreet.value.trim() : '';
       var city = addressCity ? addressCity.value.trim() : '';
       if (street) itemProperties['Adres regel 1'] = street;
       if (city) itemProperties['Adres regel 2'] = city;
-
-      // House icon
-      var houseOpt = houseIconOptions.find(function(o) { return o.id === selectedHouseIcon; });
-      if (houseOpt) itemProperties['Huisje'] = houseOpt.label;
 
       if (noFloorsMode) itemProperties['Opmerking'] = 'Geen interactieve plattegronden — handmatig opbouwen';
 
@@ -5316,7 +5326,7 @@
 
       // Generate Frame Code
       var frameCode = generateFrameCode();
-      if (frameCode) itemProperties['_Frame Code'] = frameCode;
+      if (frameCode) itemProperties['Frame Code'] = frameCode;
 
       // Restore grid + alignment overlays
       if (_gridOverlayEl) _gridOverlayEl.style.display = '';
