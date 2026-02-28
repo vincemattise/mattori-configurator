@@ -2124,10 +2124,6 @@
     // RENDER PREVIEW USING LAYOUT ENGINE
     // ============================================================
     function renderPreviewThumbnails() {
-      // Debug: trace all calls at step 5 after FC render to find what clears floors
-      if (_fcRenderGuard && currentWizardStep === 5) {
-        console.trace('[Mattori DBG] renderPreviewThumbnails called at step 5 after FC render');
-      }
       // In step 4, don't render until "Bereken indeling" is clicked
       if (currentWizardStep === 4 && !layoutCalculated) {
         for (const v of previewViewers) { if (v.renderer) v.renderer.dispose(); }
@@ -4899,7 +4895,6 @@
       }
 
       // Apply labels
-      console.log('[Mattori DBG] FC config.m=' + config.m + ', config.t=' + JSON.stringify(config.t) + ', config.c=' + JSON.stringify(config.c));
       if (config.m === 's') {
         labelMode = 'single';
         singleLabelText = config.t || 'plattegrond';
@@ -4912,8 +4907,6 @@
           if (match) match.label = labelItem.l;
         }
       }
-      console.log('[Mattori DBG] After apply: labelMode=' + labelMode + ', singleLabelText=' + singleLabelText + ', floorLabels=' + JSON.stringify(floorLabels));
-
       if (config.c) labelComments = config.c;
 
       // Auto-confirm all floors for review + mark as viewed
@@ -4995,7 +4988,6 @@
 
         // Build labels UI — renderLabelsFields() overwrites floorLabels with
         // defaults, so we restore the Frame Code values afterwards
-        console.log('[Mattori DBG] FC labels to restore: mode=' + _fcMode + ', singleText=' + _fcSingleText + ', labels=' + JSON.stringify(_fcLabels));
         try {
           renderLabelsFields();
         } catch (e) {
@@ -5029,8 +5021,6 @@
         // Update comments textarea with FC value
         var commentsEl = document.getElementById('labelComments');
         if (commentsEl) commentsEl.value = _fcComments || '';
-
-        console.log('[Mattori DBG] After restore: labelMode=' + labelMode + ', floorLabels=' + JSON.stringify(floorLabels));
 
         updateFrameAddress();
         showToast('Frame Code toegepast!');
@@ -5090,15 +5080,9 @@
       });
     }
 
-    // Attach Frame Code import button
-    var btnFrameCode = document.getElementById('btnApplyFrameCode');
-    var frameCodeInput = document.getElementById('frameCodeInput');
-    if (btnFrameCode && frameCodeInput) {
-      btnFrameCode.addEventListener('click', function() {
-        var code = frameCodeInput.value.trim();
-        if (code) applyFrameCode(code);
-      });
-    }
+    // Frame Code import button: handled by inline onclick in HTML
+    // (DO NOT add addEventListener here — it would duplicate the onclick and
+    //  cause applyFrameCode/loadFromFunda/processFloors to fire twice)
 
     // Funda status checker
     function setFundaStatus(state, html) {
