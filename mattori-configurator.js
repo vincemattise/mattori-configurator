@@ -1161,17 +1161,18 @@
       // Update address in preview
       updateFrameAddress();
 
-      // Render thumbnails, then show the button
+      // If Frame Code is pending, apply config immediately (don't hide overlay)
+      if (pendingFrameConfig) {
+        if (floorsLoading) floorsLoading.classList.add('hidden');
+        applyPendingConfig();
+        return;
+      }
+
+      // Normal flow: render thumbnails with brief loading state
       if (unifiedFloorsOverlay) unifiedFloorsOverlay.style.display = 'none';
       if (floorsLoading) floorsLoading.classList.remove('hidden');
       requestAnimationFrame(() => {
         setTimeout(() => {
-          // If Frame Code is pending, skip normal render — applyPendingConfig handles it
-          if (pendingFrameConfig) {
-            if (floorsLoading) floorsLoading.classList.add('hidden');
-            applyPendingConfig();
-            return;
-          }
           renderPreviewThumbnails();
           updateFloorLabels();
           if (floorsLoading) floorsLoading.classList.add('hidden');
@@ -4929,51 +4930,78 @@
       showWizardStep(TOTAL_WIZARD_STEPS);
       updateWizardUI();
 
-      // Wait for layout to be computed, then render floors + apply positions
-      requestAnimationFrame(function() {
-        setTimeout(function() {
-          renderPreviewThumbnails();
+      // Save Frame Code labels before any rendering that might overwrite them
+      var _fcMode = labelMode;
+      var _fcSingleText = singleLabelText;
+      var _fcLabels = floorLabels ? floorLabels.map(function(l) {
+        return { index: l.index, label: l.label };
+      }) : null;
+      var _fcComments = labelComments;
 
-          // Apply custom grid positions from code
-          if (config.f && currentLayout && currentLayout.positions) {
-            var hasPositions = config.f.some(function(fc) { return fc.px != null; });
-            if (hasPositions) {
-              customPositions = currentLayout.positions.map(function(p) {
-                return { index: p.index, anchorCellX: null, anchorCellY: null };
-              });
-              for (var i = 0; i < config.f.length && i < floors.length; i++) {
-                var fc = config.f[i];
-                if (fc.px != null && fc.py != null) {
-                  var cp = customPositions.find(function(c) { return c.index === i; });
-                  if (cp) {
-                    cp.anchorCellX = fc.px;
-                    cp.anchorCellY = fc.py;
-                  }
+      // Retry render until the overlay has valid dimensions
+      // (frame image might still be loading, giving the container zero size)
+      var _renderAttempts = 0;
+      function _tryFrameCodeRender() {
+        _renderAttempts++;
+        var grid = getGridDimensions();
+
+        if (grid.zoneW < 10 || grid.zoneH < 10) {
+          // Container not ready yet — retry (up to ~4 seconds)
+          if (_renderAttempts < 20) {
+            setTimeout(_tryFrameCodeRender, 200);
+          } else {
+            console.warn('[Mattori] Frame Code render: overlay still has no dimensions after ' + _renderAttempts + ' retries');
+          }
+          return;
+        }
+
+        // Render floor thumbnails
+        renderPreviewThumbnails();
+
+        // Apply custom grid positions from code
+        if (config.f && currentLayout && currentLayout.positions) {
+          var hasPositions = config.f.some(function(fc) { return fc.px != null; });
+          if (hasPositions) {
+            customPositions = currentLayout.positions.map(function(p) {
+              return { index: p.index, anchorCellX: null, anchorCellY: null };
+            });
+            for (var i = 0; i < config.f.length && i < floors.length; i++) {
+              var fc = config.f[i];
+              if (fc.px != null && fc.py != null) {
+                var cp = customPositions.find(function(c) { return c.index === i; });
+                if (cp) {
+                  cp.anchorCellX = fc.px;
+                  cp.anchorCellY = fc.py;
                 }
               }
-              renderPreviewThumbnails();
             }
+            renderPreviewThumbnails();
           }
+        }
 
-          // Build labels UI — save Frame Code labels, let renderLabelsFields
-          // build the UI structure (toggle, fields, comments), then restore
-          // the correct labels from the Frame Code and re-render
-          var _fcMode = labelMode;
-          var _fcLabels = floorLabels ? floorLabels.map(function(l) {
-            return { index: l.index, label: l.label };
-          }) : null;
-          renderLabelsFields();  // builds UI but overwrites labels with defaults
+        // Build labels UI — renderLabelsFields() overwrites floorLabels with
+        // defaults, so we restore the Frame Code values afterwards
+        renderLabelsFields();
 
-          // Restore Frame Code labels + mode
-          labelMode = _fcMode;
-          if (_fcLabels) floorLabels = _fcLabels;
-          renderLabelsFieldsContent();     // re-render fields with FC label text
-          updateLabelsOverlayOnly();       // update overlay without regenerating labels
+        // Restore Frame Code labels + mode
+        labelMode = _fcMode;
+        singleLabelText = _fcSingleText;
+        if (_fcLabels) floorLabels = _fcLabels;
+        labelComments = _fcComments;
+        renderLabelsFieldsContent();     // re-render fields with FC label text
+        updateLabelsOverlayOnly();       // update overlay without regenerating labels
 
-          updateFrameAddress();
+        // Update comments textarea with FC value
+        var commentsEl = document.getElementById('labelComments');
+        if (commentsEl) commentsEl.value = _fcComments || '';
 
-          showToast('Frame Code toegepast!');
-        }, 200);
+        updateFrameAddress();
+        showToast('Frame Code toegepast!');
+      }
+
+      // Start retry loop after first frame + small delay
+      requestAnimationFrame(function() {
+        setTimeout(_tryFrameCodeRender, 200);
       });
     }
 
