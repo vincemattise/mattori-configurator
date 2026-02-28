@@ -5039,11 +5039,16 @@
         if (fs.rotate && fs.rotate !== 0) {
           parts.push('rotatie: ' + fs.rotate + '\u00B0');
         }
-        // Grid position from currentLayout
-        if (currentLayout && currentLayout.positions) {
+        // Grid position + dimensions from currentLayout
+        if (currentLayout && currentLayout.positions && currentLayout.cellPx) {
           var pos = currentLayout.positions.find(function(p) { return p.index === i; });
           if (pos && pos.anchorCellX != null && pos.anchorCellY != null) {
             parts.push('positie: (' + pos.anchorCellX + ', ' + pos.anchorCellY + ')');
+          }
+          if (pos) {
+            var mmW = Math.round(pos.w / currentLayout.cellPx * GRID_CELL_MM);
+            var mmH = Math.round(pos.h / currentLayout.cellPx * GRID_CELL_MM);
+            parts.push('maat: ' + mmW + '×' + mmH + 'mm');
           }
         }
         itemProperties[key] = parts.join(', ');
