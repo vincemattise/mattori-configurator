@@ -4888,6 +4888,13 @@
           });
         }
 
+        // Fix overflow clipping: street/city have overflow:hidden for ellipsis,
+        // but html2canvas also clips vertically with it → force visible during capture
+        var _street = previewEl.querySelector('.frame-street');
+        var _city   = previewEl.querySelector('.frame-city');
+        if (_street) overrideStyle(_street, { 'overflow': 'visible' });
+        if (_city)   overrideStyle(_city,   { 'overflow': 'visible' });
+
         // Labels overlay: bottom-based → top-based + Y correction
         if (_labels && labelsRect && contRect) {
           overrideStyle(_labels, {
