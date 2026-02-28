@@ -2113,8 +2113,12 @@
     // RENDER PREVIEW USING LAYOUT ENGINE
     // ============================================================
     function renderPreviewThumbnails() {
+      var _callId = Math.random().toString(36).substr(2, 4);
+      console.log('[Mattori] renderPreviewThumbnails CALLED id=' + _callId + ' step=' + currentWizardStep + ' layoutCalc=' + layoutCalculated);
+      console.trace('[Mattori] render callstack');
       // In step 4, don't render until "Bereken indeling" is clicked
       if (currentWizardStep === 4 && !layoutCalculated) {
+        console.log('[Mattori] render BAIL step4 uncalculated id=' + _callId);
         for (const v of previewViewers) { if (v.renderer) v.renderer.dispose(); }
         previewViewers = [];
         floorsGrid.innerHTML = '';
@@ -2143,7 +2147,10 @@
       var zoneW = grid.zoneW;
       var zoneH = grid.maxGridH;  // use full-row height, not container height
 
-      if (zoneW < 10 || zoneH < 10 || includedIndices.length === 0) return;
+      if (zoneW < 10 || zoneH < 10 || includedIndices.length === 0) {
+        console.warn('[Mattori] render BAIL zero-size id=' + _callId + ' zoneW=' + zoneW.toFixed(0) + ' zoneH=' + zoneH.toFixed(0) + ' included=' + includedIndices.length);
+        return;
+      }
 
       // floorsGrid height = maxGridH (full rows only, no partial bottom row)
       // Overlay stays at CSS height → stable source for getGridDimensions()
