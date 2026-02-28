@@ -4802,7 +4802,7 @@
       }
       try {
         await document.fonts.ready;
-        var scale = 1.2;
+        var scale = 2;
 
         // Get the container (containing block for absolute overlays)
         var container = previewEl.querySelector('.unified-frame-container');
@@ -4893,7 +4893,7 @@
         var _street = previewEl.querySelector('.frame-street');
         var _city   = previewEl.querySelector('.frame-city');
         if (_street) overrideStyle(_street, { 'overflow': 'visible' });
-        if (_city)   overrideStyle(_city,   { 'overflow': 'visible' });
+        if (_city)   overrideStyle(_city,   { 'overflow': 'visible', 'margin-top': '1px' });
 
         // Labels overlay: bottom-based → top-based + Y correction
         if (_labels && labelsRect && contRect) {
