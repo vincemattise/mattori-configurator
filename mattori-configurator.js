@@ -449,7 +449,7 @@
 
         return {
           street: titleCased,
-          city: cityTitle + ', The Netherlands'
+          city: cityTitle + ', Nederland'
         };
       } catch (e) {
         return null;
@@ -468,7 +468,7 @@
             if (dashIdx > 0) {
               return {
                 street: firstLine.slice(0, dashIdx).trim(),
-                city: firstLine.slice(dashIdx + 3).trim() + ', The Netherlands'
+                city: firstLine.slice(dashIdx + 3).trim() + ', Nederland'
               };
             }
           }
@@ -480,22 +480,22 @@
     function getFloorLabel(dutchName) {
       const name = (dutchName || '').toUpperCase().trim();
       const map = {
-        'BEGANE GROND': '1st floor',
-        'EERSTE VERDIEPING': '2nd floor',
-        'TWEEDE VERDIEPING': '3rd floor',
-        'DERDE VERDIEPING': '4th floor',
-        'VIERDE VERDIEPING': '5th floor',
-        'KELDER': 'Basement',
-        'BERGING': 'Storage',
-        'SCHUUR': 'Storage',
-        'ZOLDER': 'Attic',
-        'GARAGE': 'Garage'
+        'BEGANE GROND': '1e verdieping',
+        'EERSTE VERDIEPING': '2e verdieping',
+        'TWEEDE VERDIEPING': '3e verdieping',
+        'DERDE VERDIEPING': '4e verdieping',
+        'VIERDE VERDIEPING': '5e verdieping',
+        'KELDER': 'kelder',
+        'BERGING': 'berging',
+        'SCHUUR': 'berging',
+        'ZOLDER': 'zolder',
+        'GARAGE': 'garage'
       };
       if (map[name]) return map[name];
       for (const [key, val] of Object.entries(map)) {
         if (name.includes(key)) return val;
       }
-      return dutchName || 'Floor';
+      return dutchName || 'verdieping';
     }
 
     let currentAddress = { street: '', city: '' };
@@ -2283,33 +2283,32 @@
     // ============================================================
     let floorLabels = [];
     var labelMode = 'single'; // 'single' = 1 label total, 'per-floor' = label per floor
-    var singleLabelText = 'floor plan';
+    var singleLabelText = 'plattegrond';
     var labelComments = '';    // Free-text comments from step 5
 
     function translateFloorName(name, singleFloor) {
       const lower = name.toLowerCase().trim();
-      if (/^kelder/.test(lower)) return 'basement';
-      if (/^zolder/.test(lower)) return 'attic';
-      if (/^berging/.test(lower)) return 'storage';
+      if (/^kelder/.test(lower)) return 'kelder';
+      if (/^zolder/.test(lower)) return 'zolder';
+      if (/^berging/.test(lower)) return 'berging';
       if (/^garage/.test(lower)) return 'garage';
-      if (/^dak/.test(lower)) return 'roof';
-      if (/^tuin/.test(lower)) return 'garden';
-      if (singleFloor) return 'floor plan';
-      if (/^begane\s*grond/.test(lower)) return '1st floor';
+      if (/^dak/.test(lower)) return 'dak';
+      if (/^tuin/.test(lower)) return 'tuin';
+      if (singleFloor) return 'plattegrond';
+      if (/^begane\s*grond/.test(lower)) return '1e verdieping';
       const ordMap = [
-        [/^eerste\b/, '2nd'], [/^tweede\b/, '3rd'], [/^derde\b/, '4th'],
-        [/^vierde\b/, '5th'], [/^vijfde\b/, '6th'], [/^zesde\b/, '7th'],
-        [/^zevende\b/, '8th'], [/^achtste\b/, '9th'], [/^negende\b/, '10th'],
-        [/^tiende\b/, '11th'],
+        [/^eerste\b/, '2e'], [/^tweede\b/, '3e'], [/^derde\b/, '4e'],
+        [/^vierde\b/, '5e'], [/^vijfde\b/, '6e'], [/^zesde\b/, '7e'],
+        [/^zevende\b/, '8e'], [/^achtste\b/, '9e'], [/^negende\b/, '10e'],
+        [/^tiende\b/, '11e'],
       ];
       for (const [regex, ord] of ordMap) {
-        if (regex.test(lower)) return ord + ' floor';
+        if (regex.test(lower)) return ord + ' verdieping';
       }
       const numMatch = lower.match(/^(\d+)e?\s+verdieping/);
       if (numMatch) {
         const n = parseInt(numMatch[1]) + 1;
-        const suf = n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th';
-        return n + suf + ' floor';
+        return n + 'e verdieping';
       }
       return name.charAt(0).toLowerCase() + name.slice(1).toLowerCase();
     }
@@ -2338,18 +2337,16 @@
         });
       }
 
-      // Assign ordinal labels: 1st floor, 2nd floor, ... (lowercase, left-to-right)
+      // Assign ordinal labels: 1e verdieping, 2e verdieping, ... (left-to-right)
       var ordinalMap = {};
       for (var oi = 0; oi < sortedByX.length; oi++) {
-        var n = oi + 1;
-        var suf = n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th';
-        ordinalMap[sortedByX[oi]] = n + suf + ' floor';
+        ordinalMap[sortedByX[oi]] = (oi + 1) + 'e verdieping';
       }
 
       for (const i of includedIndices) {
         labels.push({
           index: i,
-          label: ordinalMap[i] || 'floor plan'
+          label: ordinalMap[i] || 'plattegrond'
         });
       }
       return labels;
@@ -3516,7 +3513,7 @@
         var inp = document.createElement('input');
         inp.type = 'text';
         inp.value = singleLabelText;
-        inp.placeholder = 'floor plan';
+        inp.placeholder = 'plattegrond';
         inp.addEventListener('input', function() {
           singleLabelText = inp.value;
           updateLabelsOverlayOnly();
