@@ -4853,7 +4853,7 @@
         // Problem: html2canvas can't handle flex-end + negative margins + relative offsets
         // Solution: read computed positions, then set simple absolute px values
         // Y-axis corrections for html2canvas rendering offset (px, negative = up)
-        var addressYCorrection = -20;   // address elements: 20px up
+        var addressYCorrection = -13;   // address elements: 13px up
         var labelsYCorrection  = -10;   // floor plan labels: 10px up
 
         // Address overlay: flex-end → block with absolute children
