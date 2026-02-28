@@ -550,7 +550,7 @@
     .mattori-configurator .unified-floors-overlay {
       position: absolute;
       top: calc(18.5% + 65px);
-      bottom: calc(18.5% + 65px);
+      bottom: calc(18.5% + 55px);
       left: calc(14.75% + 15px);
       right: calc(14.75% + 15px);
       display: flex;

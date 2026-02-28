@@ -1388,7 +1388,7 @@
     // GRID SYSTEM — snap-to-grid for physical production
     // ============================================================
     var ZONE_PHYSICAL_W_MM = 170; // usable interior width in mm
-    var ZONE_PHYSICAL_H_MM = 130; // usable interior height in mm
+    var ZONE_PHYSICAL_H_MM = 150; // usable interior height in mm
     var GRID_CELL_MM = 5;         // grid cell size in mm
 
     var gridEditMode = false;     // true when user activated drag-to-reposition
@@ -1397,7 +1397,7 @@
     var _dragCleanups = [];       // cleanup functions for drag event listeners
 
     var GRID_COLS = Math.floor(ZONE_PHYSICAL_W_MM / GRID_CELL_MM); // 34
-    var GRID_ROWS = Math.floor(ZONE_PHYSICAL_H_MM / GRID_CELL_MM); // 26
+    var GRID_ROWS = Math.floor(ZONE_PHYSICAL_H_MM / GRID_CELL_MM); // 30
 
     function getGridDimensions() {
       var overlay = floorsGrid ? floorsGrid.parentElement : null;
@@ -5008,7 +5008,7 @@
 
       // Scale factor (from step 4)
       var scaleLabel = layoutScaleFactor <= 0.82 ? 'Klein' : layoutScaleFactor >= 1.1 ? 'Groot' : 'Normaal';
-      itemProperties['Schaal'] = scaleLabel;
+      itemProperties['Schaal'] = scaleLabel + ' (' + layoutScaleFactor.toFixed(2) + ')';
 
       // Per-floor review status as individual order properties
       floors.forEach(function(floor, i) {
