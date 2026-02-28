@@ -1166,12 +1166,16 @@
       if (floorsLoading) floorsLoading.classList.remove('hidden');
       requestAnimationFrame(() => {
         setTimeout(() => {
+          // If Frame Code is pending, skip normal render — applyPendingConfig handles it
+          if (pendingFrameConfig) {
+            if (floorsLoading) floorsLoading.classList.add('hidden');
+            applyPendingConfig();
+            return;
+          }
           renderPreviewThumbnails();
           updateFloorLabels();
           if (floorsLoading) floorsLoading.classList.add('hidden');
           updateWizardUI();
-          // Apply pending Frame Code config if present
-          if (pendingFrameConfig) applyPendingConfig();
         }, 100);
       });
     }
@@ -2118,12 +2122,8 @@
     // RENDER PREVIEW USING LAYOUT ENGINE
     // ============================================================
     function renderPreviewThumbnails() {
-      var _callId = Math.random().toString(36).substr(2, 4);
-      console.log('[Mattori] renderPreviewThumbnails CALLED id=' + _callId + ' step=' + currentWizardStep + ' layoutCalc=' + layoutCalculated);
-      console.trace('[Mattori] render callstack');
       // In step 4, don't render until "Bereken indeling" is clicked
       if (currentWizardStep === 4 && !layoutCalculated) {
-        console.log('[Mattori] render BAIL step4 uncalculated id=' + _callId);
         for (const v of previewViewers) { if (v.renderer) v.renderer.dispose(); }
         previewViewers = [];
         floorsGrid.innerHTML = '';
@@ -2153,7 +2153,6 @@
       var zoneH = grid.maxGridH;  // use full-row height, not container height
 
       if (zoneW < 10 || zoneH < 10 || includedIndices.length === 0) {
-        console.warn('[Mattori] render BAIL zero-size id=' + _callId + ' zoneW=' + zoneW.toFixed(0) + ' zoneH=' + zoneH.toFixed(0) + ' included=' + includedIndices.length);
         return;
       }
 
@@ -2729,8 +2728,12 @@
           }
         } else if (n === 5) {
           // Re-render with perspective camera (final look with depth)
-          renderPreviewThumbnails();
-          updateFloorLabels();
+          // Skip if coming from Frame Code — applyPendingConfig handles render with proper delay
+          if (!_skipStep5Render) {
+            renderPreviewThumbnails();
+            updateFloorLabels();
+          }
+          _skipStep5Render = false;
           renderLabelsFields();
         }
       }, delay);
@@ -3061,11 +3064,6 @@
       ensureDomRefs();
       var cb = document.getElementById('adminShowGrid');
       adminGridOverlay = cb ? cb.checked : false;
-      console.log('[Mattori] Admin grid toggle:', adminGridOverlay, 'floorsGrid:', !!floorsGrid);
-      if (floorsGrid) {
-        var grid = getGridDimensions();
-        console.log('[Mattori] Grid dimensions:', grid.zoneW, 'x', grid.maxGridH, 'cellPx:', grid.cellPx);
-      }
       renderGridOverlay();
     }
 
@@ -4797,6 +4795,7 @@
     }
 
     var pendingFrameConfig = null;
+    var _skipStep5Render = false;
 
     function applyFrameCode(code) {
       ensureDomRefs();
@@ -4923,7 +4922,8 @@
       if (unifiedFloorsOverlay) unifiedFloorsOverlay.style.display = '';
       if (floorsLoading) floorsLoading.classList.add('hidden');
 
-      // Jump to last step (this also makes preview visible)
+      // Jump to last step — skip its internal render, we handle it with proper delay below
+      _skipStep5Render = true;
       showWizardStep(TOTAL_WIZARD_STEPS);
       updateWizardUI();
 
@@ -4958,7 +4958,7 @@
           updateFrameAddress();
 
           showToast('Frame Code toegepast!');
-        }, 50);
+        }, 200);
       });
     }
 
