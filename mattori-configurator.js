@@ -4740,7 +4740,8 @@
           lastFundaUrl = url;
           var addr2 = parseFundaAddress(url) || parseAddressFromFML(data);
           var addrStr2 = addr2 ? addr2.street + ', ' + addr2.city : 'Adres niet gevonden';
-          var saleLine2 = data.sale_status ? '<span class="funda-address-line">\uD83C\uDFF7\uFE0F ' + data.sale_status + '</span>' : '';
+          var saleStr2 = data.sale_status || (url.includes('/verkocht/') ? 'Verkocht' : url.includes('/koop/') ? 'Te koop' : '');
+          var saleLine2 = saleStr2 ? '<span class="funda-address-line">\uD83C\uDFF7\uFE0F ' + saleStr2 + '</span>' : '';
           setFundaStatus('partial',
             '<span class="funda-address-line">\uD83D\uDCCD ' + addrStr2 + '</span>' +
             saleLine2 +
@@ -4756,9 +4757,11 @@
           // Case 3: Funda link niet (meer) geldig — woning waarschijnlijk verwijderd
           var addr3 = parseFundaAddress(url);
           var addrStr3 = addr3 ? addr3.street + ', ' + addr3.city : 'Geen adres gevonden';
+          var saleStr3 = url.includes('/verkocht/') ? 'Verkocht' : url.includes('/koop/') ? 'Te koop' : '';
+          var saleLine3 = saleStr3 ? '\uD83C\uDFF7\uFE0F ' + saleStr3 : '\uD83C\uDFF7\uFE0F Geen verkoopstatus gevonden';
           setFundaStatus('error',
             '<span class="funda-address-line">\uD83D\uDCCD ' + addrStr3 + '</span>' +
-            '<span class="funda-address-line">\uD83C\uDFF7\uFE0F Geen verkoopstatus gevonden</span>' +
+            '<span class="funda-address-line">' + saleLine3 + '</span>' +
             '<strong class="status-warning">\u2715 Funda link niet correct</strong>' +
             '<strong class="status-warning">\u2715 geen interactieve plattegronden gevonden</strong>' +
             '<span style="margin-top:8px;display:block;">Deze woning is waarschijnlijk van Funda verwijderd. Hierdoor kunnen we de plattegronden niet ophalen.</span>');
