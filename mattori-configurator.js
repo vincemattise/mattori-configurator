@@ -1389,7 +1389,7 @@
     var layoutGapFactor = 0.08; // gap as fraction of largest floor dimension (0..0.3)
     var layoutScaleFactor = 1.0; // user scale: 0.82 (klein), 1.0 (normaal), 1.1 (groot)
     var showGridOverlay = true; // user toggle for grid + alignment lines
-    var adminGridOverlay = false; // admin-only: show grid on step 5 preview
+    var adminGridOverlay = true;  // default ON for admin // admin-only: show grid on step 5 preview
     var floorSettings = {}; // per-floor: { rotate: 0|90|180|270 }
 
     // ============================================================
@@ -1553,7 +1553,8 @@
       if (!floorsGrid) return;
       var existingAlign = floorsGrid.querySelector('.align-overlay');
       if (existingAlign) existingAlign.remove();
-      if (!showGridOverlay || !gridEditMode) return;
+      // Admin grid override also shows alignment lines
+      if ((!showGridOverlay || !gridEditMode) && !adminGridOverlay) return;
       if (!currentLayout || !currentLayout.positions) return;
 
       var grid = getGridDimensions();
@@ -4898,6 +4899,7 @@
       }
 
       // Apply labels
+      console.log('[Mattori DBG] FC config.m=' + config.m + ', config.t=' + JSON.stringify(config.t) + ', config.c=' + JSON.stringify(config.c));
       if (config.m === 's') {
         labelMode = 'single';
         singleLabelText = config.t || 'plattegrond';
@@ -4910,6 +4912,7 @@
           if (match) match.label = labelItem.l;
         }
       }
+      console.log('[Mattori DBG] After apply: labelMode=' + labelMode + ', singleLabelText=' + singleLabelText + ', floorLabels=' + JSON.stringify(floorLabels));
 
       if (config.c) labelComments = config.c;
 
@@ -4985,21 +4988,49 @@
           }
         }
 
+        // Show admin grid overlay if enabled
+        if (adminGridOverlay) {
+          setTimeout(function() { renderGridOverlay(); }, 50);
+        }
+
         // Build labels UI — renderLabelsFields() overwrites floorLabels with
         // defaults, so we restore the Frame Code values afterwards
-        renderLabelsFields();
+        console.log('[Mattori DBG] FC labels to restore: mode=' + _fcMode + ', singleText=' + _fcSingleText + ', labels=' + JSON.stringify(_fcLabels));
+        try {
+          renderLabelsFields();
+        } catch (e) {
+          console.error('[Mattori] renderLabelsFields failed:', e);
+        }
 
         // Restore Frame Code labels + mode
         labelMode = _fcMode;
         singleLabelText = _fcSingleText;
         if (_fcLabels) floorLabels = _fcLabels;
         labelComments = _fcComments;
-        renderLabelsFieldsContent();     // re-render fields with FC label text
-        updateLabelsOverlayOnly();       // update overlay without regenerating labels
+
+        // Also update the toggle switch UI to match restored mode
+        var toggleInput = document.querySelector('.labels-step-container .label-mode-switch input');
+        if (toggleInput) {
+          toggleInput.checked = (_fcMode === 'per-floor');
+          var modeLabels = document.querySelectorAll('.labels-step-container .label-mode-label');
+          if (modeLabels.length >= 2) {
+            modeLabels[0].classList.toggle('active', _fcMode === 'single');
+            modeLabels[1].classList.toggle('active', _fcMode === 'per-floor');
+          }
+        }
+
+        try {
+          renderLabelsFieldsContent();     // re-render fields with FC label text
+          updateLabelsOverlayOnly();       // update overlay without regenerating labels
+        } catch (e) {
+          console.error('[Mattori] Label restore render failed:', e);
+        }
 
         // Update comments textarea with FC value
         var commentsEl = document.getElementById('labelComments');
         if (commentsEl) commentsEl.value = _fcComments || '';
+
+        console.log('[Mattori DBG] After restore: labelMode=' + labelMode + ', floorLabels=' + JSON.stringify(floorLabels));
 
         updateFrameAddress();
         showToast('Frame Code toegepast!');
@@ -5031,6 +5062,7 @@
           if (floorsGrid && floorsGrid.children.length === 0) {
             console.warn('[Mattori] FC Guard: floors grid empty — re-rendering');
             renderPreviewThumbnails();
+            if (adminGridOverlay) setTimeout(function() { renderGridOverlay(); }, 50);
             // Also restore labels
             labelMode = _fcRenderGuard.mode;
             singleLabelText = _fcRenderGuard.singleText;
