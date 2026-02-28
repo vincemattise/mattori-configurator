@@ -2130,14 +2130,6 @@
         return;
       }
 
-      // Cleanup old preview viewers
-      for (const v of previewViewers) {
-        if (v.renderer) v.renderer.dispose();
-      }
-      previewViewers = [];
-
-      floorsGrid.innerHTML = '';
-
       // Collect included floor indices
       var includedIndices = [];
       for (let i = 0; i < floors.length; i++) {
@@ -2152,9 +2144,19 @@
       var zoneW = grid.zoneW;
       var zoneH = grid.maxGridH;  // use full-row height, not container height
 
+      // Check dimensions BEFORE clearing grid — if container is hidden/zero,
+      // preserve existing content instead of clearing and returning empty
       if (zoneW < 10 || zoneH < 10 || includedIndices.length === 0) {
         return;
       }
+
+      // Cleanup old preview viewers
+      for (const v of previewViewers) {
+        if (v.renderer) v.renderer.dispose();
+      }
+      previewViewers = [];
+
+      floorsGrid.innerHTML = '';
 
       // floorsGrid height = maxGridH (full rows only, no partial bottom row)
       // Overlay stays at CSS height → stable source for getGridDimensions()
@@ -2728,13 +2730,13 @@
           }
         } else if (n === 5) {
           // Re-render with perspective camera (final look with depth)
-          // Skip if coming from Frame Code — applyPendingConfig handles render with proper delay
+          // Skip ALL rendering if coming from Frame Code — applyPendingConfig handles everything
           if (!_skipStep5Render) {
             renderPreviewThumbnails();
             updateFloorLabels();
+            renderLabelsFields();
           }
           _skipStep5Render = false;
-          renderLabelsFields();
         }
       }, delay);
 
@@ -4953,8 +4955,21 @@
             }
           }
 
-          // Update labels + address in preview
-          updateFloorLabels();
+          // Build labels UI — save Frame Code labels, let renderLabelsFields
+          // build the UI structure (toggle, fields, comments), then restore
+          // the correct labels from the Frame Code and re-render
+          var _fcMode = labelMode;
+          var _fcLabels = floorLabels ? floorLabels.map(function(l) {
+            return { index: l.index, label: l.label };
+          }) : null;
+          renderLabelsFields();  // builds UI but overwrites labels with defaults
+
+          // Restore Frame Code labels + mode
+          labelMode = _fcMode;
+          if (_fcLabels) floorLabels = _fcLabels;
+          renderLabelsFieldsContent();     // re-render fields with FC label text
+          updateLabelsOverlayOnly();       // update overlay without regenerating labels
+
           updateFrameAddress();
 
           showToast('Frame Code toegepast!');
