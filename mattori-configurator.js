@@ -5011,25 +5011,42 @@
       var scaleLabel = layoutScaleFactor <= 0.82 ? 'Klein' : layoutScaleFactor >= 1.1 ? 'Groot' : 'Normaal';
       itemProperties['Schaal'] = scaleLabel + ' (' + layoutScaleFactor.toFixed(2) + ')';
 
-      // Per-floor review status as individual order properties
+      // Per-floor combined properties: status, alignment, rotation, grid position
       floors.forEach(function(floor, i) {
         var floorName = floor.name || ('Verdieping ' + (i + 1));
         var key = 'Plattegrond ' + floorName;
-        // Mark excluded floors
         if (excludedFloors.has(i)) {
           itemProperties[key] = '\u2717 Uitgesloten';
           return;
         }
+        var parts = [];
+        // Review status
         var status = floorReviewStatus[i];
-        if (!status) return;
         if (status === 'confirmed') {
-          itemProperties[key] = '\u2713 Klopt';
+          parts.push('\u2713 Klopt');
         } else if (status === 'issue') {
           var note = floorIssues[i] || '';
-          itemProperties[key] = '\u2717 Klopt niet' + (note ? ': \u201C' + note + '\u201D' : '');
+          parts.push('\u2717 Klopt niet' + (note ? ': \u201C' + note + '\u201D' : ''));
         } else if (status === 'major') {
-          itemProperties[key] = '\u2717 Klopt helemaal niet';
+          parts.push('\u2717 Klopt helemaal niet');
         }
+        // Effective alignment (per-floor override or global)
+        var fs = floorSettings[i] || {};
+        var ax = fs.alignX || layoutAlignX;
+        var ay = fs.alignY || layoutAlignY;
+        parts.push('uitlijning: ' + ax + '/' + ay);
+        // Rotation (if any)
+        if (fs.rotate && fs.rotate !== 0) {
+          parts.push('rotatie: ' + fs.rotate + '\u00B0');
+        }
+        // Grid position from currentLayout
+        if (currentLayout && currentLayout.positions) {
+          var pos = currentLayout.positions.find(function(p) { return p.index === i; });
+          if (pos && pos.anchorCellX != null && pos.anchorCellY != null) {
+            parts.push('positie: (' + pos.anchorCellX + ', ' + pos.anchorCellY + ')');
+          }
+        }
+        itemProperties[key] = parts.join(', ');
       });
 
       // Floor labels (from step 5)
@@ -5047,11 +5064,7 @@
         itemProperties['Opmerkingen'] = labelComments.trim();
       }
 
-      // Grid positions (from manual layout adjustment in step 4)
-      var gridProps = getGridPositionProperties();
-      for (var gk in gridProps) {
-        if (gridProps.hasOwnProperty(gk)) itemProperties[gk] = gridProps[gk];
-      }
+      // (grid positions, alignment and rotation are now included per-floor above)
 
       // Layout note (from step 4)
       var layoutNoteEl = document.getElementById('layoutNote');
