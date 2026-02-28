@@ -1982,6 +1982,10 @@
         var edgeY = floorAlignY === 'top' ? r.y : floorAlignY === 'bottom' ? (r.y + r.h) : (r.y + r.h / 2);
         r.anchorCellY = Math.round(edgeY / cellPx);
         r.y = r.anchorCellY * cellPx - (floorAlignY === 'bottom' ? r.h : floorAlignY === 'center' ? r.h / 2 : 0);
+
+        // Clamp to grid bounds after anchor-snap
+        r.x = Math.max(0, Math.min(zoneW - r.w, r.x));
+        r.y = Math.max(0, Math.min(zoneH - r.h, r.y));
       }
 
       return { scale: finalScale, positions: result, type: best.type, cellPx: cellPx };
@@ -2183,6 +2187,16 @@
             _pos.anchorCellY = _cp.anchorCellY;
             _pos.x = _cp.anchorCellX * _cp_cellPx - (_alignX === 'right' ? _pos.w : _alignX === 'center' ? _pos.w / 2 : 0);
             _pos.y = _cp.anchorCellY * _cp_cellPx - (_alignY === 'bottom' ? _pos.h : _alignY === 'center' ? _pos.h / 2 : 0);
+            // Clamp to grid bounds (same logic as drag handler)
+            _pos.x = Math.max(0, Math.min(zoneW - _pos.w, _pos.x));
+            _pos.y = Math.max(0, Math.min(grid.maxGridH - _pos.h, _pos.y));
+            // Re-derive anchor cell from clamped position
+            var _edgeX = _alignX === 'right' ? _pos.x + _pos.w : _alignX === 'center' ? _pos.x + _pos.w / 2 : _pos.x;
+            var _edgeY = _alignY === 'bottom' ? _pos.y + _pos.h : _alignY === 'center' ? _pos.y + _pos.h / 2 : _pos.y;
+            _pos.anchorCellX = Math.round(_edgeX / _cp_cellPx);
+            _pos.anchorCellY = Math.round(_edgeY / _cp_cellPx);
+            _cp.anchorCellX = _pos.anchorCellX;
+            _cp.anchorCellY = _pos.anchorCellY;
           }
         }
       }
