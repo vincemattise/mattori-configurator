@@ -4742,6 +4742,7 @@
     var pendingFrameConfig = null;
 
     function applyFrameCode(code) {
+      ensureDomRefs();
       var config = decodeFrameCode(code);
       if (!config) {
         showToast('Ongeldige Frame Code');
