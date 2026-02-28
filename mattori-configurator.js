@@ -5088,6 +5088,23 @@
         if (previewUrl) itemProperties['Ontwerp'] = previewUrl;
       }
 
+      // Upload FML data to Railway for permanent backup
+      if (originalFmlData) {
+        try {
+          var fmlResp = await fetch('https://web-production-89353.up.railway.app/upload-fml', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fml: originalFmlData })
+          });
+          if (fmlResp.ok) {
+            var fmlResult = await fmlResp.json();
+            if (fmlResult.url) itemProperties['_FML bestand'] = fmlResult.url;
+          }
+        } catch (e) {
+          console.error('[Mattori] FML upload mislukt:', e);
+        }
+      }
+
       // Restore grid + alignment overlays
       if (_gridOverlayEl) _gridOverlayEl.style.display = '';
       if (_alignOverlayEl) _alignOverlayEl.style.display = '';
