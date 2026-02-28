@@ -1507,27 +1507,32 @@
         line.setAttribute('stroke-width', isMidH ? '1.5' : '0.5');
         svg.appendChild(line);
       }
-      // Column numbers along top edge
-      var fontSize = Math.max(7, Math.min(10, grid.cellPx * 0.65));
-      for (var cx = 0; cx < GRID_COLS; cx++) {
+      // Column numbers along top edge — at grid line crossings
+      var fontSize = Math.max(5, Math.min(7, grid.cellPx * 0.45));
+      for (var cx = 0; cx <= GRID_COLS; cx++) {
+        // Show every 5th number, plus 0 and midCol
+        var showLabel = (cx % 5 === 0) || cx === midCol;
+        if (!showLabel) continue;
         var txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        txt.setAttribute('x', (cx + 0.5) * grid.cellPx);
+        txt.setAttribute('x', cx * grid.cellPx);
         txt.setAttribute('y', -2);
         txt.setAttribute('text-anchor', 'middle');
         txt.setAttribute('font-size', fontSize);
-        txt.setAttribute('fill', cx === midCol ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.3)');
+        txt.setAttribute('fill', cx === midCol ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.25)');
         txt.setAttribute('font-family', 'system-ui, sans-serif');
         txt.textContent = cx;
         svg.appendChild(txt);
       }
-      // Row numbers along left edge
-      for (var ry = 0; ry < grid.visibleRows; ry++) {
+      // Row numbers along left edge — at grid line crossings
+      for (var ry = 0; ry <= grid.visibleRows; ry++) {
+        var showLabelR = (ry % 5 === 0) || ry === midRow;
+        if (!showLabelR) continue;
         var txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        txt.setAttribute('x', -3);
-        txt.setAttribute('y', (ry + 0.5) * grid.cellPx + fontSize * 0.35);
+        txt.setAttribute('x', -2);
+        txt.setAttribute('y', ry * grid.cellPx + fontSize * 0.35);
         txt.setAttribute('text-anchor', 'end');
         txt.setAttribute('font-size', fontSize);
-        txt.setAttribute('fill', ry === midRow ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.3)');
+        txt.setAttribute('fill', ry === midRow ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.25)');
         txt.setAttribute('font-family', 'system-ui, sans-serif');
         txt.textContent = ry;
         svg.appendChild(txt);
