@@ -4735,17 +4735,17 @@
         var noValidFloors = !data?.floors?.length || !(data.floors ?? []).some(f => f?.designs?.[0]);
 
         if (noPlattegrond || (data.floors && noValidFloors)) {
-          // Case 1: Funda link herkend, maar geen interactieve plattegronden (verkocht)
+          // Case 1: Funda link werkt, maar geen interactieve plattegronden beschikbaar
           noFloorsMode = true;
           lastFundaUrl = url;
-          setFundaStatus('error', '<strong>Geen interactieve plattegronden beschikbaar</strong><span>Deze woning is waarschijnlijk verkocht of van Funda verwijderd. Hierdoor kan de configurator momenteel niet gebruikt worden.</span><span style="margin-top:6px;display:block;">We werken aan een oplossing hiervoor. Je kunt \u2019m ook <a href="https://mattori.nl/products/mattori-frame" style="color:#1a73e8;text-decoration:underline;">zonder de configurator bestellen</a> \u2014 wij bouwen de plattegrond dan handmatig voor je op.</span>');
+          setFundaStatus('error', '<strong>Geen interactieve plattegronden beschikbaar</strong><span>Voor deze woning zijn geen interactieve plattegronden beschikbaar. De configurator kan hierdoor momenteel niet gebruikt worden.</span><span style="margin-top:6px;display:block;">We werken aan een oplossing hiervoor. Je kunt \u2019m ook <a href="https://mattori.nl/products/mattori-frame" style="color:#1a73e8;text-decoration:underline;">zonder de configurator bestellen</a> \u2014 wij bouwen de plattegrond dan handmatig voor je op.</span>');
           btnWizardNext.style.display = 'none';
           return;
         }
 
         if (data.error) {
-          // Case 2: Funda link helemaal niet geldig / niet bereikbaar
-          setFundaStatus('error', '<strong>Funda link niet beschikbaar</strong><span>Deze link is niet meer geldig of de woning is volledig van Funda verwijderd.</span><span style="margin-top:6px;display:block;">Helaas kunnen we op dit moment niets met deze link. Neem contact met ons op zodat we je verder kunnen helpen.</span>');
+          // Case 2: Funda link niet (meer) geldig — woning waarschijnlijk verkocht/verwijderd
+          setFundaStatus('error', '<strong>Funda link niet beschikbaar</strong><span>Deze woning is waarschijnlijk verkocht of van Funda verwijderd. Hierdoor kunnen we de plattegronden niet ophalen.</span><span style="margin-top:6px;display:block;">Neem contact met ons op zodat we je verder kunnen helpen.</span>');
           showContactEmail(url);
           btnWizardNext.style.display = 'none';
           return;
