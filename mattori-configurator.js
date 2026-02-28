@@ -4745,7 +4745,7 @@
         if (layoutAlignY !== 'bottom') config.ay = layoutAlignY;
         if (labelMode !== 'single') {
           config.m = 'p';
-          config.t = getIncludedFloorLabels().map(function(item) {
+          config.t = (floorLabels || []).map(function(item) {
             return { i: item.index, l: item.label };
           });
         } else if (singleLabelText !== 'plattegrond') {
