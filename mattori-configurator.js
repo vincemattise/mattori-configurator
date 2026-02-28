@@ -4837,6 +4837,21 @@
       var config = pendingFrameConfig;
       pendingFrameConfig = null;
 
+      // Auto-start configurator (skip animations for Frame Code)
+      if (!configuratorStarted) {
+        configuratorStarted = true;
+        var btn = document.getElementById('btnStartConfigurator');
+        if (btn) btn.style.display = 'none';
+        var collapsibles = document.querySelectorAll('.mattori-configurator .collapsible-info');
+        collapsibles.forEach(function(el) { el.style.display = 'none'; });
+        var buyBlock = document.querySelector('.mattori-configurator .buy-buttons-block');
+        if (buyBlock) buyBlock.style.display = 'none';
+        var stickyBar = document.querySelector('sticky-add-to-cart');
+        if (stickyBar) stickyBar.style.display = 'none';
+        if (wizard) wizard.style.display = '';
+        initWizard();
+      }
+
       // Apply floor exclusions
       excludedFloors.clear();
       if (config.f) {
