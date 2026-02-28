@@ -4667,7 +4667,7 @@
       box.className = 'funda-status visible ' + state;
       if (state === 'loading') {
         icon.innerHTML = '<div class="mini-spinner"></div>';
-      } else if (state === 'success') {
+      } else if (state === 'success' || state === 'partial') {
         icon.textContent = '';
       } else if (state === 'error') {
         icon.textContent = '✕';
@@ -4735,17 +4735,33 @@
         var noValidFloors = !data?.floors?.length || !(data.floors ?? []).some(f => f?.designs?.[0]);
 
         if (noPlattegrond || (data.floors && noValidFloors)) {
-          // Case 1: Funda link werkt, maar geen interactieve plattegronden beschikbaar
+          // Case 2: Funda link correct, maar geen interactieve plattegronden
           noFloorsMode = true;
           lastFundaUrl = url;
-          setFundaStatus('error', '<strong>Geen interactieve plattegronden beschikbaar</strong><span>Voor deze woning zijn geen interactieve plattegronden beschikbaar. De configurator kan hierdoor momenteel niet gebruikt worden.</span><span style="margin-top:6px;display:block;">We werken aan een oplossing hiervoor. Je kunt \u2019m ook <a href="https://mattori.nl/products/mattori-frame" style="color:#1a73e8;text-decoration:underline;">zonder de configurator bestellen</a> \u2014 wij bouwen de plattegrond dan handmatig voor je op.</span>');
+          var addr2 = parseFundaAddress(url) || parseAddressFromFML(data);
+          var addrStr2 = addr2 ? addr2.street + ', ' + addr2.city : 'Adres niet gevonden';
+          var saleLine2 = data.sale_status ? '<span class="funda-address-line">\uD83C\uDFF7\uFE0F ' + data.sale_status + '</span>' : '';
+          setFundaStatus('partial',
+            '<span class="funda-address-line">\uD83D\uDCCD ' + addrStr2 + '</span>' +
+            saleLine2 +
+            '<strong style="color:#2d6a2e;">\u2713 Funda link correct</strong>' +
+            '<strong class="status-warning">\u2715 geen interactieve plattegronden gevonden</strong>' +
+            '<span style="margin-top:8px;display:block;">Voor deze woning zijn geen interactieve plattegronden beschikbaar. De configurator kan hierdoor momenteel niet gebruikt worden. We werken aan een oplossing hiervoor.</span>' +
+            '<span style="margin-top:4px;display:block;">Je kunt \u2019m ook <a href="https://mattori.nl/products/mattori-frame" style="color:#1a73e8;text-decoration:underline;">zonder de configurator bestellen</a> \u2014 wij bouwen de plattegrond dan handmatig voor je op.</span>');
           btnWizardNext.style.display = 'none';
           return;
         }
 
         if (data.error) {
-          // Case 2: Funda link niet (meer) geldig — woning waarschijnlijk verkocht/verwijderd
-          setFundaStatus('error', '<strong>Funda link niet beschikbaar</strong><span>Deze woning is waarschijnlijk verkocht of van Funda verwijderd. Hierdoor kunnen we de plattegronden niet ophalen.</span><span style="margin-top:6px;display:block;">Neem contact met ons op zodat we je verder kunnen helpen.</span>');
+          // Case 3: Funda link niet (meer) geldig — woning waarschijnlijk verwijderd
+          var addr3 = parseFundaAddress(url);
+          var addrStr3 = addr3 ? addr3.street + ', ' + addr3.city : 'Geen adres gevonden';
+          setFundaStatus('error',
+            '<span class="funda-address-line">\uD83D\uDCCD ' + addrStr3 + '</span>' +
+            '<span class="funda-address-line">\uD83C\uDFF7\uFE0F Geen verkoopstatus gevonden</span>' +
+            '<strong class="status-warning">\u2715 Funda link niet correct</strong>' +
+            '<strong class="status-warning">\u2715 geen interactieve plattegronden gevonden</strong>' +
+            '<span style="margin-top:8px;display:block;">Deze woning is waarschijnlijk van Funda verwijderd. Hierdoor kunnen we de plattegronden niet ophalen.</span>');
           showContactEmail(url);
           btnWizardNext.style.display = 'none';
           return;
@@ -4767,8 +4783,12 @@
         }
 
         var addrStr = addr ? addr.street + ', ' + addr.city : 'Adres niet gevonden';
-        var saleStatusLine = data.sale_status ? '<span class="funda-address-line">🏷️ ' + data.sale_status + '</span>' : '';
-        setFundaStatus('success', '<strong>✓ Funda link correct</strong><strong>✓ ' + data.floors.length + ' interactieve plattegrond' + (data.floors.length === 1 ? '' : 'en') + ' gevonden</strong><span class="funda-address-line">📍 ' + addrStr + '</span>' + saleStatusLine);
+        var saleStatusLine = data.sale_status ? '<span class="funda-address-line">\uD83C\uDFF7\uFE0F ' + data.sale_status + '</span>' : '';
+        setFundaStatus('success',
+          '<span class="funda-address-line">\uD83D\uDCCD ' + addrStr + '</span>' +
+          saleStatusLine +
+          '<strong>\u2713 Funda link correct</strong>' +
+          '<strong>\u2713 ' + data.floors.length + ' interactieve plattegrond' + (data.floors.length === 1 ? '' : 'en') + ' gevonden</strong>');
 
         processFloors(data);
 
