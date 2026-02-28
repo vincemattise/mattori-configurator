@@ -2123,6 +2123,10 @@
     // RENDER PREVIEW USING LAYOUT ENGINE
     // ============================================================
     function renderPreviewThumbnails() {
+      // Debug: trace all calls at step 5 after FC render to find what clears floors
+      if (_fcRenderGuard && currentWizardStep === 5) {
+        console.trace('[Mattori DBG] renderPreviewThumbnails called at step 5 after FC render');
+      }
       // In step 4, don't render until "Bereken indeling" is clicked
       if (currentWizardStep === 4 && !layoutCalculated) {
         for (const v of previewViewers) { if (v.renderer) v.renderer.dispose(); }
@@ -4799,6 +4803,8 @@
 
     var pendingFrameConfig = null;
     var _skipStep5Render = false;
+    var _fcRenderGuard = null;  // stores FC label state for re-render guard
+    var _fcGuardInterval = null;
 
     function applyFrameCode(code) {
       ensureDomRefs();
@@ -4997,6 +5003,53 @@
 
         updateFrameAddress();
         showToast('Frame Code toegepast!');
+
+        // Set up guard: store FC state + watch for floors disappearing
+        _fcRenderGuard = {
+          mode: _fcMode,
+          labels: _fcLabels,
+          singleText: _fcSingleText,
+          comments: _fcComments
+        };
+        if (_fcGuardInterval) clearInterval(_fcGuardInterval);
+        _fcGuardInterval = setInterval(function() {
+          if (currentWizardStep !== 5 || !_fcRenderGuard) {
+            clearInterval(_fcGuardInterval);
+            _fcGuardInterval = null;
+            return;
+          }
+          // Re-show containers if something hid them
+          if (unifiedFramePreview && unifiedFramePreview.style.display === 'none') {
+            console.warn('[Mattori] FC Guard: unifiedFramePreview was hidden, re-showing');
+            unifiedFramePreview.style.display = '';
+          }
+          if (unifiedFloorsOverlay && unifiedFloorsOverlay.style.display === 'none') {
+            console.warn('[Mattori] FC Guard: unifiedFloorsOverlay was hidden, re-showing');
+            unifiedFloorsOverlay.style.display = '';
+          }
+          // Re-render floors if they disappeared
+          if (floorsGrid && floorsGrid.children.length === 0) {
+            console.warn('[Mattori] FC Guard: floors grid empty — re-rendering');
+            renderPreviewThumbnails();
+            // Also restore labels
+            labelMode = _fcRenderGuard.mode;
+            singleLabelText = _fcRenderGuard.singleText;
+            if (_fcRenderGuard.labels) floorLabels = _fcRenderGuard.labels;
+            labelComments = _fcRenderGuard.comments;
+            renderLabelsFieldsContent();
+            updateLabelsOverlayOnly();
+            var cEl = document.getElementById('labelComments');
+            if (cEl) cEl.value = _fcRenderGuard.comments || '';
+          }
+        }, 500);
+        // Stop guarding after 10 seconds
+        setTimeout(function() {
+          if (_fcGuardInterval) {
+            clearInterval(_fcGuardInterval);
+            _fcGuardInterval = null;
+          }
+          _fcRenderGuard = null;
+        }, 10000);
       }
 
       // Start retry loop after first frame + small delay
