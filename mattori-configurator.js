@@ -3046,8 +3046,14 @@
     }
 
     function toggleAdminGrid() {
+      ensureDomRefs();
       var cb = document.getElementById('adminShowGrid');
       adminGridOverlay = cb ? cb.checked : false;
+      console.log('[Mattori] Admin grid toggle:', adminGridOverlay, 'floorsGrid:', !!floorsGrid);
+      if (floorsGrid) {
+        var grid = getGridDimensions();
+        console.log('[Mattori] Grid dimensions:', grid.zoneW, 'x', grid.maxGridH, 'cellPx:', grid.cellPx);
+      }
       renderGridOverlay();
     }
 
@@ -4887,52 +4893,61 @@
 
       if (config.c) labelComments = config.c;
 
-      // Re-render layout with new settings
-      renderPreviewThumbnails();
+      // Auto-confirm all floors for review + mark as viewed
+      for (var ri = 0; ri < floors.length; ri++) {
+        if (!excludedFloors.has(ri)) {
+          floorReviewStatus[ri] = 'confirmed';
+          viewedFloors.add(ri);
+        }
+      }
 
-      // After layout, apply custom grid positions from code
-      setTimeout(function() {
-        if (config.f && currentLayout && currentLayout.positions) {
-          var hasPositions = config.f.some(function(fc) { return fc.px != null; });
-          if (hasPositions) {
-            // Initialize customPositions from code
-            customPositions = currentLayout.positions.map(function(p) {
-              return { index: p.index, anchorCellX: null, anchorCellY: null };
-            });
-            for (var i = 0; i < config.f.length && i < floors.length; i++) {
-              var fc = config.f[i];
-              if (fc.px != null && fc.py != null) {
-                var cp = customPositions.find(function(c) { return c.index === i; });
-                if (cp) {
-                  cp.anchorCellX = fc.px;
-                  cp.anchorCellY = fc.py;
+      // Mark layout as calculated so step 4 shows the result
+      layoutCalculated = true;
+
+      // Ensure preview containers are visible BEFORE rendering
+      // (getGridDimensions needs non-zero dimensions)
+      if (productHeroImage) productHeroImage.style.display = 'none';
+      if (unifiedFramePreview) unifiedFramePreview.style.display = '';
+      if (unifiedFloorsOverlay) unifiedFloorsOverlay.style.display = '';
+      if (floorsLoading) floorsLoading.classList.add('hidden');
+
+      // Jump to last step (this also makes preview visible)
+      showWizardStep(TOTAL_WIZARD_STEPS);
+      updateWizardUI();
+
+      // Wait for layout to be computed, then render floors + apply positions
+      requestAnimationFrame(function() {
+        setTimeout(function() {
+          renderPreviewThumbnails();
+
+          // Apply custom grid positions from code
+          if (config.f && currentLayout && currentLayout.positions) {
+            var hasPositions = config.f.some(function(fc) { return fc.px != null; });
+            if (hasPositions) {
+              customPositions = currentLayout.positions.map(function(p) {
+                return { index: p.index, anchorCellX: null, anchorCellY: null };
+              });
+              for (var i = 0; i < config.f.length && i < floors.length; i++) {
+                var fc = config.f[i];
+                if (fc.px != null && fc.py != null) {
+                  var cp = customPositions.find(function(c) { return c.index === i; });
+                  if (cp) {
+                    cp.anchorCellX = fc.px;
+                    cp.anchorCellY = fc.py;
+                  }
                 }
               }
+              renderPreviewThumbnails();
             }
-            renderPreviewThumbnails();
           }
-        }
 
-        // Update labels + address in preview
-        updateFloorLabels();
-        updateFrameAddress();
+          // Update labels + address in preview
+          updateFloorLabels();
+          updateFrameAddress();
 
-        // Auto-confirm all floors for review + mark as viewed
-        for (var ri = 0; ri < floors.length; ri++) {
-          if (!excludedFloors.has(ri)) {
-            floorReviewStatus[ri] = 'confirmed';
-            viewedFloors.add(ri);
-          }
-        }
-
-        // Mark layout as calculated so step 4 shows the result
-        layoutCalculated = true;
-
-        // Jump to last step
-        showWizardStep(TOTAL_WIZARD_STEPS);
-        updateWizardUI();
-        showToast('Frame Code toegepast!');
-      }, 500);
+          showToast('Frame Code toegepast!');
+        }, 50);
+      });
     }
 
     // Attach Frame Code import button
