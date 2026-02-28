@@ -23,7 +23,7 @@
   <!-- ADMIN PANEL                                 -->
   <!-- ═══════════════════════════════════════════ -->
   <div class="admin-panel" id="adminPanel" style="display:none;">
-    <div class="admin-panel-label">Admin &middot; v50.11</div>
+    <div class="admin-panel-label">Admin &middot; v50.12</div>
     <div class="admin-panel-content">
       <div class="dropzone" id="dropzone">
         <div class="dropzone-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
@@ -71,6 +71,10 @@
       <div class="error-msg" id="errorMsg"></div>
       <div class="admin-floor-dims" id="adminFloorDims" style="display:none;"></div>
       <!-- Layout controls moved to step 4 per-floor cards -->
+      <label class="admin-checkbox" style="margin-top:8px;">
+        <input type="checkbox" id="adminShowGrid" onclick="toggleAdminGrid()" />
+        Toon grid op preview
+      </label>
       <div style="margin-top:10px;border-top:1px solid rgba(0,0,0,0.1);padding-top:10px;">
         <div style="font-size:11px;font-weight:600;margin-bottom:4px;opacity:0.6;">Frame Code</div>
         <div style="display:flex;gap:6px;">

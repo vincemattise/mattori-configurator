@@ -1384,6 +1384,7 @@
     var layoutGapFactor = 0.08; // gap as fraction of largest floor dimension (0..0.3)
     var layoutScaleFactor = 1.0; // user scale: 0.82 (klein), 1.0 (normaal), 1.1 (groot)
     var showGridOverlay = true; // user toggle for grid + alignment lines
+    var adminGridOverlay = false; // admin-only: show grid on step 5 preview
     var floorSettings = {}; // per-floor: { rotate: 0|90|180|270 }
 
     // ============================================================
@@ -1457,10 +1458,10 @@
       if (existing) existing.remove();
       var existingAlign = floorsGrid.querySelector('.align-overlay');
       if (existingAlign) existingAlign.remove();
-      // Respect user toggle
-      if (!showGridOverlay) return;
-      // Only show grid when edit mode is active
-      if (!gridEditMode) return;
+      // Respect user toggle (admin override bypasses edit mode check)
+      if (!showGridOverlay && !adminGridOverlay) return;
+      // Only show grid when edit mode is active (unless admin override)
+      if (!gridEditMode && !adminGridOverlay) return;
 
       var grid = getGridDimensions();
       // Pixel-snap helper: round to nearest pixel + 0.5 so strokes sit on pixel center
@@ -1472,7 +1473,7 @@
       svg.setAttribute('class', 'grid-overlay');
       svg.setAttribute('width', grid.zoneW);
       svg.setAttribute('height', grid.zoneH);
-      svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:1;';
+      svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:1;overflow:visible;';
 
       // Only full rows — no partial bottom row
       var midCol = Math.floor(GRID_COLS / 2);
@@ -1506,6 +1507,32 @@
         line.setAttribute('stroke-width', isMidH ? '1.5' : '0.5');
         svg.appendChild(line);
       }
+      // Column numbers along top edge
+      var fontSize = Math.max(7, Math.min(10, grid.cellPx * 0.65));
+      for (var cx = 0; cx < GRID_COLS; cx++) {
+        var txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.setAttribute('x', (cx + 0.5) * grid.cellPx);
+        txt.setAttribute('y', -2);
+        txt.setAttribute('text-anchor', 'middle');
+        txt.setAttribute('font-size', fontSize);
+        txt.setAttribute('fill', cx === midCol ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.3)');
+        txt.setAttribute('font-family', 'system-ui, sans-serif');
+        txt.textContent = cx;
+        svg.appendChild(txt);
+      }
+      // Row numbers along left edge
+      for (var ry = 0; ry < grid.visibleRows; ry++) {
+        var txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.setAttribute('x', -3);
+        txt.setAttribute('y', (ry + 0.5) * grid.cellPx + fontSize * 0.35);
+        txt.setAttribute('text-anchor', 'end');
+        txt.setAttribute('font-size', fontSize);
+        txt.setAttribute('fill', ry === midRow ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.3)');
+        txt.setAttribute('font-family', 'system-ui, sans-serif');
+        txt.textContent = ry;
+        svg.appendChild(txt);
+      }
+
       floorsGrid.insertBefore(svg, floorsGrid.firstChild);
 
       renderAlignOverlay();
@@ -3016,6 +3043,12 @@
       var img = document.getElementById('unifiedFrameImage');
       if (!cb || !img) return;
       img.src = cb.checked ? FRAME_IMG_TWO : FRAME_IMG_ONE;
+    }
+
+    function toggleAdminGrid() {
+      var cb = document.getElementById('adminShowGrid');
+      adminGridOverlay = cb ? cb.checked : false;
+      renderGridOverlay();
     }
 
     function toggleLayoutAlign() {
@@ -4719,9 +4752,7 @@
         }
         var b64 = code.substring(3).replace(/-/g, '+').replace(/_/g, '/');
         while (b64.length % 4) b64 += '=';
-        console.log('[Mattori] Frame Code base64 lengte:', b64.length);
         var json = decodeURIComponent(escape(atob(b64)));
-        console.log('[Mattori] Frame Code decoded JSON:', json.substring(0, 100));
         var config = JSON.parse(json);
         // Fill in defaults for compact codes
         if (!config.i) config.i = 'huisje1';
@@ -4751,10 +4782,9 @@
 
     function applyFrameCode(code) {
       ensureDomRefs();
-      console.log('[Mattori] applyFrameCode aangeroepen met:', code ? code.substring(0, 20) + '...' : code);
       var config = decodeFrameCode(code);
       if (!config) {
-        showToast('Ongeldige Frame Code — check console (F12) voor details');
+        showToast('Ongeldige Frame Code');
         return;
       }
 
@@ -4872,13 +4902,20 @@
         updateFloorLabels();
         updateFrameAddress();
 
-        // Auto-confirm all floors for review
+        // Auto-confirm all floors for review + mark as viewed
         for (var ri = 0; ri < floors.length; ri++) {
-          if (!excludedFloors.has(ri)) floorReviewStatus[ri] = 'confirmed';
+          if (!excludedFloors.has(ri)) {
+            floorReviewStatus[ri] = 'confirmed';
+            viewedFloors.add(ri);
+          }
         }
 
+        // Mark layout as calculated so step 4 shows the result
+        layoutCalculated = true;
+
         // Jump to last step
-        goToStep(TOTAL_WIZARD_STEPS);
+        showWizardStep(TOTAL_WIZARD_STEPS);
+        updateWizardUI();
         showToast('Frame Code toegepast!');
       }, 500);
     }
