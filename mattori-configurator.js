@@ -4240,7 +4240,7 @@
 
         // Expand each floor source slightly so adjacent polygons overlap,
         // guaranteeing the union merges them into one continuous shape.
-        const FLOOR_EXPAND = 2;
+        const FLOOR_EXPAND = 4;
         for (let si = 0; si < floorSources.length; si++) {
           const poly = floorSources[si];
           if (poly.length < 3) continue;
