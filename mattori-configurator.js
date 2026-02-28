@@ -4738,8 +4738,8 @@
           // noFloorsMode: Funda link valid but no interactive floor plans
           noFloorsMode = true;
           lastFundaUrl = url;
-          setFundaStatus('success', '<strong>✓ Funda link herkend</strong><strong class="status-warning">✗ Geen interactieve plattegronden beschikbaar</strong><span>Geen zorgen — we bouwen je Frame\u00B3 handmatig op basis van de Funda-foto\'s.</span>');
-          updateWizardUI();
+          setFundaStatus('error', '<strong>✗ Geen interactieve plattegronden beschikbaar</strong><span>Deze woning is waarschijnlijk verkocht of van Funda verwijderd. Hierdoor zijn de interactieve plattegronden niet meer beschikbaar en kan de configurator momenteel niet gebruikt worden.</span><span style="margin-top:6px;display:block;">We werken aan een oplossing hiervoor. Bestel in de tussentijd het <a href="https://mattori.nl/products/mattori-frame" style="color:#1a73e8;text-decoration:underline;">standaard Frame\u00B3 product</a> — wij bouwen de plattegrond dan handmatig voor je op.</span>');
+          btnWizardNext.style.display = 'none';
           return;
         }
 
