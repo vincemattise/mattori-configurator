@@ -4802,7 +4802,7 @@
       }
       try {
         await document.fonts.ready;
-        var scale = 2;
+        var scale = 1.2;
 
         // Get the container (containing block for absolute overlays)
         var container = previewEl.querySelector('.unified-frame-container');
