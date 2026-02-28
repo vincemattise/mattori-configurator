@@ -4771,7 +4771,15 @@
       // Set house icon
       if (config.i) {
         selectedHouseIcon = config.i;
-        updateHouseIcon();
+        var iconOpt = houseIconOptions.find(function(o) { return o.id === config.i; });
+        if (iconOpt && frameHouseIcon) frameHouseIcon.src = iconOpt.url;
+        // Update picker active state
+        var iconContainer = document.getElementById('houseIconOptions');
+        if (iconContainer) {
+          iconContainer.querySelectorAll('.house-icon-option').forEach(function(el) {
+            el.classList.toggle('active', el.dataset.iconId === config.i);
+          });
+        }
       }
 
       // Set scale
