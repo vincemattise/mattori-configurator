@@ -1795,14 +1795,15 @@
           }
         }
       }
-      if (!customPositions) return props;
-      for (var i = 0; i < customPositions.length; i++) {
-        var cp = customPositions[i];
-        // Skip floors that haven't been manually positioned (still at auto-layout)
-        if (cp.anchorCellX == null || cp.anchorCellY == null) continue;
-        var floor = floors[cp.index];
-        var floorName = floor ? floor.name : ('Verdieping ' + (cp.index + 1));
-        props['Positie ' + floorName] = 'X=' + cp.anchorCellX + ', Y=' + cp.anchorCellY;
+      // Always include grid positions from currentLayout (auto or manual)
+      if (currentLayout && currentLayout.positions) {
+        for (var i = 0; i < currentLayout.positions.length; i++) {
+          var pos = currentLayout.positions[i];
+          if (pos.anchorCellX == null || pos.anchorCellY == null) continue;
+          var floor = floors[pos.index];
+          var floorName = floor ? floor.name : ('Verdieping ' + (pos.index + 1));
+          props['Positie ' + floorName] = 'X=' + pos.anchorCellX + ', Y=' + pos.anchorCellY;
+        }
       }
       return props;
     }
