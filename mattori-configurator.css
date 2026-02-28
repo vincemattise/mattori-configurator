@@ -1165,6 +1165,21 @@
       gap: 0.5rem;
     }
 
+    .mattori-configurator .wizard-help-link {
+      width: 100%;
+      text-align: center;
+      font-size: 0.75rem;
+      color: #999;
+      text-decoration: none;
+      margin-top: 0.3rem;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+    .mattori-configurator .wizard-help-link:hover {
+      color: #1a1a1a;
+      text-decoration: underline;
+    }
+
     .mattori-configurator .btn-wizard-prev,
     .mattori-configurator .btn-wizard-next {
       height: 40px;
@@ -1357,6 +1372,14 @@
       text-align: center;
       line-height: 1.4;
       margin: 0;
+    }
+
+    .mattori-configurator .floor-review-reassurance {
+      font-size: 0.72rem;
+      color: #aaa;
+      text-align: center;
+      margin: 0.6rem 0 0 0;
+      line-height: 1.4;
     }
 
     /* Issue box (small difference) */

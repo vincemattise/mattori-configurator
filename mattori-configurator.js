@@ -2637,6 +2637,20 @@
         if (orderBtn) orderBtn.style.display = n === TOTAL_WIZARD_STEPS ? '' : 'none';
         if (orderNotice) orderNotice.style.display = n === TOTAL_WIZARD_STEPS ? '' : 'none';
 
+        // Show "Hulp nodig?" contact link from step 2 onward
+        var helpLink = document.getElementById('wizardHelpLink');
+        if (helpLink) {
+          helpLink.style.display = (n >= 2) ? '' : 'none';
+          var _fundaVal = fundaUrlInput ? fundaUrlInput.value.trim() : '';
+          var _helpSubj = encodeURIComponent('Frame\u00B3 \u2014 hulp nodig bij stap ' + n);
+          var _helpBody = encodeURIComponent(
+            'Hoi,\n\nIk zit in stap ' + n + ' van de configurator en heb hulp nodig.\n\n' +
+            'Funda link: ' + (_fundaVal || '(niet ingevuld)') + '\n\n' +
+            'Mijn vraag/probleem:\n\n'
+          );
+          helpLink.href = 'mailto:vince@mattori.nl?subject=' + _helpSubj + '&body=' + _helpBody;
+        }
+
         // Special step initialization
         if (n === 3) {
           // Only reset viewed floors on first visit (not when returning)
