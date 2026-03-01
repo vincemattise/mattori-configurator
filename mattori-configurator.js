@@ -1776,9 +1776,8 @@
     var layoutHasOverlap = false;
 
     // Compute 2D floor outline in local (FML) coordinates.
-    // Uses ONLY area + surface polygons (the actual floor surfaces, not walls).
-    // This prevents wall thickness from extending beyond the bounding box
-    // and causing false overlap detection with neighboring floors.
+    // Includes areas + surfaces + wall union + wall rects for complete coverage,
+    // then clips to the floor bbox so nothing extends beyond the wrap rect.
     // Returns polygon-clipping multi-polygon format, cached on floor object.
     function computeFloorOutline(floorIndex) {
       var floor = floors[floorIndex];
@@ -1787,9 +1786,12 @@
 
       var design = floor.design;
       var wallBBox = computeWallBBox(design);
+      var walls = flattenWalls(design.walls || []);
+      var solidWalls = walls.filter(function(w) { return !(w.openings && w.openings.length > 0); });
+      var wallUnion = computeWallUnion(solidWalls, walls);
       var sources = [];
 
-      // Area polygons (room shapes = actual floor surfaces)
+      // Area polygons (room shapes)
       var areas = design.areas || [];
       for (var ai = 0; ai < areas.length; ai++) {
         var tess = tessellateSurfacePoly(areas[ai].poly || []);
@@ -1810,21 +1812,23 @@
         if (st.length >= 3) sources.push(st);
       }
 
-      // Fallback: if no areas/surfaces found, use wall union (rare edge case)
-      if (sources.length === 0) {
-        var walls = flattenWalls(design.walls || []);
-        var solidWalls = walls.filter(function(w) { return !(w.openings && w.openings.length > 0); });
-        var wallUnion = computeWallUnion(solidWalls, walls);
-        for (var wu = 0; wu < wallUnion.length; wu++) {
-          for (var wr = 0; wr < wallUnion[wu].length; wr++) {
-            var pts = wallUnion[wu][wr].slice();
-            if (pts.length > 1) {
-              var _f = pts[0], _l = pts[pts.length - 1];
-              if (Math.hypot(_f[0] - _l[0], _f[1] - _l[1]) < 0.01) pts.pop();
-            }
-            if (pts.length >= 3) sources.push(pts.map(function(p) { return { x: p[0], y: p[1] }; }));
+      // Wall union rings
+      for (var wu = 0; wu < wallUnion.length; wu++) {
+        for (var wr = 0; wr < wallUnion[wu].length; wr++) {
+          var pts = wallUnion[wu][wr].slice();
+          if (pts.length > 1) {
+            var _f = pts[0], _l = pts[pts.length - 1];
+            if (Math.hypot(_f[0] - _l[0], _f[1] - _l[1]) < 0.01) pts.pop();
           }
+          if (pts.length >= 3) sources.push(pts.map(function(p) { return { x: p[0], y: p[1] }; }));
         }
+      }
+
+      // Individual wall rects (no extension — just the wall itself)
+      for (var wk = 0; wk < walls.length; wk++) {
+        if ((walls[wk].thickness || 20) < 0.1) continue;
+        var wr2 = wallToRect(walls[wk], 0, 0);
+        if (wr2) sources.push(wr2.slice(0, 4).map(function(p) { return { x: p[0], y: p[1] }; }));
       }
 
       // Convert to polygon-clipping format [[[x,y],...]]
@@ -1848,13 +1852,18 @@
         }
       }
 
-      // Store max wall half-thickness for visual scale correction
-      var maxHt = 0;
-      var dwalls = design.walls || [];
-      for (var wm = 0; wm < dwalls.length; wm++) {
-        maxHt = Math.max(maxHt, ((dwalls[wm].thickness || 20) / 2));
+      // Clip outline to floor bbox — walls extend beyond bbox due to thickness,
+      // clipping ensures the outline stays within the wrap rect boundary.
+      if (outline.length > 0) {
+        var bx = floor.bbox;
+        var clipRect = [[[bx.minX, bx.minY], [bx.maxX, bx.minY],
+                         [bx.maxX, bx.maxY], [bx.minX, bx.maxY],
+                         [bx.minX, bx.minY]]];
+        try {
+          var clipped = polygonClipping.intersection(outline, [clipRect]);
+          if (clipped && clipped.length > 0) outline = clipped;
+        } catch (e) { /* keep unclipped */ }
       }
-      floor._outlineWallMargin = maxHt;
 
       floor._outline = outline;
       return outline;
@@ -1862,21 +1871,14 @@
 
     // Transform a floor outline from local coords to grid pixel coords,
     // accounting for position, scale, and rotation.
-    // Uses padded bbox to match Three.js camera fitting: the 3D mesh extends
-    // beyond the 2D bbox by wall-thickness + FLOOR_EXPAND, so the camera shows
-    // more area → the visual floor is smaller within the container than a raw
-    // [0,1] normalization would produce.
+    // Strict mode: no padding — outline fills the full wrap rect via bbox normalization.
+    // This means the check is slightly stricter than visual (catches near-touches too).
     function transformOutlineToGrid(outline, floorIndex, rect) {
       var floor = floors[floorIndex];
       var bbox = floor.bbox;
       var localW = bbox.maxX - bbox.minX;
       var localH = bbox.maxY - bbox.minY;
       var rot = getFloorRotate(floorIndex);
-
-      // Pad bbox to approximate the 3D mesh extent that the camera fits
-      var wMargin = (floor._outlineWallMargin || 10) + 4; // wall half-thickness + FLOOR_EXPAND
-      var padW = localW + 2 * wMargin;
-      var padH = localH + 2 * wMargin;
 
       var result = [];
       for (var pi = 0; pi < outline.length; pi++) {
@@ -1886,9 +1888,9 @@
           var tRing = [];
           for (var vi = 0; vi < ring.length; vi++) {
             var lx = ring[vi][0], ly = ring[vi][1];
-            // Normalize using padded bbox (shrinks outline to match visual rendering)
-            var nx = padW > 0 ? (lx - bbox.minX + wMargin) / padW : 0.5;
-            var ny = padH > 0 ? (ly - bbox.minY + wMargin) / padH : 0.5;
+            // Normalize to [0,1] using bbox (strict — no padding)
+            var nx = localW > 0 ? (lx - bbox.minX) / localW : 0.5;
+            var ny = localH > 0 ? (ly - bbox.minY) / localH : 0.5;
             // Apply rotation (matches Three.js rotateY)
             var rx, ry;
             switch (rot) {
