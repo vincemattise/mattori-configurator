@@ -3117,6 +3117,19 @@
         submitOrder();
         return;
       }
+      // Step 2: require address fields
+      if (currentWizardStep === 2) {
+        var street = addressStreet ? addressStreet.value.trim() : '';
+        var city = addressCity ? addressCity.value.trim() : '';
+        if (!street || !city) {
+          if (!street && addressStreet) addressStreet.style.borderColor = '#ae1c28';
+          if (!city && addressCity) addressCity.style.borderColor = '#ae1c28';
+          return;
+        }
+        // Reset border colors
+        if (addressStreet) addressStreet.style.borderColor = '';
+        if (addressCity) addressCity.style.borderColor = '';
+      }
       if (currentWizardStep < TOTAL_WIZARD_STEPS) {
         showWizardStep(currentWizardStep + 1);
       }
@@ -3166,8 +3179,8 @@
         });
         strip.appendChild(thumb);
 
-        // Render mini static thumbnail
-        const viewer = renderStaticThumbnail(i, thumb);
+        // Render mini static thumbnail (ortho, no shadows)
+        const viewer = renderStaticThumbnailSized(i, thumb, null, null, { ortho: true });
         if (viewer) thumbstripRenderers.push(viewer);
       }
 
@@ -4964,9 +4977,9 @@
       showToast('✓ FML gedownload');
     });
 
-    // Address fields — live update frame preview
-    addressStreet.addEventListener('input', () => updateFrameAddress());
-    addressCity.addEventListener('input', () => updateFrameAddress());
+    // Address fields — live update frame preview + clear validation
+    addressStreet.addEventListener('input', () => { addressStreet.style.borderColor = ''; updateFrameAddress(); });
+    addressCity.addEventListener('input', () => { addressCity.style.borderColor = ''; updateFrameAddress(); });
 
     // House icon picker — render options
     (function renderHouseIconPicker() {
