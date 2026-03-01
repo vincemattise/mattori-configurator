@@ -1776,6 +1776,9 @@
     var layoutHasOverlap = false;
 
     // Compute 2D floor outline in local (FML) coordinates.
+    // Uses ONLY area + surface polygons (the actual floor surfaces, not walls).
+    // This prevents wall thickness from extending beyond the bounding box
+    // and causing false overlap detection with neighboring floors.
     // Returns polygon-clipping multi-polygon format, cached on floor object.
     function computeFloorOutline(floorIndex) {
       var floor = floors[floorIndex];
@@ -1784,13 +1787,9 @@
 
       var design = floor.design;
       var wallBBox = computeWallBBox(design);
-      var walls = flattenWalls(design.walls || []);
-      var solidWalls = walls.filter(function(w) { return !(w.openings && w.openings.length > 0); });
-      var wallUnion = computeWallUnion(solidWalls, walls);
-
       var sources = [];
 
-      // Area polygons
+      // Area polygons (room shapes = actual floor surfaces)
       var areas = design.areas || [];
       for (var ai = 0; ai < areas.length; ai++) {
         var tess = tessellateSurfacePoly(areas[ai].poly || []);
@@ -1811,23 +1810,21 @@
         if (st.length >= 3) sources.push(st);
       }
 
-      // Wall union rings
-      for (var wu = 0; wu < wallUnion.length; wu++) {
-        for (var wr = 0; wr < wallUnion[wu].length; wr++) {
-          var pts = wallUnion[wu][wr].slice();
-          if (pts.length > 1) {
-            var _f = pts[0], _l = pts[pts.length - 1];
-            if (Math.hypot(_f[0] - _l[0], _f[1] - _l[1]) < 0.01) pts.pop();
+      // Fallback: if no areas/surfaces found, use wall union (rare edge case)
+      if (sources.length === 0) {
+        var walls = flattenWalls(design.walls || []);
+        var solidWalls = walls.filter(function(w) { return !(w.openings && w.openings.length > 0); });
+        var wallUnion = computeWallUnion(solidWalls, walls);
+        for (var wu = 0; wu < wallUnion.length; wu++) {
+          for (var wr = 0; wr < wallUnion[wu].length; wr++) {
+            var pts = wallUnion[wu][wr].slice();
+            if (pts.length > 1) {
+              var _f = pts[0], _l = pts[pts.length - 1];
+              if (Math.hypot(_f[0] - _l[0], _f[1] - _l[1]) < 0.01) pts.pop();
+            }
+            if (pts.length >= 3) sources.push(pts.map(function(p) { return { x: p[0], y: p[1] }; }));
           }
-          if (pts.length >= 3) sources.push(pts.map(function(p) { return { x: p[0], y: p[1] }; }));
         }
-      }
-
-      // Individual wall rects (slight extension for seamless union)
-      for (var wk = 0; wk < walls.length; wk++) {
-        if ((walls[wk].thickness || 20) < 0.1) continue;
-        var wr2 = wallToRect(walls[wk], 1, 1);
-        if (wr2) sources.push(wr2.slice(0, 4).map(function(p) { return { x: p[0], y: p[1] }; }));
       }
 
       // Convert to polygon-clipping format [[[x,y],...]]
