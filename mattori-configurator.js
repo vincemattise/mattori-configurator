@@ -2404,8 +2404,8 @@
         }
       }
 
-      // Always use ortho (flat 2D top-down) for unified preview
-      var useOrtho = true;
+      // Use perspective camera (3D top-down with slight tilt) for unified preview
+      var useOrtho = false;
 
       // Render each floor at its computed position
       for (var pi = 0; pi < currentLayout.positions.length; pi++) {
@@ -2420,10 +2420,7 @@
 
         floorsGrid.appendChild(wrap);
 
-        var renderOpts = { ortho: useOrtho };
-        if (useOrtho) {
-          renderOpts.floorColor = EDIT_FLOOR_COLOR;
-        }
+        var renderOpts = { ortho: useOrtho, floorColor: EDIT_FLOOR_COLOR };
         renderStaticThumbnailSized(pos.index, wrap, pos.w, pos.h, renderOpts);
       }
     }
