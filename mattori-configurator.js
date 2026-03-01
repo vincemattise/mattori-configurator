@@ -5109,6 +5109,75 @@
     };
 
     // ============================================================
+    // DEMO — load a pre-cached FML for visitors without a Funda link
+    // ============================================================
+    var _demoLoading = false;
+
+    window.loadDemoData = async function() {
+      if (_demoLoading) return;
+      _demoLoading = true;
+      try {
+        ensureDomRefs();
+
+        // Use test-5 (3 floors, good demo data)
+        var demoKey = 5;
+        if (!_fmlCache[demoKey]) {
+          var scriptEl = document.querySelector('script[src*="mattori-configurator"]');
+          var cdnBase = scriptEl ? scriptEl.src.replace('mattori-configurator.js', '') : '';
+          var url = cdnBase + 'fml-cache/test-' + demoKey + '.json';
+          var resp = await fetch(url);
+          var data = await resp.json();
+          if (data.error) {
+            alert('Demo laden mislukt: ' + data.error);
+            return;
+          }
+          _fmlCache[demoKey] = data;
+        }
+
+        var data = _fmlCache[demoKey];
+        originalFmlData = data;
+        originalFileName = 'demo.fml';
+
+        // Mark as demo in the URL field
+        if (fundaUrlInput) fundaUrlInput.value = 'demo';
+
+        // Fast-start configurator if not yet started
+        if (!configuratorStarted) {
+          configuratorStarted = true;
+          var btnStart = document.getElementById('btnStartConfigurator');
+          if (btnStart) btnStart.style.display = 'none';
+          var collapsibles = document.querySelectorAll('.mattori-configurator .collapsible-info');
+          collapsibles.forEach(function(el) { el.style.display = 'none'; });
+          var buyBlock = document.querySelector('.mattori-configurator .buy-buttons-block');
+          if (buyBlock) buyBlock.style.display = 'none';
+          var stickyBar = document.querySelector('sticky-add-to-cart');
+          if (stickyBar) stickyBar.style.display = 'none';
+          wizard.style.display = '';
+          initWizard();
+        }
+
+        // Reset state
+        excludedFloors = new Set();
+        viewedFloors = new Set();
+        floorReviewStatus = {};
+        floorIssues = {};
+        currentFloorReviewIndex = 0;
+
+        // Process floors (also fills address via parseAddressFromFML)
+        processFloors(data);
+
+        // Jump to step 3 (review)
+        showWizardStep(3);
+
+      } catch (e) {
+        console.error('Demo load error:', e);
+        alert('Demo laden mislukt: ' + e.message);
+      } finally {
+        _demoLoading = false;
+      }
+    };
+
+    // ============================================================
     // FRAME CODE — encode/decode full configuration
     // ============================================================
     function generateFrameCode() {
