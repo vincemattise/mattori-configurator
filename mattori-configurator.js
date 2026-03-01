@@ -3389,7 +3389,7 @@
     // ADMIN: Toggle frame image (One.png ↔ Two.png)
     // ============================================================
     var FRAME_IMG_ONE = 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Two_2ea7e364-8d19-4ebf-a33b-86df839bb390.png?v=1772385215';
-    var FRAME_IMG_TWO = 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/One_met_schaduw.png?v=1772384832';
+    var FRAME_IMG_TWO = 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/One_6d739714-6517-40e3-99c6-a238000f2dad.png?v=1772393844';
 
     function toggleAdminFrame() {
       ensureDomRefs();
