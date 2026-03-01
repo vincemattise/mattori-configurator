@@ -1228,22 +1228,22 @@
 
     // Build a Three.js scene for a floor (reused by preview thumbnails, floor review, layout)
     // Editing floor color — warm beige
-    var EDIT_FLOOR_COLOR = 0xC4B9A8;
+    var EDIT_FLOOR_COLOR = 0xB0A594;
 
     // Diagonal stripe texture for floor surfaces (mimics real product engraving)
     var _stripeCanvas = null;
     function _createStripeTexture() {
       if (!_stripeCanvas) {
-        var s = 64;
+        var s = 128;
         _stripeCanvas = document.createElement('canvas');
         _stripeCanvas.width = s;
         _stripeCanvas.height = s;
         var ctx = _stripeCanvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, s, s);
-        ctx.strokeStyle = 'rgba(0,0,0,0.07)';
-        ctx.lineWidth = 1;
-        for (var i = -s; i < s * 2; i += 4) {
+        ctx.strokeStyle = 'rgba(0,0,0,0.16)';
+        ctx.lineWidth = 0.8;
+        for (var i = -s; i < s * 2; i += 3) {
           ctx.beginPath();
           ctx.moveTo(i, s);
           ctx.lineTo(i + s, 0);
@@ -1253,6 +1253,7 @@
       var tex = new THREE.CanvasTexture(_stripeCanvas);
       tex.wrapS = THREE.RepeatWrapping;
       tex.wrapT = THREE.RepeatWrapping;
+      tex.minFilter = THREE.LinearFilter;
       return tex;
     }
 
