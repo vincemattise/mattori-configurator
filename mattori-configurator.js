@@ -3070,6 +3070,8 @@
           dot.className = 'floor-thumb-status status-' + status;
           if (status === 'confirmed') {
             dot.innerHTML = '<svg viewBox="0 0 12 12"><polyline points="2.5,6 5,8.5 9.5,3.5"/></svg>';
+          } else if (status === 'excluded') {
+            dot.innerHTML = '<svg viewBox="0 0 12 12"><line x1="3" y1="6" x2="9" y2="6"/></svg>';
           } else {
             dot.innerHTML = '<svg viewBox="0 0 12 12"><line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/></svg>';
           }
@@ -3178,6 +3180,16 @@
       floorReviewStatus[currentFloorReviewIndex] = 'confirmed';
       advanceFloorReview();
     }
+
+    // Exclude floor from design (user doesn't want it)
+    function excludeFloorFromReview() {
+      ensureDomRefs();
+      excludedFloors.add(currentFloorReviewIndex);
+      viewedFloors.add(currentFloorReviewIndex);
+      floorReviewStatus[currentFloorReviewIndex] = 'excluded';
+      advanceFloorReview();
+    }
+    window.excludeFloorFromReview = excludeFloorFromReview;
 
     // Show issue panel (small difference)
     function showFloorIssuePanel() {

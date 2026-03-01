@@ -1390,13 +1390,22 @@
       transform: translateY(-1px);
     }
 
-    /* Hint about excluding in step 4 */
-    .mattori-configurator .floor-review-hint-text {
-      font-size: 0.72rem;
-      color: #bbb;
+    /* Exclude floor link in step 3 review */
+    .mattori-configurator .floor-review-exclude-link {
+      display: block;
+      width: 100%;
       text-align: center;
-      line-height: 1.4;
+      font-size: 0.72rem;
+      color: #aaa;
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.2s ease;
       margin: 0;
+      line-height: 1.4;
+    }
+    .mattori-configurator .floor-review-exclude-link:hover {
+      color: #1a1a1a;
+      text-decoration: underline;
     }
 
     .mattori-configurator .floor-review-reassurance {
@@ -1609,7 +1618,13 @@
       fill: none;
     }
 
-    /* All statuses use default black — no color override */
+    /* Excluded status — grey dot with minus icon */
+    .mattori-configurator .floor-thumb-status.status-excluded {
+      background: #bbb;
+    }
+    .mattori-configurator .floor-thumb-status.status-excluded svg {
+      stroke: #fff;
+    }
 
     /* ── Step 4: Include/exclude chips ── */
     .mattori-configurator .floor-include-bar {
