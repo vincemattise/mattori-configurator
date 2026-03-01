@@ -5190,6 +5190,9 @@
         var fundaBox = document.getElementById('fundaStatus');
         if (fundaBox) fundaBox.className = 'funda-status';
 
+        // Sync address to frame preview
+        updateFrameAddress();
+
         // Jump to step 2 (address)
         showWizardStep(2);
 
