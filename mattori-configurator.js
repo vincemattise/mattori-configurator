@@ -5184,8 +5184,8 @@
 
         // Set demo address
         if (addressStreet) addressStreet.value = 'Lijsterbesstraat 42';
-        if (addressCity) addressCity.value = 'Amsterdam';
-        currentAddress = { street: 'Lijsterbesstraat 42', city: 'Amsterdam' };
+        if (addressCity) addressCity.value = 'Amsterdam, Nederland';
+        currentAddress = { street: 'Lijsterbesstraat 42', city: 'Amsterdam, Nederland' };
 
         // Hide loading spinner
         var fundaBox = document.getElementById('fundaStatus');
