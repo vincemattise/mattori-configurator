@@ -1436,6 +1436,7 @@
     var layoutScaleFactor = 1.0; // user scale: 0.82 (klein), 1.0 (normaal), 1.1 (groot)
     var showGridOverlay = true; // user toggle for grid + alignment lines
     var adminGridOverlay = false;  // enabled when Frame Code is loaded // admin-only: show grid on step 5 preview
+    var use3dMode = true; // user toggle for perspective camera + shadows
     var floorSettings = {}; // per-floor: { rotate: 0|90|180|270 }
 
     // ============================================================
@@ -2404,8 +2405,8 @@
         }
       }
 
-      // Use perspective camera (3D top-down with slight tilt) for unified preview
-      var useOrtho = false;
+      // 3D mode: perspective camera + shadows; off = flat ortho
+      var useOrtho = !use3dMode;
 
       // Render each floor at its computed position
       for (var pi = 0; pi < currentLayout.positions.length; pi++) {
@@ -2791,8 +2792,8 @@
         // Show/hide floors in unified preview (visible from step 4 onward)
         if (unifiedFloorsOverlay) {
           unifiedFloorsOverlay.style.display = n >= 4 ? '' : 'none';
-          // Step 4 class — disables cosmetic CSS effects during layout editing
-          unifiedFloorsOverlay.classList.toggle('step-editing', n === 4);
+          // Toggle flat/3D mode class based on user preference
+          unifiedFloorsOverlay.classList.toggle('mode-flat', !use3dMode);
         }
 
         // Show/hide address overlay (visible from step 2 onward)
@@ -3239,6 +3240,19 @@
       advanceFloorReview();
     }
     window.excludeFloorFromReview = excludeFloorFromReview;
+
+    // Toggle 3D mode (perspective camera + shadows) on/off
+    function toggle3dMode(enabled) {
+      use3dMode = enabled;
+      // Toggle CSS class for drop-shadow
+      var overlay = document.getElementById('unifiedFloorsOverlay');
+      if (overlay) overlay.classList.toggle('mode-flat', !enabled);
+      renderPreviewThumbnails();
+      if (gridEditMode) {
+        refreshGridAfterChange();
+      }
+    }
+    window.toggle3dMode = toggle3dMode;
 
     // Show issue panel (small difference)
     function showFloorIssuePanel() {
@@ -3692,6 +3706,8 @@
 
       // Show grid overlay in step 4 (always visible, subtle)
       renderGridOverlayIfStep4();
+
+      // ── 3D mode checkbox — handled via global toggle3dMode() ──
     }
 
     // Helper: show grid overlay when in step 4

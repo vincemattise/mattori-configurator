@@ -663,7 +663,7 @@
       cursor: default;
     }
 
-    .mattori-configurator .unified-floors-overlay.step-editing .floor-canvas-wrap {
+    .mattori-configurator .unified-floors-overlay.mode-flat .floor-canvas-wrap {
       filter: none;
     }
 
