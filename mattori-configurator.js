@@ -5166,8 +5166,8 @@
         // Process floors (also fills address via parseAddressFromFML)
         processFloors(data);
 
-        // Jump to step 3 (review)
-        showWizardStep(3);
+        // Jump to step 2 (address)
+        showWizardStep(2);
 
       } catch (e) {
         console.error('Demo load error:', e);
