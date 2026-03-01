@@ -1273,38 +1273,19 @@
 
       var wallMesh = groups.walls ? new THREE.Mesh(groups.walls, wallMaterial) : null;
       var floorMesh = groups.floor ? new THREE.Mesh(groups.floor, floorMaterial) : null;
-      if (wallMesh) { wallMesh.castShadow = true; scene.add(wallMesh); }
-      if (floorMesh) { floorMesh.castShadow = true; scene.add(floorMesh); }
-
-      // Shadow-receiving plane just below the model (ShadowMaterial = invisible except shadow)
-      var shadowPlaneSize = Math.max(size.x, size.z) * 3;
-      var shadowPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(shadowPlaneSize, shadowPlaneSize),
-        new THREE.ShadowMaterial({ opacity: 0.12 })
-      );
-      shadowPlane.rotation.x = -Math.PI / 2;
-      shadowPlane.position.y = -size.y / 2 - 0.01;
-      shadowPlane.receiveShadow = true;
-      scene.add(shadowPlane);
+      if (wallMesh) scene.add(wallMesh);
+      if (floorMesh) scene.add(floorMesh);
 
       scene.add(new THREE.AmbientLight(0xFFF8F0, 1.0));
       const dirLight = new THREE.DirectionalLight(0xFFF5E8, 0.7);
       dirLight.position.set(2, 8, 5);
-      dirLight.castShadow = true;
-      dirLight.shadow.mapSize.width = 1024;
-      dirLight.shadow.mapSize.height = 1024;
-      dirLight.shadow.camera.near = 0.5;
-      dirLight.shadow.camera.far = 100;
-      var shadowExtent = Math.max(size.x, size.z) * 1.5;
-      dirLight.shadow.camera.left = -shadowExtent;
-      dirLight.shadow.camera.right = shadowExtent;
-      dirLight.shadow.camera.top = shadowExtent;
-      dirLight.shadow.camera.bottom = -shadowExtent;
-      dirLight.shadow.radius = 4;
       scene.add(dirLight);
       const fillLight = new THREE.DirectionalLight(0xF0EBE0, 0.4);
       fillLight.position.set(-4, 6, -1);
       scene.add(fillLight);
+
+      // Shadow setup — only for perspective renders (not ortho/editing)
+      scene._hasShadows = false;
 
       // Global size based on largest floor — for uniform scaling across all viewers
       const SCALE = 0.01;
@@ -1391,10 +1372,49 @@
         camera.lookAt(center);
       }
 
+      // Enable shadows only for perspective renders (not ortho/editing)
+      var useShadows = !opts.ortho;
+      if (useShadows && !scene._hasShadows) {
+        // Add shadow-receiving plane below model
+        var shadowPlaneSize = Math.max(size.x, size.z) * 3;
+        var shadowPlane = new THREE.Mesh(
+          new THREE.PlaneGeometry(shadowPlaneSize, shadowPlaneSize),
+          new THREE.ShadowMaterial({ opacity: 0.12 })
+        );
+        shadowPlane.rotation.x = -Math.PI / 2;
+        shadowPlane.position.y = -size.y / 2 - 0.01;
+        shadowPlane.receiveShadow = true;
+        scene.add(shadowPlane);
+        // Enable castShadow on meshes
+        scene.traverse(function(obj) {
+          if (obj.isMesh && !(obj.material && obj.material.isShadowMaterial)) obj.castShadow = true;
+        });
+        // Configure directional light for shadows
+        scene.traverse(function(obj) {
+          if (obj.isDirectionalLight && !obj._shadowConfigured) {
+            obj.castShadow = true;
+            obj.shadow.mapSize.width = 1024;
+            obj.shadow.mapSize.height = 1024;
+            obj.shadow.camera.near = 0.5;
+            obj.shadow.camera.far = 100;
+            var ext = Math.max(size.x, size.z) * 1.5;
+            obj.shadow.camera.left = -ext;
+            obj.shadow.camera.right = ext;
+            obj.shadow.camera.top = ext;
+            obj.shadow.camera.bottom = -ext;
+            obj.shadow.radius = 4;
+            obj._shadowConfigured = true;
+          }
+        });
+        scene._hasShadows = true;
+      }
+
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      if (useShadows) {
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      }
       renderer.setClearColor(0x000000, 0);
       renderer.setSize(width, height);
       renderer.setPixelRatio(dpr);
