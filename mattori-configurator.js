@@ -1772,8 +1772,136 @@
       });
     }
 
-    // --- Overlap detection ---
+    // --- Overlap detection (polygon-based) ---
     var layoutHasOverlap = false;
+
+    // Compute 2D floor outline in local (FML) coordinates.
+    // Returns polygon-clipping multi-polygon format, cached on floor object.
+    function computeFloorOutline(floorIndex) {
+      var floor = floors[floorIndex];
+      if (!floor) return null;
+      if (floor._outline) return floor._outline;
+
+      var design = floor.design;
+      var wallBBox = computeWallBBox(design);
+      var walls = flattenWalls(design.walls || []);
+      var solidWalls = walls.filter(function(w) { return !(w.openings && w.openings.length > 0); });
+      var wallUnion = computeWallUnion(solidWalls, walls);
+
+      var sources = [];
+
+      // Area polygons
+      var areas = design.areas || [];
+      for (var ai = 0; ai < areas.length; ai++) {
+        var tess = tessellateSurfacePoly(areas[ai].poly || []);
+        if (tess.length >= 3) sources.push(tess);
+      }
+
+      // Surface polygons (non-cutout, inside walls, with valid names)
+      var surfaces = design.surfaces || [];
+      for (var si = 0; si < surfaces.length; si++) {
+        var surf = surfaces[si];
+        if (surf.isCutout) continue;
+        if (isSurfaceOutsideWalls(surf, wallBBox)) continue;
+        var sN = (surf.name || '').trim();
+        var cN = (surf.customName || '').trim();
+        if (!sN && !cN) continue;
+        if (sN && cN && cN.toLowerCase() !== sN.toLowerCase()) continue;
+        var st = tessellateSurfacePoly(surf.poly || []);
+        if (st.length >= 3) sources.push(st);
+      }
+
+      // Wall union rings
+      for (var wu = 0; wu < wallUnion.length; wu++) {
+        for (var wr = 0; wr < wallUnion[wu].length; wr++) {
+          var pts = wallUnion[wu][wr].slice();
+          if (pts.length > 1) {
+            var _f = pts[0], _l = pts[pts.length - 1];
+            if (Math.hypot(_f[0] - _l[0], _f[1] - _l[1]) < 0.01) pts.pop();
+          }
+          if (pts.length >= 3) sources.push(pts.map(function(p) { return { x: p[0], y: p[1] }; }));
+        }
+      }
+
+      // Individual wall rects (slight extension for seamless union)
+      for (var wk = 0; wk < walls.length; wk++) {
+        if ((walls[wk].thickness || 20) < 0.1) continue;
+        var wr2 = wallToRect(walls[wk], 1, 1);
+        if (wr2) sources.push(wr2.slice(0, 4).map(function(p) { return { x: p[0], y: p[1] }; }));
+      }
+
+      // Convert to polygon-clipping format [[[x,y],...]]
+      var polys = [];
+      for (var pk = 0; pk < sources.length; pk++) {
+        var src = sources[pk];
+        if (src.length < 3) continue;
+        var ring = src.map(function(p) { return [p.x, p.y]; });
+        var f0 = ring[0], ln = ring[ring.length - 1];
+        if (Math.hypot(f0[0] - ln[0], f0[1] - ln[1]) > 0.01) ring.push([f0[0], f0[1]]);
+        polys.push([ring]);
+      }
+
+      var outline = [];
+      if (polys.length > 0) {
+        try {
+          outline = polygonClipping.union.apply(null, polys);
+        } catch (e) {
+          console.warn('Floor outline union failed for floor ' + floorIndex, e);
+          outline = polys;
+        }
+      }
+
+      floor._outline = outline;
+      return outline;
+    }
+
+    // Transform a floor outline from local coords to grid pixel coords,
+    // accounting for position, scale, and rotation.
+    function transformOutlineToGrid(outline, floorIndex, rect) {
+      var floor = floors[floorIndex];
+      var bbox = floor.bbox;
+      var localW = bbox.maxX - bbox.minX;
+      var localH = bbox.maxY - bbox.minY;
+      var rot = getFloorRotate(floorIndex);
+
+      var result = [];
+      for (var pi = 0; pi < outline.length; pi++) {
+        var polygon = [];
+        for (var ri = 0; ri < outline[pi].length; ri++) {
+          var ring = outline[pi][ri];
+          var tRing = [];
+          for (var vi = 0; vi < ring.length; vi++) {
+            var lx = ring[vi][0], ly = ring[vi][1];
+            // Normalize to [0,1]
+            var nx = localW > 0 ? (lx - bbox.minX) / localW : 0.5;
+            var ny = localH > 0 ? (ly - bbox.minY) / localH : 0.5;
+            // Apply rotation (matches Three.js rotateY)
+            var rx, ry;
+            switch (rot) {
+              case 90:  rx = ny;     ry = 1 - nx; break;
+              case 180: rx = 1 - nx; ry = 1 - ny; break;
+              case 270: rx = 1 - ny; ry = nx;     break;
+              default:  rx = nx;     ry = ny;      break;
+            }
+            // Map to grid pixel space
+            tRing.push([rect.x + rx * rect.w, rect.y + ry * rect.h]);
+          }
+          polygon.push(tRing);
+        }
+        result.push(polygon);
+      }
+      return result;
+    }
+
+    // Signed area of a polygon ring (for intersection area check)
+    function polyRingArea(ring) {
+      var area = 0;
+      for (var i = 0; i < ring.length; i++) {
+        var j = (i + 1) % ring.length;
+        area += ring[i][0] * ring[j][1] - ring[j][0] * ring[i][1];
+      }
+      return area / 2;
+    }
 
     function checkFloorOverlaps() {
       layoutHasOverlap = false;
@@ -1782,23 +1910,50 @@
         return;
       }
       var positions = currentLayout.positions;
-      // Get actual rendered positions from the DOM wraps
       var wraps = floorsGrid ? floorsGrid.querySelectorAll('.floor-canvas-wrap') : [];
       var rects = [];
       for (var wi = 0; wi < wraps.length; wi++) {
-        var l = parseFloat(wraps[wi].style.left) || 0;
-        var t = parseFloat(wraps[wi].style.top) || 0;
-        var w = parseFloat(wraps[wi].style.width) || 0;
-        var h = parseFloat(wraps[wi].style.height) || 0;
-        rects.push({ x: l, y: t, w: w, h: h });
+        rects.push({
+          x: parseFloat(wraps[wi].style.left) || 0,
+          y: parseFloat(wraps[wi].style.top) || 0,
+          w: parseFloat(wraps[wi].style.width) || 0,
+          h: parseFloat(wraps[wi].style.height) || 0
+        });
       }
-      // Check all pairs for overlap (with 2px tolerance)
       var tolerance = 2;
       for (var a = 0; a < rects.length; a++) {
         for (var b = a + 1; b < rects.length; b++) {
           var ra = rects[a], rb = rects[b];
-          if (ra.x + tolerance < rb.x + rb.w && rb.x + tolerance < ra.x + ra.w &&
-              ra.y + tolerance < rb.y + rb.h && rb.y + tolerance < ra.y + ra.h) {
+          // Quick AABB pre-check — if bounding boxes don't overlap, polygons can't either
+          if (!(ra.x + tolerance < rb.x + rb.w && rb.x + tolerance < ra.x + ra.w &&
+                ra.y + tolerance < rb.y + rb.h && rb.y + tolerance < ra.y + ra.h)) {
+            continue;
+          }
+          // Bounding boxes DO overlap — check actual polygon shapes
+          var idxA = positions[a].index;
+          var idxB = positions[b].index;
+          var outA = computeFloorOutline(idxA);
+          var outB = computeFloorOutline(idxB);
+          if (!outA || !outA.length || !outB || !outB.length) {
+            layoutHasOverlap = true; // fallback: treat as overlapping
+            break;
+          }
+          var gridA = transformOutlineToGrid(outA, idxA, rects[a]);
+          var gridB = transformOutlineToGrid(outB, idxB, rects[b]);
+          try {
+            var inter = polygonClipping.intersection(gridA, gridB);
+            if (inter && inter.length > 0) {
+              var totalArea = 0;
+              for (var ip = 0; ip < inter.length; ip++) {
+                if (inter[ip][0]) totalArea += Math.abs(polyRingArea(inter[ip][0]));
+              }
+              if (totalArea > 4) { // > 4 sq px threshold (ignore sub-pixel touching)
+                layoutHasOverlap = true;
+                break;
+              }
+            }
+          } catch (e) {
+            console.warn('Polygon overlap check failed, AABB fallback', e);
             layoutHasOverlap = true;
             break;
           }
