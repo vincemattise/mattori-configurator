@@ -1257,7 +1257,7 @@
 
       const wallMaterial = new THREE.MeshPhongMaterial({
         color: 0xAA9A82,
-        flatShading: false,
+        flatShading: true,
         side: THREE.DoubleSide,
         shininess: 18,
         specular: 0x444444
@@ -1265,7 +1265,7 @@
       var fColor = (floorColor !== undefined) ? floorColor : 0xAA9A82;
       const floorMaterial = new THREE.MeshPhongMaterial({
         color: fColor,
-        flatShading: false,
+        flatShading: true,
         side: THREE.DoubleSide,
         shininess: 18,
         specular: 0x444444
@@ -2774,6 +2774,8 @@
         // Show/hide floors in unified preview (visible from step 4 onward)
         if (unifiedFloorsOverlay) {
           unifiedFloorsOverlay.style.display = n >= 4 ? '' : 'none';
+          // Step 4 class — disables cosmetic CSS effects during layout editing
+          unifiedFloorsOverlay.classList.toggle('step-editing', n === 4);
         }
 
         // Show/hide address overlay (visible from step 2 onward)
