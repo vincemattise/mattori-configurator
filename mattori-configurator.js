@@ -1848,18 +1848,35 @@
         }
       }
 
+      // Store max wall half-thickness for visual scale correction
+      var maxHt = 0;
+      var dwalls = design.walls || [];
+      for (var wm = 0; wm < dwalls.length; wm++) {
+        maxHt = Math.max(maxHt, ((dwalls[wm].thickness || 20) / 2));
+      }
+      floor._outlineWallMargin = maxHt;
+
       floor._outline = outline;
       return outline;
     }
 
     // Transform a floor outline from local coords to grid pixel coords,
     // accounting for position, scale, and rotation.
+    // Uses padded bbox to match Three.js camera fitting: the 3D mesh extends
+    // beyond the 2D bbox by wall-thickness + FLOOR_EXPAND, so the camera shows
+    // more area → the visual floor is smaller within the container than a raw
+    // [0,1] normalization would produce.
     function transformOutlineToGrid(outline, floorIndex, rect) {
       var floor = floors[floorIndex];
       var bbox = floor.bbox;
       var localW = bbox.maxX - bbox.minX;
       var localH = bbox.maxY - bbox.minY;
       var rot = getFloorRotate(floorIndex);
+
+      // Pad bbox to approximate the 3D mesh extent that the camera fits
+      var wMargin = (floor._outlineWallMargin || 10) + 4; // wall half-thickness + FLOOR_EXPAND
+      var padW = localW + 2 * wMargin;
+      var padH = localH + 2 * wMargin;
 
       var result = [];
       for (var pi = 0; pi < outline.length; pi++) {
@@ -1869,9 +1886,9 @@
           var tRing = [];
           for (var vi = 0; vi < ring.length; vi++) {
             var lx = ring[vi][0], ly = ring[vi][1];
-            // Normalize to [0,1]
-            var nx = localW > 0 ? (lx - bbox.minX) / localW : 0.5;
-            var ny = localH > 0 ? (ly - bbox.minY) / localH : 0.5;
+            // Normalize using padded bbox (shrinks outline to match visual rendering)
+            var nx = padW > 0 ? (lx - bbox.minX + wMargin) / padW : 0.5;
+            var ny = padH > 0 ? (ly - bbox.minY + wMargin) / padH : 0.5;
             // Apply rotation (matches Three.js rotateY)
             var rx, ry;
             switch (rot) {
