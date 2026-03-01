@@ -3093,6 +3093,12 @@
           btnWizardNext.textContent = 'Start met ontwerpen \u2192';
           btnWizardNext.style.display = floors.length > 0 ? '' : 'none';
         }
+      } else if (currentWizardStep === 2) {
+        // Step 2: disable next until both address fields are filled
+        var hasStreet = addressStreet && addressStreet.value.trim();
+        var hasCity = addressCity && addressCity.value.trim();
+        btnWizardNext.disabled = !(hasStreet && hasCity);
+        btnWizardNext.style.display = '';
       } else if (currentWizardStep === 3) {
         // Step 3: hide wizard next — "Klopt, volgende" button handles navigation
         btnWizardNext.style.display = 'none';
@@ -3116,19 +3122,6 @@
       if (noFloorsMode && currentWizardStep === 1) {
         submitOrder();
         return;
-      }
-      // Step 2: require address fields
-      if (currentWizardStep === 2) {
-        var street = addressStreet ? addressStreet.value.trim() : '';
-        var city = addressCity ? addressCity.value.trim() : '';
-        if (!street || !city) {
-          if (!street && addressStreet) addressStreet.style.borderColor = '#ae1c28';
-          if (!city && addressCity) addressCity.style.borderColor = '#ae1c28';
-          return;
-        }
-        // Reset border colors
-        if (addressStreet) addressStreet.style.borderColor = '';
-        if (addressCity) addressCity.style.borderColor = '';
       }
       if (currentWizardStep < TOTAL_WIZARD_STEPS) {
         showWizardStep(currentWizardStep + 1);
@@ -4977,9 +4970,15 @@
       showToast('✓ FML gedownload');
     });
 
-    // Address fields — live update frame preview + clear validation
-    addressStreet.addEventListener('input', () => { addressStreet.style.borderColor = ''; updateFrameAddress(); });
-    addressCity.addEventListener('input', () => { addressCity.style.borderColor = ''; updateFrameAddress(); });
+    // Address fields — live update frame preview + toggle next button
+    function updateStep2NextBtn() {
+      if (currentWizardStep !== 2) return;
+      var hasStreet = addressStreet.value.trim();
+      var hasCity = addressCity.value.trim();
+      btnWizardNext.disabled = !(hasStreet && hasCity);
+    }
+    addressStreet.addEventListener('input', () => { updateFrameAddress(); updateStep2NextBtn(); });
+    addressCity.addEventListener('input', () => { updateFrameAddress(); updateStep2NextBtn(); });
 
     // House icon picker — render options
     (function renderHouseIconPicker() {
