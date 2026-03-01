@@ -502,6 +502,37 @@
       overflow: visible;
     }
 
+    /* Vignette — subtle darkening at mat edges for depth */
+    .mattori-configurator .unified-frame-container::before {
+      content: '';
+      position: absolute;
+      top: 14%;
+      bottom: 14%;
+      left: 13%;
+      right: 13%;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.05) 100%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Glass reflection — subtle diagonal light streak */
+    .mattori-configurator .unified-frame-container::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        transparent 30%,
+        rgba(255,255,255,0.04) 40%,
+        rgba(255,255,255,0.09) 50%,
+        rgba(255,255,255,0.04) 60%,
+        transparent 70%
+      );
+      pointer-events: none;
+      z-index: 10;
+      border-radius: 4px;
+    }
+
     .mattori-configurator .unified-frame-image {
       width: 100%;
       display: block;
@@ -631,6 +662,9 @@
     .mattori-configurator .floor-canvas-wrap {
       position: absolute;
       overflow: hidden;
+      /* Drop shadow follows alpha channel — traces the actual floor plan shape */
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.18))
+              drop-shadow(0 1px 2px rgba(0,0,0,0.10));
     }
 
     .mattori-configurator .floor-canvas-wrap canvas {

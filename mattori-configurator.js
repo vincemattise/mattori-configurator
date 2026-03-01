@@ -1228,7 +1228,7 @@
 
     // Build a Three.js scene for a floor (reused by preview thumbnails, floor review, layout)
     // Editing floor color — subtle muted sage so walls stand out
-    var EDIT_FLOOR_COLOR = 0xB8C4B0;
+    var EDIT_FLOOR_COLOR = 0xC4B9A8;
 
     function buildFloorScene(floorIndex, floorColor) {
       const floor = floors[floorIndex];
@@ -1257,26 +1257,50 @@
 
       const wallMaterial = new THREE.MeshPhongMaterial({
         color: 0xAA9A82,
-        flatShading: true,
+        flatShading: false,
         side: THREE.DoubleSide,
-        shininess: 5,
-        specular: 0x222222
+        shininess: 18,
+        specular: 0x444444
       });
       var fColor = (floorColor !== undefined) ? floorColor : 0xAA9A82;
       const floorMaterial = new THREE.MeshPhongMaterial({
         color: fColor,
-        flatShading: true,
+        flatShading: false,
         side: THREE.DoubleSide,
-        shininess: 5,
-        specular: 0x222222
+        shininess: 18,
+        specular: 0x444444
       });
 
-      if (groups.walls) scene.add(new THREE.Mesh(groups.walls, wallMaterial));
-      if (groups.floor) scene.add(new THREE.Mesh(groups.floor, floorMaterial));
+      var wallMesh = groups.walls ? new THREE.Mesh(groups.walls, wallMaterial) : null;
+      var floorMesh = groups.floor ? new THREE.Mesh(groups.floor, floorMaterial) : null;
+      if (wallMesh) { wallMesh.castShadow = true; scene.add(wallMesh); }
+      if (floorMesh) { floorMesh.castShadow = true; scene.add(floorMesh); }
+
+      // Shadow-receiving plane just below the model (ShadowMaterial = invisible except shadow)
+      var shadowPlaneSize = Math.max(size.x, size.z) * 3;
+      var shadowPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(shadowPlaneSize, shadowPlaneSize),
+        new THREE.ShadowMaterial({ opacity: 0.12 })
+      );
+      shadowPlane.rotation.x = -Math.PI / 2;
+      shadowPlane.position.y = -size.y / 2 - 0.01;
+      shadowPlane.receiveShadow = true;
+      scene.add(shadowPlane);
 
       scene.add(new THREE.AmbientLight(0xFFF8F0, 1.0));
       const dirLight = new THREE.DirectionalLight(0xFFF5E8, 0.7);
-      dirLight.position.set(0, 8, 5);
+      dirLight.position.set(2, 8, 5);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 1024;
+      dirLight.shadow.mapSize.height = 1024;
+      dirLight.shadow.camera.near = 0.5;
+      dirLight.shadow.camera.far = 100;
+      var shadowExtent = Math.max(size.x, size.z) * 1.5;
+      dirLight.shadow.camera.left = -shadowExtent;
+      dirLight.shadow.camera.right = shadowExtent;
+      dirLight.shadow.camera.top = shadowExtent;
+      dirLight.shadow.camera.bottom = -shadowExtent;
+      dirLight.shadow.radius = 4;
       scene.add(dirLight);
       const fillLight = new THREE.DirectionalLight(0xF0EBE0, 0.4);
       fillLight.position.set(-4, 6, -1);
@@ -1369,6 +1393,8 @@
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.setClearColor(0x000000, 0);
       renderer.setSize(width, height);
       renderer.setPixelRatio(dpr);
@@ -2410,6 +2436,8 @@
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.setClearColor(0x000000, 0);
       renderer.setSize(width, height);
       renderer.setPixelRatio(dpr);
@@ -2476,6 +2504,8 @@
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.setClearColor(0x000000, 0);
       renderer.setSize(width, height);
       renderer.setPixelRatio(dpr);
