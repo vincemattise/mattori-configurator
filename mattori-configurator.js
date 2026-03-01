@@ -5119,6 +5119,9 @@
       try {
         ensureDomRefs();
 
+        // Show loading spinner
+        setFundaStatus('loading', '<div class="funda-progress-bar"><div class="funda-progress-fill"></div></div>Demo woning laden...');
+
         // Use test-5 (3 floors, good demo data)
         var demoKey = 5;
         if (!_fmlCache[demoKey]) {
@@ -5163,8 +5166,17 @@
         floorIssues = {};
         currentFloorReviewIndex = 0;
 
-        // Process floors (also fills address via parseAddressFromFML)
+        // Process floors
         processFloors(data);
+
+        // Set demo address
+        if (addressStreet) addressStreet.value = 'Lijsterbesstraat 42';
+        if (addressCity) addressCity.value = 'Amsterdam';
+        currentAddress = { street: 'Lijsterbesstraat 42', city: 'Amsterdam' };
+
+        // Hide loading spinner
+        var fundaBox = document.getElementById('fundaStatus');
+        if (fundaBox) fundaBox.className = 'funda-status';
 
         // Jump to step 2 (address)
         showWizardStep(2);
