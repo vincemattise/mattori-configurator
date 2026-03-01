@@ -3027,6 +3027,14 @@
             }
           }
         } else if (n === 5) {
+          // Force 3D mode on for final preview
+          if (!use3dMode) {
+            use3dMode = true;
+            var chk3d = document.getElementById('chk3dMode');
+            if (chk3d) chk3d.checked = true;
+            var overlay = document.getElementById('unifiedFloorsOverlay');
+            if (overlay) overlay.classList.remove('mode-flat');
+          }
           // Re-render with perspective camera (final look with depth)
           // Skip ALL rendering if coming from Frame Code — applyPendingConfig handles everything
           if (!_skipStep5Render) {
