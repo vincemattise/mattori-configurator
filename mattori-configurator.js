@@ -1227,8 +1227,34 @@
     }
 
     // Build a Three.js scene for a floor (reused by preview thumbnails, floor review, layout)
-    // Editing floor color — subtle muted sage so walls stand out
+    // Editing floor color — warm beige
     var EDIT_FLOOR_COLOR = 0xC4B9A8;
+
+    // Diagonal stripe texture for floor surfaces (mimics real product engraving)
+    var _stripeCanvas = null;
+    function _createStripeTexture() {
+      if (!_stripeCanvas) {
+        var s = 64;
+        _stripeCanvas = document.createElement('canvas');
+        _stripeCanvas.width = s;
+        _stripeCanvas.height = s;
+        var ctx = _stripeCanvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, s, s);
+        ctx.strokeStyle = 'rgba(0,0,0,0.07)';
+        ctx.lineWidth = 1;
+        for (var i = -s; i < s * 2; i += 4) {
+          ctx.beginPath();
+          ctx.moveTo(i, s);
+          ctx.lineTo(i + s, 0);
+          ctx.stroke();
+        }
+      }
+      var tex = new THREE.CanvasTexture(_stripeCanvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
 
     function buildFloorScene(floorIndex, floorColor) {
       const floor = floors[floorIndex];
@@ -1255,6 +1281,18 @@
       const scene = new THREE.Scene();
       scene.background = null;
 
+      // Generate planar UVs for floor geometry (top-down XZ projection for stripe texture)
+      if (groups.floor) {
+        var floorPos = groups.floor.getAttribute('position');
+        var floorUvs = new Float32Array(floorPos.count * 2);
+        var STRIPE_SCALE = 0.15;
+        for (var ui = 0; ui < floorPos.count; ui++) {
+          floorUvs[ui * 2] = floorPos.getX(ui) * STRIPE_SCALE;
+          floorUvs[ui * 2 + 1] = floorPos.getZ(ui) * STRIPE_SCALE;
+        }
+        groups.floor.setAttribute('uv', new THREE.BufferAttribute(floorUvs, 2));
+      }
+
       const wallMaterial = new THREE.MeshPhongMaterial({
         color: 0xAA9A82,
         flatShading: true,
@@ -1263,8 +1301,10 @@
         specular: 0x444444
       });
       var fColor = (floorColor !== undefined) ? floorColor : 0xAA9A82;
+      var stripeMap = _createStripeTexture();
       const floorMaterial = new THREE.MeshPhongMaterial({
         color: fColor,
+        map: stripeMap,
         flatShading: true,
         side: THREE.DoubleSide,
         shininess: 18,
