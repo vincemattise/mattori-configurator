@@ -1399,18 +1399,38 @@
 
         camera.updateProjectionMatrix();
       } else {
-        // Perspective camera with slight tilt (for final result with depth)
-        var ref = globalSize;
-        var padding = 1.15;
-        var halfW = (ref.x * padding) / 2;
-        var halfZ = (ref.z * padding) / 2;
-        var halfExtent = Math.max(halfW, halfZ);
+        // Perspective camera — same framing as ortho but with subtle 3D depth
+        var isSwapped = (rotation === 90 || rotation === 270);
+        var effectiveW = isSwapped ? size.z : size.x;
+        var effectiveH = isSwapped ? size.x : size.z;
+        var pxPerUnitW = width / effectiveW;
+        var pxPerUnitH = height / effectiveH;
+        var pxPerUnit = Math.min(pxPerUnitW, pxPerUnitH);
+        var halfFrustumW = (width / 2) / pxPerUnit;
+        var halfFrustumH = (height / 2) / pxPerUnit;
+
         var FOV = 12;
         var aspect = width / height;
-        camera = new THREE.PerspectiveCamera(FOV, aspect, 0.01, halfExtent * 100);
-        var camDist = halfExtent / Math.tan((FOV / 2) * Math.PI / 180);
-        camera.position.set(0, camDist, camDist * 0.14);
-        camera.lookAt(center);
+        var camDist = halfFrustumH / Math.tan((FOV / 2) * Math.PI / 180);
+        camera = new THREE.PerspectiveCamera(FOV, aspect, 0.01, camDist * 10);
+        camera.up.set(0, 0, -1);
+        camera.position.set(0, camDist, camDist * 0.05);
+        camera.lookAt(0, 0, 0);
+
+        // Same alignment as ortho — push model to edge
+        var modelHalfW = effectiveW / 2;
+        var modelHalfH = effectiveH / 2;
+        var alignY = getFloorAlignY(floorIndex);
+        if (alignY === 'top' || alignY === 'bottom') {
+          var shiftZ = halfFrustumH - modelHalfH;
+          scene.position.z += (alignY === 'bottom') ? shiftZ : -shiftZ;
+        }
+        var alignX = getFloorAlignX(floorIndex);
+        if (alignX === 'left' || alignX === 'right') {
+          var shiftX = halfFrustumW - modelHalfW;
+          scene.position.x += (alignX === 'right') ? shiftX : -shiftX;
+        }
+        camera.updateProjectionMatrix();
       }
 
       // Enable shadows only for perspective renders (not ortho/editing)
