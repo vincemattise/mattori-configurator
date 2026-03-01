@@ -500,6 +500,8 @@
       margin: 0 auto;
       border-radius: 4px;
       overflow: visible;
+      /* Frame shadow — makes the frame float off the page */
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
     }
 
     /* Vignette — subtle darkening at mat edges for depth */
@@ -510,27 +512,9 @@
       bottom: 14%;
       left: 13%;
       right: 13%;
-      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.05) 100%);
+      background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.08) 100%);
       pointer-events: none;
       z-index: 1;
-    }
-
-    /* Glass reflection — subtle diagonal light streak */
-    .mattori-configurator .unified-frame-container::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        135deg,
-        transparent 30%,
-        rgba(255,255,255,0.04) 40%,
-        rgba(255,255,255,0.09) 50%,
-        rgba(255,255,255,0.04) 60%,
-        transparent 70%
-      );
-      pointer-events: none;
-      z-index: 10;
-      border-radius: 4px;
     }
 
     .mattori-configurator .unified-frame-image {
@@ -686,6 +670,7 @@
       pointer-events: auto;
       z-index: 2;
       overflow: visible;
+      filter: none;
     }
 
     .mattori-configurator .unified-floors-overlay.drag-enabled .floor-canvas-wrap.dragging {
