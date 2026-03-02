@@ -5292,7 +5292,8 @@
       18: 'https://www.funda.nl/detail/koop/berlicum/huis-de-misse-1/43243248/',
       19: 'https://www.funda.nl/detail/koop/breda/huis-oede-van-hoornestraat-12/43243210/',
       20: 'https://www.funda.nl/detail/koop/breda/appartement-haagdijk-141/43132850/',
-      21: 'https://www.funda.nl/detail/koop/waarland/huis-veluweweg-32-b/89499833/'
+      21: 'https://www.funda.nl/detail/koop/waarland/huis-veluweweg-32-b/89499833/',
+      22: 'https://www.funda.nl/detail/huur/wassenaar/huis-zanderijlaan-9/43210032/'
     };
     function highlightAdminBtn(btn) {
       if (!btn) return;
