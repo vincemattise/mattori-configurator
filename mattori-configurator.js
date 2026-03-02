@@ -1449,7 +1449,7 @@
         depthWrite: false
       });
       var glowMesh = new THREE.Mesh(glowGeo, glowMat);
-      glowMesh.position.y = -0.01; // just below floor geometry
+      glowMesh.position.y = -size.y / 2 + 0.001; // at floor level (bottom of centered bbox)
       scene.add(glowMesh);
 
       scene.add(new THREE.AmbientLight(0xFFF8F0, 1.0));
