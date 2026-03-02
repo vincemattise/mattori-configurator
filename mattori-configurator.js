@@ -1073,11 +1073,45 @@
     // ============================================================
     // STAIR VOID DETECTION
     // ============================================================
+    function enhanceVoidWithCurvedWalls(voidPoly, curvedWalls) {
+      if (curvedWalls.length === 0) return voidPoly;
+      var MATCH_TOL = 30;
+      var ARC_SEGMENTS = 24;
+      var result = [];
+      for (var i = 0; i < voidPoly.length; i++) {
+        var j = (i + 1) % voidPoly.length;
+        var edgeA = voidPoly[i];
+        var edgeB = voidPoly[j];
+        result.push({ x: edgeA.x, y: edgeA.y });
+        var edgeLen = Math.hypot(edgeB.x - edgeA.x, edgeB.y - edgeA.y);
+        if (edgeLen < 50) continue;
+        for (var wi = 0; wi < curvedWalls.length; wi++) {
+          var wall = curvedWalls[wi];
+          var wa = wall.a, wb = wall.b, wc = wall.c;
+          var dAa = Math.hypot(edgeA.x - wa.x, edgeA.y - wa.y);
+          var dAb = Math.hypot(edgeA.x - wb.x, edgeA.y - wb.y);
+          var dBa = Math.hypot(edgeB.x - wa.x, edgeB.y - wa.y);
+          var dBb = Math.hypot(edgeB.x - wb.x, edgeB.y - wb.y);
+          if ((dAa < MATCH_TOL && dBb < MATCH_TOL) || (dAb < MATCH_TOL && dBa < MATCH_TOL)) {
+            for (var s = 1; s < ARC_SEGMENTS; s++) {
+              var t = s / ARC_SEGMENTS;
+              var px = (1-t)*(1-t)*edgeA.x + 2*(1-t)*t*wc.x + t*t*edgeB.x;
+              var py = (1-t)*(1-t)*edgeA.y + 2*(1-t)*t*wc.y + t*t*edgeB.y;
+              result.push({ x: px, y: py });
+            }
+            break;
+          }
+        }
+      }
+      return result;
+    }
+
     function detectStairVoids(allFloorDesigns) {
       const voidsByFloor = allFloorDesigns.map(() => []);
 
       for (let fi = 0; fi < allFloorDesigns.length; fi++) {
         const design = allFloorDesigns[fi];
+        const curvedWalls = (design.walls ?? []).filter(w => w.c && w.c.x != null && w.c.y != null);
 
         // Only use explicit isCutout surfaces and role=14 (stair void markers)
         for (const surface of design.surfaces ?? []) {
@@ -1089,7 +1123,9 @@
             const vw = Math.max(...vxs) - Math.min(...vxs);
             const vh = Math.max(...vys) - Math.min(...vys);
             if (Math.min(vw, vh) < 40) continue;
-            voidsByFloor[fi].push(poly.map(p => ({ x: p.x, y: p.y })));
+            var voidPoly = poly.map(p => ({ x: p.x, y: p.y }));
+            voidPoly = enhanceVoidWithCurvedWalls(voidPoly, curvedWalls);
+            voidsByFloor[fi].push(voidPoly);
           }
         }
       }
