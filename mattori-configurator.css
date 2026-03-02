@@ -2437,7 +2437,7 @@
 
     @media (max-width: 1024px) {
       .mattori-configurator .page-columns {
-        gap: 2rem !important;
+        gap: 1.5rem !important;
         padding: 2rem 1.5rem;
       }
       .mattori-configurator .admin-panel {
@@ -2445,6 +2445,14 @@
       }
       .mattori-configurator .admin-panel-label {
         right: 1.5rem;
+      }
+      .mattori-configurator .product-hero-image,
+      .mattori-configurator .unified-frame-preview,
+      .mattori-configurator .floor-review-viewer {
+        width: 100%;
+      }
+      .mattori-configurator .unified-frame-container {
+        width: 100%;
       }
     }
 
