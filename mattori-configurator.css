@@ -2467,6 +2467,9 @@
       .mattori-configurator .unified-frame-preview {
         width: 100%;
       }
+      .mattori-configurator .floor-review-viewer {
+        margin-bottom: -10px;
+      }
     }
 
     @media (max-width: 640px) {
