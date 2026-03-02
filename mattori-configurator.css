@@ -2435,6 +2435,14 @@
     /* RESPONSIVE                                  */
     /* ═══════════════════════════════════════════ */
 
+    @media (max-width: 1440px) {
+      .mattori-configurator .page-columns {
+        grid-template-columns: 1.3fr 1fr !important;
+        gap: 2.5rem !important;
+        padding: 2.5rem 2.5rem;
+      }
+    }
+
     @media (max-width: 1024px) {
       .mattori-configurator .page-columns {
         gap: 1.5rem !important;
