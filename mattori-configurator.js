@@ -589,13 +589,35 @@
     function computeBoundingBox(design) {
       const points = [];
       const wallBBox = computeWallBBox(design);
+      // Include wall thickness: expand each wall endpoint perpendicular by halfThickness.
+      // This matches the 3D geometry (createWallBox) so grid allocation equals visual extent.
       for (const wall of design.walls ?? []) {
-        points.push({ x: wall.a.x, y: wall.a.y }, { x: wall.b.x, y: wall.b.y });
+        var dx = wall.b.x - wall.a.x;
+        var dy = wall.b.y - wall.a.y;
+        var len = Math.sqrt(dx * dx + dy * dy) || 1;
+        var nx = -dy / len;   // perpendicular normal
+        var ny =  dx / len;
+        var ht = (wall.thickness ?? 20) / 2;
+        points.push(
+          { x: wall.a.x + nx * ht, y: wall.a.y + ny * ht },
+          { x: wall.a.x - nx * ht, y: wall.a.y - ny * ht },
+          { x: wall.b.x + nx * ht, y: wall.b.y + ny * ht },
+          { x: wall.b.x - nx * ht, y: wall.b.y - ny * ht }
+        );
         if (wall.c && wall.c.x != null && wall.c.y != null) {
           for (let t = 0.25; t <= 0.75; t += 0.25) {
-            const px = (1-t)*(1-t)*wall.a.x + 2*(1-t)*t*wall.c.x + t*t*wall.b.x;
-            const py = (1-t)*(1-t)*wall.a.y + 2*(1-t)*t*wall.c.y + t*t*wall.b.y;
-            points.push({ x: px, y: py });
+            var px = (1-t)*(1-t)*wall.a.x + 2*(1-t)*t*wall.c.x + t*t*wall.b.x;
+            var py = (1-t)*(1-t)*wall.a.y + 2*(1-t)*t*wall.c.y + t*t*wall.b.y;
+            // Tangent at t for accurate normal on curves
+            var tx = 2*(1-t)*(wall.c.x - wall.a.x) + 2*t*(wall.b.x - wall.c.x);
+            var ty = 2*(1-t)*(wall.c.y - wall.a.y) + 2*t*(wall.b.y - wall.c.y);
+            var tlen = Math.sqrt(tx*tx + ty*ty) || 1;
+            var cnx = -ty / tlen;
+            var cny =  tx / tlen;
+            points.push(
+              { x: px + cnx * ht, y: py + cny * ht },
+              { x: px - cnx * ht, y: py - cny * ht }
+            );
           }
         }
       }
@@ -612,27 +634,21 @@
         points.push({ x: bal.a.x, y: bal.a.y }, { x: bal.b.x, y: bal.b.y });
         if (bal.c && bal.c.x != null && bal.c.y != null) {
           for (let t = 0.25; t <= 0.75; t += 0.25) {
-            const px = (1-t)*(1-t)*bal.a.x + 2*(1-t)*t*bal.c.x + t*t*bal.b.x;
-            const py = (1-t)*(1-t)*bal.a.y + 2*(1-t)*t*bal.c.y + t*t*bal.b.y;
-            points.push({ x: px, y: py });
+            var bpx = (1-t)*(1-t)*bal.a.x + 2*(1-t)*t*bal.c.x + t*t*bal.b.x;
+            var bpy = (1-t)*(1-t)*bal.a.y + 2*(1-t)*t*bal.c.y + t*t*bal.b.y;
+            points.push({ x: bpx, y: bpy });
           }
         }
       }
       if (!points.length) return { minX: 0, minY: 0, maxX: 1, maxY: 1 };
-      var bbox = {
-        minX: Math.min(...points.map(p => p.x)),
-        minY: Math.min(...points.map(p => p.y)),
-        maxX: Math.max(...points.map(p => p.x)),
-        maxY: Math.max(...points.map(p => p.y))
+      // FLOOR_EXPAND (4 units) accounts for the outward push of floor polygon vertices
+      var FLOOR_EXPAND = 4;
+      return {
+        minX: Math.min(...points.map(p => p.x)) - FLOOR_EXPAND,
+        minY: Math.min(...points.map(p => p.y)) - FLOOR_EXPAND,
+        maxX: Math.max(...points.map(p => p.x)) + FLOOR_EXPAND,
+        maxY: Math.max(...points.map(p => p.y)) + FLOOR_EXPAND
       };
-      // Clamp to wall bounds — areas/surfaces must not extend bbox beyond walls
-      if (wallBBox) {
-        bbox.minX = Math.max(bbox.minX, wallBBox.minX);
-        bbox.minY = Math.max(bbox.minY, wallBBox.minY);
-        bbox.maxX = Math.min(bbox.maxX, wallBBox.maxX);
-        bbox.maxY = Math.min(bbox.maxY, wallBBox.maxY);
-      }
-      return bbox;
     }
 
     // ============================================================
@@ -1420,11 +1436,7 @@
       const SCALE = 0.01;
       const globalSize = new THREE.Vector3(maxWorldW * SCALE, size.y, maxWorldH * SCALE);
 
-      // Bbox-derived size for camera frustum — matches grid allocation proportions
-      // so the visual fills the allocated cell space without letterboxing.
-      var bboxSize = new THREE.Vector3(floor.worldW * SCALE, size.y, floor.worldH * SCALE);
-
-      return { scene, size, center, globalSize, bboxSize };
+      return { scene, size, center, globalSize };
     }
 
     // ============================================================
@@ -1440,7 +1452,7 @@
       var floorColor = (opts.floorColor !== undefined) ? opts.floorColor : undefined;
       const result = buildFloorScene(floorIndex, floorColor);
       if (!result) return;
-      const { scene, size, center, globalSize, bboxSize } = result;
+      const { scene, size, center, globalSize } = result;
 
       // Apply rotation if set for this floor
       var rotation = getFloorRotate(floorIndex);
@@ -1452,18 +1464,14 @@
       const height = Math.round(forceH || container.getBoundingClientRect().height) || 260;
 
       var camera;
-      // Dynamic padding: ensure 3D geometry (including wall thickness + FLOOR_EXPAND)
-      // fits within the frustum. bboxSize = wall centerlines; size = actual 3D geometry.
-      var frustumPad = Math.max(1.02,
-        size.x / (bboxSize.x || size.x),
-        size.z / (bboxSize.z || size.z));
+      // Small padding to prevent edge clipping from sub-pixel rounding
+      var frustumPad = 1.03;
       if (opts.ortho) {
         // Orthographic camera — uniform scale, flat top-down (for editing)
-        // Use bbox-derived size so frustum proportions match grid allocation.
-        // Swap for 90°/270° rotation.
+        // Use actual bounding box to prevent clipping. Swap for 90°/270° rotation.
         var isSwapped = (rotation === 90 || rotation === 270);
-        var effectiveW = (isSwapped ? bboxSize.z : bboxSize.x) * frustumPad;
-        var effectiveH = (isSwapped ? bboxSize.x : bboxSize.z) * frustumPad;
+        var effectiveW = (isSwapped ? size.z : size.x) * frustumPad;
+        var effectiveH = (isSwapped ? size.x : size.z) * frustumPad;
         var pxPerUnitW = width / effectiveW;
         var pxPerUnitH = height / effectiveH;
         var pxPerUnit = Math.min(pxPerUnitW, pxPerUnitH);
@@ -1503,8 +1511,8 @@
       } else {
         // Perspective camera — same framing as ortho but with subtle 3D depth
         var isSwapped = (rotation === 90 || rotation === 270);
-        var effectiveW = (isSwapped ? bboxSize.z : bboxSize.x) * frustumPad;
-        var effectiveH = (isSwapped ? bboxSize.x : bboxSize.z) * frustumPad;
+        var effectiveW = (isSwapped ? size.z : size.x) * frustumPad;
+        var effectiveH = (isSwapped ? size.x : size.z) * frustumPad;
         var pxPerUnitW = width / effectiveW;
         var pxPerUnitH = height / effectiveH;
         var pxPerUnit = Math.min(pxPerUnitW, pxPerUnitH);
