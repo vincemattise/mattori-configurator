@@ -4666,7 +4666,7 @@
         (function polishFloorHoles() {
           if (floorResult.length === 0) return;
           var CELL = 2; // cm grid resolution — fine enough to catch thin slits
-          var MAX_HOLE_AREA = 500; // cm² — holes larger than this are kept (real voids)
+          var MAX_HOLE_AREA = 1500; // cm² — safe: real voids already subtracted, this catches all artifacts
           // Compute floor bbox with 1-cell margin for flood fill
           var fb = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
           for (var p = 0; p < floorResult.length; p++) {
