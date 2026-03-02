@@ -1344,7 +1344,7 @@
       renderStaticThumbnailSized(floorIndex, container, null, null, {});
     }
 
-    // opts: { ortho: bool, floorColor: hex }
+    // opts: { ortho: bool, floorColor: hex, noTrack: bool }
     function renderStaticThumbnailSized(floorIndex, container, forceW, forceH, opts) {
       opts = opts || {};
       var floorColor = (opts.floorColor !== undefined) ? opts.floorColor : undefined;
@@ -1447,7 +1447,7 @@
       renderer.render(scene, camera);
       container.appendChild(renderer.domElement);
 
-      previewViewers.push({ renderer });
+      if (!opts.noTrack) previewViewers.push({ renderer });
       return { renderer };
     }
 
@@ -3137,7 +3137,7 @@
         strip.appendChild(thumb);
 
         // Render mini static thumbnail (ortho, no shadows)
-        const viewer = renderStaticThumbnailSized(i, thumb, null, null, { ortho: true });
+        const viewer = renderStaticThumbnailSized(i, thumb, null, null, { ortho: true, noTrack: true });
         if (viewer) thumbstripRenderers.push(viewer);
       }
 
