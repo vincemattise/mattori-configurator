@@ -2441,6 +2441,14 @@
         gap: 2.5rem !important;
         padding: 2.5rem 2.5rem;
       }
+      .mattori-configurator .product-hero-image,
+      .mattori-configurator .unified-frame-preview,
+      .mattori-configurator .floor-review-viewer {
+        width: 100%;
+      }
+      .mattori-configurator .unified-frame-container {
+        width: 100%;
+      }
     }
 
     @media (max-width: 1024px) {
