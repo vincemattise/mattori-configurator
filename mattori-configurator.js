@@ -4915,8 +4915,15 @@
               }
             }
           } else {
-            // Simple polygon without holes — ear-clip triangulation
-            const tris = earClipTriangulate(outerObjPts);
+            // Simple polygon without holes
+            // Prefer THREE.ShapeUtils (robust) over ear-clip for complex concave polygons
+            var tris;
+            if (typeof THREE !== 'undefined' && THREE.ShapeUtils) {
+              var contour = outerObjPts.map(function(p) { return new THREE.Vector2(p.x, p.y); });
+              tris = THREE.ShapeUtils.triangulateShape(contour, []);
+            } else {
+              tris = earClipTriangulate(outerObjPts);
+            }
             const baseBot = vertexIndex;
             for (const pt of outerObjPts) {
               vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
