@@ -1044,6 +1044,11 @@
           if ((surface.role ?? -1) !== 14 && !surface.isCutout) continue;
           const poly = tessellateSurfacePoly(surface.poly ?? []);
           if (poly.length >= 3) {
+            // Skip voids that are too small to be real stair openings / trap doors
+            const vxs = poly.map(p => p.x), vys = poly.map(p => p.y);
+            const vw = Math.max(...vxs) - Math.min(...vxs);
+            const vh = Math.max(...vys) - Math.min(...vys);
+            if (Math.min(vw, vh) < 40) continue;
             voidsByFloor[fi].push(poly.map(p => ({ x: p.x, y: p.y })));
           }
         }
