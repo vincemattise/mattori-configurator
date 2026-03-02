@@ -1420,7 +1420,11 @@
       const SCALE = 0.01;
       const globalSize = new THREE.Vector3(maxWorldW * SCALE, size.y, maxWorldH * SCALE);
 
-      return { scene, size, center, globalSize };
+      // Bbox-derived size for camera frustum — matches grid allocation proportions
+      // so the visual fills the allocated cell space without letterboxing.
+      var bboxSize = new THREE.Vector3(floor.worldW * SCALE, size.y, floor.worldH * SCALE);
+
+      return { scene, size, center, globalSize, bboxSize };
     }
 
     // ============================================================
@@ -1436,7 +1440,7 @@
       var floorColor = (opts.floorColor !== undefined) ? opts.floorColor : undefined;
       const result = buildFloorScene(floorIndex, floorColor);
       if (!result) return;
-      const { scene, size, center, globalSize } = result;
+      const { scene, size, center, globalSize, bboxSize } = result;
 
       // Apply rotation if set for this floor
       var rotation = getFloorRotate(floorIndex);
@@ -1448,14 +1452,18 @@
       const height = Math.round(forceH || container.getBoundingClientRect().height) || 260;
 
       var camera;
-      // Small padding to prevent edge clipping from wall thickness / sub-pixel rounding
-      var frustumPad = 1.03;
+      // Dynamic padding: ensure 3D geometry (including wall thickness + FLOOR_EXPAND)
+      // fits within the frustum. bboxSize = wall centerlines; size = actual 3D geometry.
+      var frustumPad = Math.max(1.02,
+        size.x / (bboxSize.x || size.x),
+        size.z / (bboxSize.z || size.z));
       if (opts.ortho) {
         // Orthographic camera — uniform scale, flat top-down (for editing)
-        // Use actual bounding box to prevent clipping. Swap for 90°/270° rotation.
+        // Use bbox-derived size so frustum proportions match grid allocation.
+        // Swap for 90°/270° rotation.
         var isSwapped = (rotation === 90 || rotation === 270);
-        var effectiveW = (isSwapped ? size.z : size.x) * frustumPad;
-        var effectiveH = (isSwapped ? size.x : size.z) * frustumPad;
+        var effectiveW = (isSwapped ? bboxSize.z : bboxSize.x) * frustumPad;
+        var effectiveH = (isSwapped ? bboxSize.x : bboxSize.z) * frustumPad;
         var pxPerUnitW = width / effectiveW;
         var pxPerUnitH = height / effectiveH;
         var pxPerUnit = Math.min(pxPerUnitW, pxPerUnitH);
@@ -1495,8 +1503,8 @@
       } else {
         // Perspective camera — same framing as ortho but with subtle 3D depth
         var isSwapped = (rotation === 90 || rotation === 270);
-        var effectiveW = (isSwapped ? size.z : size.x) * frustumPad;
-        var effectiveH = (isSwapped ? size.x : size.z) * frustumPad;
+        var effectiveW = (isSwapped ? bboxSize.z : bboxSize.x) * frustumPad;
+        var effectiveH = (isSwapped ? bboxSize.x : bboxSize.z) * frustumPad;
         var pxPerUnitW = width / effectiveW;
         var pxPerUnitH = height / effectiveH;
         var pxPerUnit = Math.min(pxPerUnitW, pxPerUnitH);
