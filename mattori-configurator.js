@@ -3521,21 +3521,30 @@
     }
 
     // Clear control panel, show spinner, do work, rebuild
+    function showLayoutLoading() {
+      var section = document.getElementById('layoutResultSection');
+      if (!section) return;
+      var existing = section.querySelector('.layout-loading-overlay');
+      if (existing) return;
+      var overlay = document.createElement('div');
+      overlay.className = 'layout-loading-overlay';
+      overlay.innerHTML = '<div class="step-spinner"></div>';
+      section.appendChild(overlay);
+    }
+
+    function hideLayoutLoading() {
+      var section = document.getElementById('layoutResultSection');
+      if (!section) return;
+      var overlay = section.querySelector('.layout-loading-overlay');
+      if (overlay) overlay.remove();
+    }
+
     function updatePreviewWithLoading(fn) {
-      // Clear layout viewer and show spinner (same pattern as step transitions)
-      if (floorLayoutViewer) {
-        // Dispose old renderers first
-        for (var v of layoutViewers) { disposeScene(v.scene); if (v.renderer) v.renderer.dispose(); }
-        layoutViewers = [];
-        floorLayoutViewer.innerHTML = '';
-        var loader = document.createElement('div');
-        loader.className = 'wizard-step-loading';
-        loader.innerHTML = '<div class="step-spinner"></div>';
-        floorLayoutViewer.appendChild(loader);
-      }
+      showLayoutLoading();
       setTimeout(function() {
         fn();
         renderLayoutView();
+        hideLayoutLoading();
       }, 60);
     }
 
@@ -3558,15 +3567,18 @@
       if (!floorSettings[floorIndex]) floorSettings[floorIndex] = {};
       var current = getFloorRotate(floorIndex);
       floorSettings[floorIndex].rotate = (current + 90) % 360;
-      // Only reset this floor's position, keep others (dimensions change on rotate)
       resetSingleFloorPosition(floorIndex);
-      showResetButton();
-      renderPreviewThumbnails();
-      renderGridOverlayIfStep4();
-      updateFloorLabels();
-      if (gridEditMode) enableGridDrag();
-      checkFloorOverlaps();
-      renderLayoutView();
+      showLayoutLoading();
+      setTimeout(function() {
+        showResetButton();
+        renderPreviewThumbnails();
+        renderGridOverlayIfStep4();
+        updateFloorLabels();
+        if (gridEditMode) enableGridDrag();
+        checkFloorOverlaps();
+        renderLayoutView();
+        hideLayoutLoading();
+      }, 60);
     }
 
     // ============================================================
@@ -3749,14 +3761,18 @@
                   btn.addEventListener('click', function() {
                     if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
                     floorSettings[floorIdx].alignX = val;
-                    reSnapFloorAlignment(floorIdx);
-                    showResetButton();
-                    renderPreviewThumbnails();
-                    renderGridOverlayIfStep4();
-                    updateFloorLabels();
-                    if (gridEditMode) enableGridDrag();
-                    checkFloorOverlaps();
-                    renderLayoutView();
+                    showLayoutLoading();
+                    setTimeout(function() {
+                      reSnapFloorAlignment(floorIdx);
+                      showResetButton();
+                      renderPreviewThumbnails();
+                      renderGridOverlayIfStep4();
+                      updateFloorLabels();
+                      if (gridEditMode) enableGridDrag();
+                      checkFloorOverlaps();
+                      renderLayoutView();
+                      hideLayoutLoading();
+                    }, 60);
                   });
                   xBtns.appendChild(btn);
                 })(xVals[bx]);
@@ -3777,14 +3793,18 @@
                   btn.addEventListener('click', function() {
                     if (!floorSettings[floorIdx]) floorSettings[floorIdx] = {};
                     floorSettings[floorIdx].alignY = val;
-                    reSnapFloorAlignment(floorIdx);
-                    showResetButton();
-                    renderPreviewThumbnails();
-                    renderGridOverlayIfStep4();
-                    updateFloorLabels();
-                    if (gridEditMode) enableGridDrag();
-                    checkFloorOverlaps();
-                    renderLayoutView();
+                    showLayoutLoading();
+                    setTimeout(function() {
+                      reSnapFloorAlignment(floorIdx);
+                      showResetButton();
+                      renderPreviewThumbnails();
+                      renderGridOverlayIfStep4();
+                      updateFloorLabels();
+                      if (gridEditMode) enableGridDrag();
+                      checkFloorOverlaps();
+                      renderLayoutView();
+                      hideLayoutLoading();
+                    }, 60);
                   });
                   yBtns.appendChild(btn);
                 })(yVals[by]);
