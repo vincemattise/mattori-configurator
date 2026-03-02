@@ -641,13 +641,14 @@
         }
       }
       if (!points.length) return { minX: 0, minY: 0, maxX: 1, maxY: 1 };
-      // FLOOR_EXPAND (4 units) accounts for the outward push of floor polygon vertices
-      var FLOOR_EXPAND = 4;
+      // No extra padding needed: wall halfThickness (≥5) already exceeds
+      // FLOOR_EXPAND (4), so the wall-thickness-expanded points define the
+      // true visual extent. Avoiding extra padding prevents alignment gaps.
       return {
-        minX: Math.min(...points.map(p => p.x)) - FLOOR_EXPAND,
-        minY: Math.min(...points.map(p => p.y)) - FLOOR_EXPAND,
-        maxX: Math.max(...points.map(p => p.x)) + FLOOR_EXPAND,
-        maxY: Math.max(...points.map(p => p.y)) + FLOOR_EXPAND
+        minX: Math.min(...points.map(p => p.x)),
+        minY: Math.min(...points.map(p => p.y)),
+        maxX: Math.max(...points.map(p => p.x)),
+        maxY: Math.max(...points.map(p => p.y))
       };
     }
 
@@ -1464,8 +1465,10 @@
       const height = Math.round(forceH || container.getBoundingClientRect().height) || 260;
 
       var camera;
-      // Small padding to prevent edge clipping from sub-pixel rounding
-      var frustumPad = 1.03;
+      // No padding: bbox now includes wall thickness so grid allocation
+      // matches the 3D geometry extent. Padding would shrink the visual
+      // relative to the grid cells, causing alignment gaps at edges.
+      var frustumPad = 1.0;
       if (opts.ortho) {
         // Orthographic camera — uniform scale, flat top-down (for editing)
         // Use actual bounding box to prevent clipping. Swap for 90°/270° rotation.
