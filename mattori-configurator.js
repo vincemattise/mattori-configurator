@@ -5186,9 +5186,18 @@
       20: 'https://www.funda.nl/detail/koop/breda/appartement-haagdijk-141/43132850/',
       21: 'https://www.funda.nl/detail/koop/waarland/huis-veluweweg-32-b/89499833/'
     };
+    function highlightAdminBtn(btn) {
+      if (!btn) return;
+      // Clear siblings in same row
+      var siblings = btn.parentElement.querySelectorAll('.btn-admin');
+      siblings.forEach(function(b) { b.style.outline = ''; b.style.outlineOffset = ''; });
+      btn.style.outline = '2px solid #4fc3f7';
+      btn.style.outlineOffset = '-2px';
+    }
     function pasteTestLink(n) {
       var input = document.getElementById('fundaUrl');
       if (input) input.value = TEST_LINKS[n] || TEST_LINKS[1];
+      highlightAdminBtn(document.getElementById('btnTest' + n));
     }
     for (const n of Array.from({length: 21}, (_, i) => i + 1)) {
       const btn = document.getElementById('btnTest' + n);
@@ -5204,6 +5213,11 @@
     window.quickTestLoad = async function(n) {
       if (_quickTestLoading) return;
       _quickTestLoading = true;
+      // Highlight clicked button
+      var allQuick = document.querySelectorAll('.admin-panel .btn-admin[onclick*="quickTestLoad"]');
+      allQuick.forEach(function(b) { b.style.outline = ''; b.style.outlineOffset = ''; });
+      var clickedBtn = Array.from(allQuick).find(function(b) { return b.getAttribute('onclick').indexOf('(' + n + ')') !== -1; });
+      highlightAdminBtn(clickedBtn);
       try {
         ensureDomRefs();
 
