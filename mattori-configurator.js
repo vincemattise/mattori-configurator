@@ -323,7 +323,7 @@
           document.body.appendChild(vpEl);
           function updateVpSize() {
             var w = window.innerWidth, h = window.innerHeight;
-            var label = w <= 480 ? 'XS' : w <= 768 ? 'SM' : w <= 1024 ? 'MD' : w <= 1440 ? 'LG' : 'XL';
+            var label = w <= 768 ? 'SM' : w <= 1024 ? 'MD' : w <= 1440 ? 'LG' : 'XL';
             vpEl.textContent = w + ' × ' + h + '  ' + label;
           }
           window.addEventListener('resize', updateVpSize);
