@@ -626,7 +626,8 @@
         if (isElongated && isRailingHeight) {
           const cx = item.x ?? 0;
           const cy = item.y ?? 0;
-          const angle = (item.rotation ?? 0) * Math.PI / 180;
+          const baseAngle = (item.rotation ?? 0) * Math.PI / 180;
+          const angle = h > w ? baseAngle + Math.PI / 2 : baseAngle;
           const halfLen = Math.max(w, h) / 2;
           const dx = Math.cos(angle) * halfLen;
           const dy = Math.sin(angle) * halfLen;
