@@ -4665,7 +4665,7 @@
         // uncovered interior cell is a hole. Small hole clusters get filled.
         (function polishFloorHoles() {
           if (floorResult.length === 0) return;
-          var CELL = 5; // cm grid resolution
+          var CELL = 2; // cm grid resolution — fine enough to catch thin slits
           var MAX_HOLE_AREA = 250; // cm² — holes larger than this are kept (real voids)
           // Compute floor bbox with 1-cell margin for flood fill
           var fb = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
