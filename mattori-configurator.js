@@ -2549,6 +2549,25 @@
       // 3D mode: perspective camera + shadows; off = flat ortho
       var useOrtho = !use3dMode;
 
+      // Snap floor positions to same pixel grid as alignment overlay lines.
+      // renderAlignOverlay uses crispPx(anchorCell * cellPx) for the dashed lines;
+      // floor wraps must derive their position from the same snapped anchor.
+      var _snapDpr = window.devicePixelRatio || 1;
+      function _snapCrispPx(v) { return (Math.round(v * _snapDpr) + 0.5) / _snapDpr; }
+      for (var si = 0; si < currentLayout.positions.length; si++) {
+        var sp = currentLayout.positions[si];
+        if (sp.anchorCellX != null) {
+          var snapX = _snapCrispPx(sp.anchorCellX * cellPx);
+          var alX = getFloorAlignX(sp.index);
+          sp.x = snapX - (alX === 'right' ? sp.w : alX === 'center' ? sp.w / 2 : 0);
+        }
+        if (sp.anchorCellY != null) {
+          var snapY = _snapCrispPx(sp.anchorCellY * cellPx);
+          var alY = getFloorAlignY(sp.index);
+          sp.y = snapY - (alY === 'bottom' ? sp.h : alY === 'center' ? sp.h / 2 : 0);
+        }
+      }
+
       // Render each floor at its computed position
       for (var pi = 0; pi < currentLayout.positions.length; pi++) {
         var pos = currentLayout.positions[pi];
