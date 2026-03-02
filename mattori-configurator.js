@@ -2126,6 +2126,15 @@
       }, 200);
     });
 
+    // --- Resize handler for preview floors (non-edit mode) ---
+    // CSS-scale the pre-rendered grid instead of re-creating WebGL contexts.
+    var _previewScaleTimer = null;
+    window.addEventListener('resize', function() {
+      if (gridEditMode) return; // edit mode has its own full re-render
+      clearTimeout(_previewScaleTimer);
+      _previewScaleTimer = setTimeout(rescaleFloorsGrid, 80);
+    });
+
     function computeFloorLayout(zoneW, zoneH, includedIndices) {
       // Gather floor dimensions in cm (swap for 90°/270° rotation)
       var items = includedIndices.map(function(i) {
@@ -2470,6 +2479,31 @@
         var renderOpts = { ortho: useOrtho, floorColor: EDIT_FLOOR_COLOR };
         renderStaticThumbnailSized(pos.index, wrap, pos.w, pos.h, renderOpts);
       }
+
+      // Store reference dimensions for responsive rescaling.
+      // The grid is rendered at the current overlay size; on resize we
+      // CSS-scale it instead of re-rendering all WebGL canvases.
+      floorsGrid._refW = zoneW;
+      floorsGrid._refH = parseFloat(floorsGrid.style.height);
+      floorsGrid.style.width = zoneW + 'px';
+      floorsGrid.style.transformOrigin = '0 0';
+      rescaleFloorsGrid();
+    }
+
+    // Responsive rescale: CSS-transform the pre-rendered floors grid
+    // to fit the current overlay size without re-creating WebGL contexts.
+    function rescaleFloorsGrid() {
+      if (!floorsGrid || !floorsGrid._refW) return;
+      var overlay = floorsGrid.parentElement;
+      if (!overlay) return;
+      var currentW = overlay.getBoundingClientRect().width;
+      if (currentW < 1) return;
+      var s = currentW / floorsGrid._refW;
+      floorsGrid.style.transform = (s === 1) ? '' : 'scale(' + s + ')';
+      // Negative margins shrink the layout box to match the visual size,
+      // so the flex-centering parent aligns correctly.
+      floorsGrid.style.marginRight = (floorsGrid._refW * (1 - s)) * -1 + 'px';
+      floorsGrid.style.marginBottom = (floorsGrid._refH * (1 - s)) * -1 + 'px';
     }
 
     // ============================================================
