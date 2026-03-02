@@ -1436,6 +1436,22 @@
       if (wallMesh) scene.add(wallMesh);
       if (floorMesh) scene.add(floorMesh);
 
+      // Soft background glow: semi-transparent plane showing the floor's bounding extent.
+      // Helps visualize overall footprint size, especially for situatie/site plan floors
+      // where garden surfaces are filtered out and only sparse walls remain.
+      var glowGeo = new THREE.PlaneGeometry(size.x * 0.97, size.z * 0.97);
+      glowGeo.rotateX(-Math.PI / 2); // lay flat (XZ plane)
+      var glowMat = new THREE.MeshBasicMaterial({
+        color: 0xC4B59A,
+        transparent: true,
+        opacity: 0.10,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      var glowMesh = new THREE.Mesh(glowGeo, glowMat);
+      glowMesh.position.y = -0.01; // just below floor geometry
+      scene.add(glowMesh);
+
       scene.add(new THREE.AmbientLight(0xFFF8F0, 1.0));
       const dirLight = new THREE.DirectionalLight(0xFFF5E8, 0.7);
       dirLight.position.set(2, 8, 5);
