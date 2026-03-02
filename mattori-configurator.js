@@ -4598,6 +4598,50 @@
         }
 
 
+        // Second union pass: expand result polygons slightly and re-union to close
+        // micro-gaps between adjacent polygons that the first union missed.
+        if (floorResult.length > 1) {
+          const GAP_CLOSE = 2; // cm — small enough to not affect shape visibly
+          const reExpandedPolys = [];
+          for (const poly of floorResult) {
+            const outerRing = poly[0];
+            if (!outerRing || outerRing.length < 4) { reExpandedPolys.push(poly); continue; }
+            // Expand outer ring outward by GAP_CLOSE
+            const pts = outerRing.map(p => ({ x: p[0], y: p[1] }));
+            // Remove closing duplicate for expansion
+            const last = pts[pts.length - 1], first = pts[0];
+            if (Math.hypot(last.x - first.x, last.y - first.y) < 0.01) pts.pop();
+            if (pts.length < 3) { reExpandedPolys.push(poly); continue; }
+            const n = pts.length;
+            let cx = 0, cy = 0;
+            for (const p of pts) { cx += p.x; cy += p.y; }
+            cx /= n; cy /= n;
+            const expanded = [];
+            for (let i = 0; i < n; i++) {
+              const prev = pts[(i - 1 + n) % n], curr = pts[i], next = pts[(i + 1) % n];
+              const e1dx = curr.x - prev.x, e1dy = curr.y - prev.y;
+              const e1len = Math.hypot(e1dx, e1dy) || 1;
+              const n1x = -e1dy / e1len, n1y = e1dx / e1len;
+              const e2dx = next.x - curr.x, e2dy = next.y - curr.y;
+              const e2len = Math.hypot(e2dx, e2dy) || 1;
+              const n2x = -e2dy / e2len, n2y = e2dx / e2len;
+              let nx = n1x + n2x, ny = n1y + n2y;
+              const nlen = Math.hypot(nx, ny);
+              if (nlen < 0.01) { nx = n1x; ny = n1y; }
+              else { nx /= nlen; ny /= nlen; }
+              const toCx = cx - curr.x, toCy = cy - curr.y;
+              if (nx * toCx + ny * toCy > 0) { nx = -nx; ny = -ny; }
+              expanded.push([curr.x + nx * GAP_CLOSE, curr.y + ny * GAP_CLOSE]);
+            }
+            expanded.push([expanded[0][0], expanded[0][1]]); // close ring
+            reExpandedPolys.push([expanded]);
+          }
+          try {
+            const reUnion = polygonClipping.union(...reExpandedPolys);
+            if (reUnion.length > 0) floorResult = reUnion;
+          } catch (e) { /* keep original if re-union fails */ }
+        }
+
         // Subtract voids (stair openings) — per-polygon to avoid SweepLine crash
         for (const v of floorVoids) {
           if (v.length < 3) continue;
