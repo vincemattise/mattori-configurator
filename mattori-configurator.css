@@ -2463,7 +2463,8 @@
       .mattori-configurator .product-title {
         font-size: 2rem;
       }
-      .mattori-configurator .floor-review-viewer {
+      .mattori-configurator .floor-review-viewer,
+      .mattori-configurator .unified-frame-preview {
         width: 100%;
       }
     }
