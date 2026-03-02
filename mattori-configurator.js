@@ -4616,6 +4616,24 @@
           floorResult = newFloorResult;
         }
 
+        // === Polish: fill micro-holes (< 250 cm²) left by union imprecision ===
+        for (let pi = 0; pi < floorResult.length; pi++) {
+          const poly = floorResult[pi];
+          if (poly.length <= 1) continue; // no holes
+          const cleaned = [poly[0]]; // keep outer ring
+          for (let hi = 1; hi < poly.length; hi++) {
+            const hole = poly[hi];
+            // Shoelace area (absolute)
+            let area = 0;
+            for (let i = 0, j = hole.length - 1; i < hole.length; j = i++) {
+              area += (hole[j][0] + hole[i][0]) * (hole[j][1] - hole[i][1]);
+            }
+            area = Math.abs(area) / 2;
+            if (area >= 250) cleaned.push(hole); // keep large holes (real voids)
+          }
+          floorResult[pi] = cleaned;
+        }
+
         // === Bridge slabs: fill floor-thickness material under walls/balustrades floating over voids ===
         // Without these, walls crossing stairwell openings float in mid-air (breaks 3D printing).
         const bridgePolys = [];
