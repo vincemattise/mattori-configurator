@@ -2460,15 +2460,14 @@
         max-height: none;
         overflow-y: visible;
       }
-      .mattori-configurator .product-hero-image {
-        max-width: 420px;
-      }
-      .mattori-configurator .product-title {
-        font-size: 2rem;
-      }
+      .mattori-configurator .product-hero-image,
       .mattori-configurator .floor-review-viewer,
       .mattori-configurator .unified-frame-preview {
         width: 100%;
+        max-width: none;
+      }
+      .mattori-configurator .product-title {
+        font-size: 2rem;
       }
       .mattori-configurator .floor-review-viewer {
         margin-bottom: -10px;
