@@ -4660,23 +4660,127 @@
           floorResult = newFloorResult;
         }
 
-        // === Polish: fill micro-holes (< 250 cm²) left by union imprecision ===
-        for (let pi = 0; pi < floorResult.length; pi++) {
-          const poly = floorResult[pi];
-          if (poly.length <= 1) continue; // no holes
-          const cleaned = [poly[0]]; // keep outer ring
-          for (let hi = 1; hi < poly.length; hi++) {
-            const hole = poly[hi];
-            // Shoelace area (absolute)
-            let area = 0;
-            for (let i = 0, j = hole.length - 1; i < hole.length; j = i++) {
-              area += (hole[j][0] + hole[i][0]) * (hole[j][1] - hole[i][1]);
+        // === Polish: grid-scan to detect and fill micro-holes in the floor ===
+        // Scans a 2D grid, flood-fills from edges to find "outside", then any
+        // uncovered interior cell is a hole. Small hole clusters get filled.
+        (function polishFloorHoles() {
+          if (floorResult.length === 0) return;
+          var CELL = 5; // cm grid resolution
+          var MAX_HOLE_AREA = 250; // cm² — holes larger than this are kept (real voids)
+          // Compute floor bbox with 1-cell margin for flood fill
+          var fb = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+          for (var p = 0; p < floorResult.length; p++) {
+            var ring = floorResult[p][0];
+            for (var k = 0; k < ring.length; k++) {
+              if (ring[k][0] < fb.x0) fb.x0 = ring[k][0];
+              if (ring[k][1] < fb.y0) fb.y0 = ring[k][1];
+              if (ring[k][0] > fb.x1) fb.x1 = ring[k][0];
+              if (ring[k][1] > fb.y1) fb.y1 = ring[k][1];
             }
-            area = Math.abs(area) / 2;
-            if (area >= 250) cleaned.push(hole); // keep large holes (real voids)
           }
-          floorResult[pi] = cleaned;
-        }
+          fb.x0 -= CELL; fb.y0 -= CELL; fb.x1 += CELL; fb.y1 += CELL;
+          var cols = Math.ceil((fb.x1 - fb.x0) / CELL);
+          var rows = Math.ceil((fb.y1 - fb.y0) / CELL);
+          if (cols * rows > 500000) return; // safety: skip if grid too large
+
+          // Point-in-ring test for [x,y] ring format
+          function pipRing(px, py, ring) {
+            var inside = false;
+            for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+              var xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+              if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi)
+                inside = !inside;
+            }
+            return inside;
+          }
+
+          // Build coverage grid: 1 = floor, 0 = uncovered
+          var grid = new Uint8Array(rows * cols);
+          for (var r = 0; r < rows; r++) {
+            var py = fb.y0 + (r + 0.5) * CELL;
+            for (var c = 0; c < cols; c++) {
+              var px = fb.x0 + (c + 0.5) * CELL;
+              for (var p = 0; p < floorResult.length; p++) {
+                if (pipRing(px, py, floorResult[p][0])) {
+                  var inHole = false;
+                  for (var h = 1; h < floorResult[p].length; h++) {
+                    if (pipRing(px, py, floorResult[p][h])) { inHole = true; break; }
+                  }
+                  if (!inHole) { grid[r * cols + c] = 1; break; }
+                }
+              }
+            }
+          }
+
+          // Flood-fill from all edge cells to mark "outside" (value 2)
+          var queue = [];
+          for (var r = 0; r < rows; r++) {
+            if (!grid[r * cols]) { grid[r * cols] = 2; queue.push(r * cols); }
+            if (!grid[r * cols + cols - 1]) { grid[r * cols + cols - 1] = 2; queue.push(r * cols + cols - 1); }
+          }
+          for (var c = 0; c < cols; c++) {
+            if (!grid[c]) { grid[c] = 2; queue.push(c); }
+            if (!grid[(rows - 1) * cols + c]) { grid[(rows - 1) * cols + c] = 2; queue.push((rows - 1) * cols + c); }
+          }
+          while (queue.length > 0) {
+            var idx = queue.pop();
+            var gr = (idx / cols) | 0, gc = idx % cols;
+            if (gr > 0     && !grid[(gr - 1) * cols + gc]) { grid[(gr - 1) * cols + gc] = 2; queue.push((gr - 1) * cols + gc); }
+            if (gr < rows-1 && !grid[(gr + 1) * cols + gc]) { grid[(gr + 1) * cols + gc] = 2; queue.push((gr + 1) * cols + gc); }
+            if (gc > 0     && !grid[gr * cols + gc - 1])    { grid[gr * cols + gc - 1] = 2;    queue.push(gr * cols + gc - 1); }
+            if (gc < cols-1 && !grid[gr * cols + gc + 1])    { grid[gr * cols + gc + 1] = 2;    queue.push(gr * cols + gc + 1); }
+          }
+
+          // Remaining 0-cells are interior holes. Cluster them via flood-fill.
+          var visited = new Uint8Array(rows * cols);
+          var patches = [];
+          for (var r = 0; r < rows; r++) {
+            for (var c = 0; c < cols; c++) {
+              if (grid[r * cols + c] !== 0 || visited[r * cols + c]) continue;
+              // BFS to collect cluster
+              var cluster = [];
+              var q = [r * cols + c];
+              visited[r * cols + c] = 1;
+              while (q.length > 0) {
+                var ci = q.pop();
+                cluster.push(ci);
+                var cr = (ci / cols) | 0, cc = ci % cols;
+                var nbrs = [];
+                if (cr > 0)      nbrs.push((cr-1)*cols+cc);
+                if (cr < rows-1) nbrs.push((cr+1)*cols+cc);
+                if (cc > 0)      nbrs.push(cr*cols+cc-1);
+                if (cc < cols-1) nbrs.push(cr*cols+cc+1);
+                for (var ni = 0; ni < nbrs.length; ni++) {
+                  if (grid[nbrs[ni]] === 0 && !visited[nbrs[ni]]) {
+                    visited[nbrs[ni]] = 1;
+                    q.push(nbrs[ni]);
+                  }
+                }
+              }
+              var clusterArea = cluster.length * CELL * CELL;
+              if (clusterArea < MAX_HOLE_AREA) {
+                // Generate fill patches for each cell in cluster
+                for (var ci = 0; ci < cluster.length; ci++) {
+                  var cr = (cluster[ci] / cols) | 0, cc = cluster[ci] % cols;
+                  var x = fb.x0 + cc * CELL, y = fb.y0 + cr * CELL;
+                  patches.push([[
+                    [x, y], [x + CELL, y], [x + CELL, y + CELL], [x, y + CELL], [x, y]
+                  ]]);
+                }
+              }
+            }
+          }
+
+          // Merge patches into floorResult
+          if (patches.length > 0) {
+            try {
+              floorResult = polygonClipping.union(...floorResult, ...patches);
+            } catch (e) {
+              // Fallback: just append patches
+              for (var i = 0; i < patches.length; i++) floorResult.push(patches[i]);
+            }
+          }
+        })();
 
         // === Bridge slabs: fill floor-thickness material under walls/balustrades floating over voids ===
         // Without these, walls crossing stairwell openings float in mid-air (breaks 3D printing).
