@@ -1448,6 +1448,7 @@
       container.appendChild(renderer.domElement);
 
       previewViewers.push({ renderer });
+      return { renderer };
     }
 
     // ============================================================
@@ -4562,8 +4563,12 @@
             const n2x = -e2dy / e2len, n2y = e2dx / e2len;
             let nx = n1x + n2x, ny = n1y + n2y;
             const nlen = Math.hypot(nx, ny);
-            if (nlen < 0.001) { expanded.push({ x: curr.x, y: curr.y }); continue; }
-            nx /= nlen; ny /= nlen;
+            if (nlen < 0.01) {
+              // Near-collinear or anti-parallel edges — fallback to first edge normal
+              nx = n1x; ny = n1y;
+            } else {
+              nx /= nlen; ny /= nlen;
+            }
             const toCx = cx - curr.x, toCy = cy - curr.y;
             if (nx * toCx + ny * toCy > 0) { nx = -nx; ny = -ny; }
             expanded.push({ x: curr.x + nx * FLOOR_EXPAND, y: curr.y + ny * FLOOR_EXPAND });
