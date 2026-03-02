@@ -1091,6 +1091,7 @@
       padding: 1.8rem;
       border: none;
       box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+      position: relative;
     }
 
     .mattori-configurator .wizard-title {
@@ -1277,13 +1278,9 @@
       border: 2px solid rgba(255,255,255,0.3);
       border-top-color: #fff;
       border-radius: 50%;
-      animation: btnSpin 0.6s linear infinite;
+      animation: spin 0.6s linear infinite;
       vertical-align: middle;
       margin-right: 4px;
-    }
-
-    @keyframes btnSpin {
-      to { transform: rotate(360deg); }
     }
 
     .mattori-configurator .btn-wizard-next:hover {
@@ -1713,8 +1710,10 @@
 
     .mattori-configurator .layout-align-label {
       color: #777;
-      font-size: 0.78rem;
-      font-weight: 600;
+      font-size: 0.72rem;
+      font-weight: 700;
+      min-width: 14px;
+      text-align: center;
     }
 
     .mattori-configurator .info-tooltip {
@@ -1783,13 +1782,6 @@
       width: 14px;
       height: 14px;
       cursor: pointer;
-    }
-
-    .mattori-configurator .layout-align-label {
-      font-size: 0.72rem;
-      font-weight: 700;
-      min-width: 14px;
-      text-align: center;
     }
 
     /* ── Step 4: Floor Layout Viewer ── */
@@ -2462,14 +2454,6 @@
       .mattori-configurator .admin-panel-label {
         right: 1.5rem;
       }
-      .mattori-configurator .product-hero-image,
-      .mattori-configurator .unified-frame-preview,
-      .mattori-configurator .floor-review-viewer {
-        width: 100%;
-      }
-      .mattori-configurator .unified-frame-container {
-        width: 100%;
-      }
     }
 
     @media (max-width: 768px) {
@@ -2487,7 +2471,6 @@
       .mattori-configurator .product-hero-image,
       .mattori-configurator .floor-review-viewer,
       .mattori-configurator .unified-frame-preview {
-        width: 100%;
         max-width: none;
       }
       .mattori-configurator .product-title {
@@ -2508,9 +2491,6 @@
       .mattori-configurator .admin-panel-content {
         flex-direction: column;
       }
-      .mattori-configurator .floors-grid {
-        /* layout engine handles positioning */
-      }
       .mattori-configurator .product-title {
         font-size: 1.7rem;
         letter-spacing: -0.8px;
@@ -2530,9 +2510,6 @@
     }
 
     /* ── Feedback corner ── */
-    .mattori-configurator .wizard {
-      position: relative;
-    }
     .mattori-configurator .feedback-corner {
       position: absolute;
       bottom: 0;

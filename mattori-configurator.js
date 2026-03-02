@@ -401,6 +401,16 @@
     // ============================================================
     // UTILITY FUNCTIONS
     // ============================================================
+
+    // Fetch with timeout — prevents indefinite hangs when backend is unreachable
+    function fetchWithTimeout(url, opts, timeoutMs) {
+      timeoutMs = timeoutMs || 15000;
+      var controller = new AbortController();
+      var timer = setTimeout(function() { controller.abort(); }, timeoutMs);
+      var fetchOpts = Object.assign({}, opts || {}, { signal: controller.signal });
+      return fetch(url, fetchOpts).finally(function() { clearTimeout(timer); });
+    }
+
     function clearError() { errorMsg.textContent = ''; }
     function setError(msg) { errorMsg.textContent = msg; }
     function showLoading() { loadingOverlay.classList.add('active'); }
@@ -1469,8 +1479,24 @@
       renderer.render(scene, camera);
       container.appendChild(renderer.domElement);
 
-      if (!opts.noTrack) previewViewers.push({ renderer });
+      if (!opts.noTrack) previewViewers.push({ renderer, scene });
       return { renderer };
+    }
+
+    // Dispose all geometries, materials & textures inside a Three.js scene
+    function disposeScene(scene) {
+      if (!scene) return;
+      scene.traverse(function(obj) {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(function(m) { if (m.map) m.map.dispose(); m.dispose(); });
+          } else {
+            if (obj.material.map) obj.material.map.dispose();
+            obj.material.dispose();
+          }
+        }
+      });
     }
 
     // ============================================================
@@ -2136,6 +2162,13 @@
       _previewScaleTimer = setTimeout(rescaleFloorsGrid, 80);
     });
 
+    // --- Cleanup all WebGL resources on page unload ---
+    window.addEventListener('beforeunload', function() {
+      for (var v of previewViewers) { disposeScene(v.scene); if (v.renderer) v.renderer.dispose(); }
+      for (var v of layoutViewers) { disposeScene(v.scene); if (v.renderer) v.renderer.dispose(); }
+      for (var v of activeViewers) { if (v.renderer) v.renderer.dispose(); }
+    });
+
     function computeFloorLayout(zoneW, zoneH, includedIndices) {
       // Gather floor dimensions in cm (swap for 90°/270° rotation)
       var items = includedIndices.map(function(i) {
@@ -2390,7 +2423,7 @@
     function renderPreviewThumbnails() {
       // In step 4, don't render until "Bereken indeling" is clicked
       if (currentWizardStep === 4 && !layoutCalculated) {
-        for (const v of previewViewers) { if (v.renderer) v.renderer.dispose(); }
+        for (const v of previewViewers) { disposeScene(v.scene); if (v.renderer) v.renderer.dispose(); }
         previewViewers = [];
         floorsGrid.innerHTML = '';
         return;
@@ -2416,8 +2449,9 @@
         return;
       }
 
-      // Cleanup old preview viewers
+      // Cleanup old preview viewers (dispose scene + renderer to prevent GPU memory leak)
       for (const v of previewViewers) {
+        disposeScene(v.scene);
         if (v.renderer) v.renderer.dispose();
       }
       previewViewers = [];
@@ -3440,7 +3474,7 @@
       // Clear layout viewer and show spinner (same pattern as step transitions)
       if (floorLayoutViewer) {
         // Dispose old renderers first
-        for (var v of layoutViewers) { if (v.renderer) v.renderer.dispose(); }
+        for (var v of layoutViewers) { disposeScene(v.scene); if (v.renderer) v.renderer.dispose(); }
         layoutViewers = [];
         floorLayoutViewer.innerHTML = '';
         var loader = document.createElement('div');
@@ -3490,8 +3524,9 @@
     var floorOrder = null; // null = default order
 
     function renderLayoutView() {
-      // Cleanup old layout viewers
+      // Cleanup old layout viewers (dispose scene + renderer)
       for (const v of layoutViewers) {
+        disposeScene(v.scene);
         if (v.renderer) v.renderer.dispose();
       }
       layoutViewers = [];
@@ -5282,7 +5317,8 @@
           var scriptEl = document.querySelector('script[src*="mattori-configurator"]');
           var cdnBase = scriptEl ? scriptEl.src.replace('mattori-configurator.js', '') : '';
           var url = cdnBase + 'fml-cache/test-' + n + '.json';
-          var resp = await fetch(url);
+          var resp = await fetchWithTimeout(url, null, 10000);
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
           var data = await resp.json();
           if (data.error) {
             alert('Quick Test ' + n + ': ' + data.error);
@@ -5351,7 +5387,8 @@
           var scriptEl = document.querySelector('script[src*="mattori-configurator"]');
           var cdnBase = scriptEl ? scriptEl.src.replace('mattori-configurator.js', '') : '';
           var url = cdnBase + 'fml-cache/test-' + demoKey + '.json';
-          var resp = await fetch(url);
+          var resp = await fetchWithTimeout(url, null, 10000);
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
           var data = await resp.json();
           if (data.error) {
             alert('Demo laden mislukt: ' + data.error);
@@ -5844,9 +5881,11 @@
       statusBox.parentNode.insertBefore(btn, statusBox.nextSibling);
     }
 
+    var _fundaLoadId = 0; // race-condition guard: only the latest call wins
     async function loadFromFunda() {
       ensureDomRefs();
       noFloorsMode = false; // Reset on new attempt
+      var myLoadId = ++_fundaLoadId;
       const url = getFundaUrl();
       clearError();
       if (!url) { setError('Voer een Funda URL in.'); return; }
@@ -5871,11 +5910,12 @@
       btnFunda.disabled = true;
 
       try {
-        const resp = await fetch('https://web-production-89353.up.railway.app/funda-fml', {
+        const resp = await fetchWithTimeout('https://web-production-89353.up.railway.app/funda-fml', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url })
-        });
+        }, 20000);
+        if (myLoadId !== _fundaLoadId) return; // superseded by newer call
         const data = await resp.json();
 
         // Check if Funda link was valid but no interactive floor plans found
@@ -5946,7 +5986,9 @@
         // Hide load button after successful load
         btnFunda.style.display = 'none';
       } catch (err) {
-        if (err.message && (err.message.includes('Load failed') || err.message.includes('Failed to fetch'))) {
+        if (err.name === 'AbortError') {
+          setFundaStatus('error', '<strong>Timeout</strong><span>Het laden duurde te lang. Probeer het opnieuw.</span>');
+        } else if (err.message && (err.message.includes('Load failed') || err.message.includes('Failed to fetch'))) {
           setFundaStatus('error', '<strong>Verbinding mislukt</strong><span>Probeer het zo weer opnieuw.</span>');
         } else {
           setFundaStatus('error', `<strong>Fout</strong><span>Probeer het zo weer opnieuw.</span>`);
@@ -6104,11 +6146,11 @@
         }
 
         // Upload to Railway backend for persistent URL
-        var resp = await fetch('https://web-production-89353.up.railway.app/upload-preview', {
+        var resp = await fetchWithTimeout('https://web-production-89353.up.railway.app/upload-preview', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: dataUrl })
-        });
+        }, 15000);
         if (!resp.ok) throw new Error('Upload status ' + resp.status);
         var result = await resp.json();
         if (result.url) {
@@ -6239,11 +6281,11 @@
       // Upload FML data to Railway for permanent backup
       if (originalFmlData) {
         try {
-          var fmlResp = await fetch('https://web-production-89353.up.railway.app/upload-fml', {
+          var fmlResp = await fetchWithTimeout('https://web-production-89353.up.railway.app/upload-fml', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fml: originalFmlData })
-          });
+          }, 15000);
           if (fmlResp.ok) {
             var fmlResult = await fmlResp.json();
             if (fmlResult.url) itemProperties['_FML bestand'] = fmlResult.url;
