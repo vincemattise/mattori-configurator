@@ -578,12 +578,23 @@
       if (!wallBBox) return false;
       const poly = surface.poly ?? [];
       if (poly.length < 3) return false;
+      // Check 1: centroid outside wall bounds (small margin)
       let cx = 0, cy = 0;
       for (const pt of poly) { cx += (pt.x ?? 0); cy += (pt.y ?? 0); }
       cx /= poly.length; cy /= poly.length;
       const MARGIN = 25;
-      return cx < wallBBox.minX - MARGIN || cx > wallBBox.maxX + MARGIN ||
-             cy < wallBBox.minY - MARGIN || cy > wallBBox.maxY + MARGIN;
+      if (cx < wallBBox.minX - MARGIN || cx > wallBBox.maxX + MARGIN ||
+          cy < wallBBox.minY - MARGIN || cy > wallBBox.maxY + MARGIN) return true;
+      // Check 2: any vertex extends far beyond walls (catches garden/site boundaries
+      // whose centroid is near the building but whose polygon reaches very far out)
+      var wallW = wallBBox.maxX - wallBBox.minX;
+      var wallH = wallBBox.maxY - wallBBox.minY;
+      var FAR = Math.max(wallW, wallH) * 0.5;
+      for (const pt of poly) {
+        if ((pt.x ?? 0) < wallBBox.minX - FAR || (pt.x ?? 0) > wallBBox.maxX + FAR ||
+            (pt.y ?? 0) < wallBBox.minY - FAR || (pt.y ?? 0) > wallBBox.maxY + FAR) return true;
+      }
+      return false;
     }
 
     function computeBoundingBox(design) {
