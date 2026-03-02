@@ -619,12 +619,20 @@
         }
       }
       if (!points.length) return { minX: 0, minY: 0, maxX: 1, maxY: 1 };
-      return {
+      var bbox = {
         minX: Math.min(...points.map(p => p.x)),
         minY: Math.min(...points.map(p => p.y)),
         maxX: Math.max(...points.map(p => p.x)),
         maxY: Math.max(...points.map(p => p.y))
       };
+      // Clamp to wall bounds — areas/surfaces must not extend bbox beyond walls
+      if (wallBBox) {
+        bbox.minX = Math.max(bbox.minX, wallBBox.minX);
+        bbox.minY = Math.max(bbox.minY, wallBBox.minY);
+        bbox.maxX = Math.min(bbox.maxX, wallBBox.maxX);
+        bbox.maxY = Math.min(bbox.maxY, wallBBox.maxY);
+      }
+      return bbox;
     }
 
     // ============================================================
