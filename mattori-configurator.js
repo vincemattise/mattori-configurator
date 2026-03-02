@@ -432,6 +432,20 @@
     }
 
     // ============================================================
+    // TEXT INPUT SANITIZER — strips emoji and special characters
+    // ============================================================
+    function sanitizeTextInput(input) {
+      var cursor = input.selectionStart;
+      var before = input.value;
+      var cleaned = before.replace(/[^\p{L}\p{N}\s.,'\-]/gu, '');
+      if (cleaned !== before) {
+        input.value = cleaned;
+        var diff = before.length - cleaned.length;
+        input.setSelectionRange(cursor - diff, cursor - diff);
+      }
+    }
+
+    // ============================================================
     // ADDRESS PARSING
     // ============================================================
     function parseFundaAddress(url) {
@@ -3964,6 +3978,7 @@
         inp.value = singleLabelText;
         inp.placeholder = 'plattegrond';
         inp.addEventListener('input', function() {
+          sanitizeTextInput(inp);
           singleLabelText = inp.value;
           updateLabelsOverlayOnly();
         });
@@ -3987,6 +4002,7 @@
             inp.value = item.label;
             inp.placeholder = item.label;
             inp.addEventListener('input', function() {
+              sanitizeTextInput(inp);
               floorLabels[idx].label = inp.value;
               updateLabelsOverlayOnly();
             });
@@ -5210,8 +5226,8 @@
       var hasCity = addressCity.value.trim();
       btnWizardNext.disabled = !(hasStreet && hasCity);
     }
-    addressStreet.addEventListener('input', () => { updateFrameAddress(); updateStep2NextBtn(); });
-    addressCity.addEventListener('input', () => { updateFrameAddress(); updateStep2NextBtn(); });
+    addressStreet.addEventListener('input', () => { sanitizeTextInput(addressStreet); updateFrameAddress(); updateStep2NextBtn(); });
+    addressCity.addEventListener('input', () => { sanitizeTextInput(addressCity); updateFrameAddress(); updateStep2NextBtn(); });
 
     // House icon picker — render options
     (function renderHouseIconPicker() {
