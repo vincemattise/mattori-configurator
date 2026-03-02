@@ -2463,6 +2463,9 @@
       .mattori-configurator .product-title {
         font-size: 2rem;
       }
+      .mattori-configurator .floor-review-viewer {
+        width: 100%;
+      }
     }
 
     @media (max-width: 640px) {
