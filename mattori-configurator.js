@@ -2339,6 +2339,15 @@
       // The floor position is derived from the anchor.
       var cellPx = zoneW / GRID_COLS;
 
+      // Round floor dimensions to whole cell multiples.
+      // Without this, non-integer cell counts cause partial-cell movements
+      // at grid edges (e.g. a 15.3-cell floor can only move 0.7 cells on the
+      // last snap before clamping, while the alignment line moves a full cell).
+      for (var ri2 = 0; ri2 < result.length; ri2++) {
+        result[ri2].w = Math.ceil(result[ri2].w / cellPx) * cellPx;
+        result[ri2].h = Math.ceil(result[ri2].h / cellPx) * cellPx;
+      }
+
       for (var ri = 0; ri < result.length; ri++) {
         var r = result[ri];
         var floorAlignX = getFloorAlignX(r.index);
