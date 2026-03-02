@@ -1247,8 +1247,9 @@
     }
 
     // Build a Three.js scene for a floor (reused by preview thumbnails, floor review, layout)
-    // Editing floor color — warm beige
+    // Editing floor color — warm beige (3D), lighter variant (2D/flat) for wall contrast
     var EDIT_FLOOR_COLOR = 0xB0A594;
+    var EDIT_FLOOR_COLOR_FLAT = 0xD2C7B6;
 
     // Diagonal stripe texture for floor surfaces (mimics real product engraving)
     var _stripeCanvas = null;
@@ -2476,7 +2477,7 @@
 
         floorsGrid.appendChild(wrap);
 
-        var renderOpts = { ortho: useOrtho, floorColor: EDIT_FLOOR_COLOR };
+        var renderOpts = { ortho: useOrtho, floorColor: useOrtho ? EDIT_FLOOR_COLOR_FLAT : EDIT_FLOOR_COLOR };
         renderStaticThumbnailSized(pos.index, wrap, pos.w, pos.h, renderOpts);
       }
 
