@@ -1383,9 +1383,13 @@
         camera.lookAt(0, 0, 0);
 
         // Fine-tune alignment: push model to canvas edge so it touches
-        // the alignment line at that edge
-        var modelHalfW = effectiveW / 2;
-        var modelHalfH = effectiveH / 2;
+        // the alignment line at that edge.
+        // Use ACTUAL model bounds (no frustumPad) so the visible geometry
+        // sits flush against the edge — the padding only prevents clipping.
+        var actualW = (isSwapped ? size.z : size.x);
+        var actualH = (isSwapped ? size.x : size.z);
+        var modelHalfW = actualW / 2;
+        var modelHalfH = actualH / 2;
 
         // Y-axis: push to top or bottom edge
         var alignY = getFloorAlignY(floorIndex);
@@ -1421,9 +1425,11 @@
         camera.position.set(0, camDist, camDist * 0.05);
         camera.lookAt(0, 0, 0);
 
-        // Same alignment as ortho — push model to edge
-        var modelHalfW = effectiveW / 2;
-        var modelHalfH = effectiveH / 2;
+        // Same alignment as ortho — use actual model bounds (no frustumPad)
+        var actualW = (isSwapped ? size.z : size.x);
+        var actualH = (isSwapped ? size.x : size.z);
+        var modelHalfW = actualW / 2;
+        var modelHalfH = actualH / 2;
         var alignY = getFloorAlignY(floorIndex);
         if (alignY === 'top' || alignY === 'bottom') {
           var shiftZ = halfFrustumH - modelHalfH;
