@@ -313,6 +313,21 @@
         var urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('admin') === 'true') {
           adminPanel.style.display = '';
+          // Live viewport size indicator (bottom-left corner)
+          var vpEl = document.createElement('div');
+          vpEl.id = 'adminViewportSize';
+          vpEl.style.cssText = 'position:fixed;bottom:6px;left:6px;z-index:99999;' +
+            'background:rgba(0,0,0,0.72);color:#4fc3f7;font-family:monospace;' +
+            'font-size:11px;padding:3px 7px;border-radius:4px;pointer-events:none;' +
+            'line-height:1.3;white-space:pre;';
+          document.body.appendChild(vpEl);
+          function updateVpSize() {
+            var w = window.innerWidth, h = window.innerHeight;
+            var label = w <= 480 ? 'XS' : w <= 768 ? 'SM' : w <= 1024 ? 'MD' : w <= 1440 ? 'LG' : 'XL';
+            vpEl.textContent = w + ' × ' + h + '  ' + label;
+          }
+          window.addEventListener('resize', updateVpSize);
+          updateVpSize();
         } else {
           adminPanel.style.display = 'none';
         }
