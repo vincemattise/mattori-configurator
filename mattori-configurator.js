@@ -2553,16 +2553,17 @@
       // renderAlignOverlay uses crispPx(anchorCell * cellPx) for the dashed lines;
       // floor wraps must derive their position from the same snapped anchor.
       var _snapDpr = window.devicePixelRatio || 1;
+      var _snapCellPx = grid.cellPx;
       function _snapCrispPx(v) { return (Math.round(v * _snapDpr) + 0.5) / _snapDpr; }
       for (var si = 0; si < currentLayout.positions.length; si++) {
         var sp = currentLayout.positions[si];
         if (sp.anchorCellX != null) {
-          var snapX = _snapCrispPx(sp.anchorCellX * cellPx);
+          var snapX = _snapCrispPx(sp.anchorCellX * _snapCellPx);
           var alX = getFloorAlignX(sp.index);
           sp.x = snapX - (alX === 'right' ? sp.w : alX === 'center' ? sp.w / 2 : 0);
         }
         if (sp.anchorCellY != null) {
-          var snapY = _snapCrispPx(sp.anchorCellY * cellPx);
+          var snapY = _snapCrispPx(sp.anchorCellY * _snapCellPx);
           var alY = getFloorAlignY(sp.index);
           sp.y = snapY - (alY === 'bottom' ? sp.h : alY === 'center' ? sp.h / 2 : 0);
         }
