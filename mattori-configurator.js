@@ -1442,7 +1442,7 @@
       var glowGeo = new THREE.PlaneGeometry(size.x * 0.97, size.z * 0.97);
       glowGeo.rotateX(-Math.PI / 2); // lay flat (XZ plane)
       var glowMat = new THREE.MeshBasicMaterial({
-        color: 0xC4B59A,
+        color: 0xA09890,
         transparent: true,
         opacity: 0.10,
         side: THREE.DoubleSide,
