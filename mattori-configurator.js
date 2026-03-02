@@ -600,6 +600,7 @@
         }
       }
       for (const area of design.areas ?? []) {
+        if (isSurfaceOutsideWalls(area, wallBBox)) continue;
         for (const pt of area.poly ?? []) points.push(pt);
       }
       for (const surface of design.surfaces ?? []) {
