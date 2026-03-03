@@ -5400,8 +5400,7 @@
       20: 'https://www.funda.nl/detail/koop/breda/appartement-haagdijk-141/43132850/',
       21: 'https://www.funda.nl/detail/koop/waarland/huis-veluweweg-32-b/89499833/',
       22: 'https://www.funda.nl/detail/huur/wassenaar/huis-zanderijlaan-9/43210032/',
-      23: 'https://www.funda.nl/detail/koop/amsterdam/appartement-suikerplein-6/89607360/',
-      24: 'https://www.funda.nl/detail/koop/amsterdam/appartement-suikerplein-6/89607360/'
+      23: 'https://www.funda.nl/detail/koop/amsterdam/appartement-suikerplein-6/89607360/'
     };
     function highlightAdminBtn(btn) {
       if (!btn) return;
@@ -5416,7 +5415,7 @@
       if (input) input.value = TEST_LINKS[n] || TEST_LINKS[1];
       highlightAdminBtn(document.getElementById('btnTest' + n));
     }
-    for (const n of Array.from({length: 24}, (_, i) => i + 1)) {
+    for (const n of Array.from({length: 23}, (_, i) => i + 1)) {
       const btn = document.getElementById('btnTest' + n);
       if (btn) btn.addEventListener('click', () => pasteTestLink(n));
     }
