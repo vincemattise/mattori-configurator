@@ -1291,12 +1291,6 @@
       box-shadow: none;
     }
 
-    .mattori-configurator .btn-wizard-next:disabled:hover {
-      background: #1a1a1a;
-      transform: none;
-      box-shadow: none;
-    }
-
     .mattori-configurator .btn-spinner {
       display: inline-block;
       width: 14px;
@@ -1313,6 +1307,12 @@
       background: #333;
       transform: translateY(-1px);
       box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    }
+
+    .mattori-configurator .btn-wizard-next:disabled:hover {
+      background: #1a1a1a;
+      transform: none;
+      box-shadow: none;
     }
 
     /* ── Step 3: Floor Review Viewer ── */
@@ -2661,4 +2661,56 @@
       .mattori-configurator select {
         font-size: 16px !important;
       }
+    }
+
+    /* ── Accessibility: focus-visible styles ── */
+    .mattori-configurator button:focus-visible,
+    .mattori-configurator a:focus-visible,
+    .mattori-configurator input:focus-visible,
+    .mattori-configurator textarea:focus-visible,
+    .mattori-configurator select:focus-visible {
+      outline: 2px solid #1a1a1a;
+      outline-offset: 2px;
+    }
+
+    /* Toggle switch focus indicator */
+    .mattori-configurator .label-mode-switch input:focus-visible + .switch-slider {
+      outline: 2px solid #1a1a1a;
+      outline-offset: 2px;
+    }
+
+    /* ── Accessibility: contrast fixes (WCAG AA minimum 4.5:1) ── */
+    .mattori-configurator .step-label,
+    .mattori-configurator .wizard-step-indicator,
+    .mattori-configurator .floor-review-hint {
+      color: #767676;
+    }
+    .mattori-configurator .floor-review-counter,
+    .mattori-configurator .floor-review-exclude-link,
+    .mattori-configurator .btn-floor-back {
+      color: #767676;
+    }
+    .mattori-configurator .label-mode-label {
+      color: #666;
+    }
+    .mattori-configurator .wizard-help-link {
+      color: #767676;
+    }
+    .mattori-configurator .btn-floor-major {
+      color: #767676;
+    }
+
+    /* ── Firefox scrollbar styling ── */
+    .mattori-configurator .page-col-right-inner {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,0,0,0.1) transparent;
+    }
+
+    /* ── Safari user-select prefix ── */
+    .mattori-configurator .unified-frame-container,
+    .mattori-configurator .floor-include-chip,
+    .mattori-configurator .layout-grid-toggle,
+    .mattori-configurator .floor-layout-card .floor-layout-include,
+    .mattori-configurator .label-mode-switch {
+      -webkit-user-select: none;
     }

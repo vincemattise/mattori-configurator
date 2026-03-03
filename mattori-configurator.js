@@ -51,8 +51,9 @@
       const offset = new THREE.Vector3().subVectors(this.camera.position, this.target);
       let targetDist = offset.length();
       targetDist *= Math.tan((this.camera.fov / 2) * Math.PI / 180);
-      const panX = 2 * dx * targetDist / el.clientHeight * this.panSpeed;
-      const panY = 2 * dy * targetDist / el.clientHeight * this.panSpeed;
+      const h = el.clientHeight || 1;
+      const panX = 2 * dx * targetDist / h * this.panSpeed;
+      const panY = 2 * dy * targetDist / h * this.panSpeed;
       const camLeft = new THREE.Vector3().setFromMatrixColumn(this.camera.matrix, 0);
       const camUp = new THREE.Vector3().setFromMatrixColumn(this.camera.matrix, 1);
       this._panOffset.addScaledVector(camLeft, -panX);
@@ -440,8 +441,10 @@
       var cleaned = before.replace(/[^\p{L}\p{N}\s.,'\-]/gu, '');
       if (cleaned !== before) {
         input.value = cleaned;
-        var diff = before.length - cleaned.length;
-        input.setSelectionRange(cursor - diff, cursor - diff);
+        if (typeof cursor === 'number') {
+          var pos = Math.max(0, cursor - (before.length - cleaned.length));
+          input.setSelectionRange(pos, pos);
+        }
       }
     }
 
@@ -566,12 +569,19 @@
         }
       }
       if (!pts.length) return null;
-      return {
-        minX: Math.min(...pts.map(p => p.x)),
-        minY: Math.min(...pts.map(p => p.y)),
-        maxX: Math.max(...pts.map(p => p.x)),
-        maxY: Math.max(...pts.map(p => p.y))
-      };
+      return arrayBounds(pts);
+    }
+
+    function arrayBounds(pts) {
+      var mnX = Infinity, mnY = Infinity, mxX = -Infinity, mxY = -Infinity;
+      for (var i = 0; i < pts.length; i++) {
+        var px = pts[i].x, py = pts[i].y;
+        if (px < mnX) mnX = px;
+        if (py < mnY) mnY = py;
+        if (px > mxX) mxX = px;
+        if (py > mxY) mxY = py;
+      }
+      return { minX: mnX, minY: mnY, maxX: mxX, maxY: mxY };
     }
 
     function isSurfaceOutsideWalls(surface, wallBBox) {
@@ -655,12 +665,7 @@
       // No extra padding needed: wall halfThickness (≥5) already exceeds
       // FLOOR_EXPAND (4), so the wall-thickness-expanded points define the
       // true visual extent. Avoiding extra padding prevents alignment gaps.
-      return {
-        minX: Math.min(...points.map(p => p.x)),
-        minY: Math.min(...points.map(p => p.y)),
-        maxX: Math.max(...points.map(p => p.x)),
-        maxY: Math.max(...points.map(p => p.y))
-      };
+      return arrayBounds(points);
     }
 
     // ============================================================
@@ -1677,10 +1682,7 @@
     // Re-snap a floor after alignment change.
     // The anchor cell stays the same — only the interpretation changes.
     // renderPreviewThumbnails will recompute pos.x/y from the anchor.
-    function reSnapFloorAlignment(floorIdx) {
-      // Nothing to do — anchor cells are alignment-independent.
-      // The position is derived from anchor + alignment in renderPreviewThumbnails.
-    }
+
 
     // --- Grid overlay (SVG) ---
     function renderGridOverlay() {
@@ -1846,7 +1848,7 @@
       for (var wi = 0; wi < wraps.length; wi++) {
         attachDragHandlers(wraps[wi], wi);
       }
-      addGridFloorButtons();
+
     }
 
     function refreshGridAfterChange() {
@@ -1858,14 +1860,9 @@
       for (var nw = 0; nw < newWraps.length; nw++) {
         attachDragHandlers(newWraps[nw], nw);
       }
-      addGridFloorButtons();
+
     }
 
-    function addGridFloorButtons() {
-      // Alignment lines are now drawn in renderGridOverlay() (same SVG = no sub-pixel drift)
-      // This function is kept as a hook for future per-floor UI elements
-      if (!gridEditMode || !floorsGrid || !showGridOverlay) return;
-    }
 
     function disableGridDrag() {
       var overlay = document.getElementById('unifiedFloorsOverlay');
@@ -2455,24 +2452,6 @@
       return { type: 'stacked', positions: positions };
     }
 
-    function layoutDiagonal(items) {
-      // Place first floor top-left, second bottom-right with slight overlap zone
-      if (items.length < 2) return layoutSingle(items);
-      var a = items[0], b = items[1];
-      var gap = Math.max(a.w, a.h) * layoutGapFactor * 0.6;
-      var positions = [
-        { index: a.index, x: 0, y: 0, w: a.w, h: a.h },
-        { index: b.index, x: a.w * 0.35 + gap, y: a.h * 0.35 + gap, w: b.w, h: b.h }
-      ];
-      // Add remaining floors (if any) stacked to the right
-      var curX = Math.max(a.w, positions[1].x + b.w) + gap;
-      for (var i = 2; i < items.length; i++) {
-        positions.push({ index: items[i].index, x: curX, y: 0, w: items[i].w, h: items[i].h });
-        curX += items[i].w + gap;
-      }
-      return { type: 'diagonal', positions: positions };
-    }
-
     function layoutTriangle(items) {
       // Two on top, one centered below (or vice versa based on sizes)
       if (items.length < 3) return layoutSideBySide(items);
@@ -2741,55 +2720,12 @@
     // ============================================================
     // ORTHOGRAPHIC VIEWER (for step 5 layout)
     // ============================================================
-    function renderOrthographicViewer(floorIndex, container) {
-      const result = buildFloorScene(floorIndex);
-      if (!result) return null;
-      const { scene, size, center, globalSize } = result;
-
-      // Apply rotation if set for this floor
-      var rotation = getFloorRotate(floorIndex);
-      if (rotation) {
-        scene.rotateY(rotation * Math.PI / 180);
-      }
-
-      const rect = container.getBoundingClientRect();
-      const width = Math.round(rect.width) || 200;
-      const height = Math.round(rect.height) || 260;
-
-      // Use own size for card thumbnails — each card fills its own space
-      const ref = size;
-      const padding = 1.25;
-      const halfW = (ref.x * padding) / 2;
-      const halfZ = (ref.z * padding) / 2;
-      const halfExtent = Math.max(halfW, halfZ);
-
-      const FOV = 12;
-      const aspect = width / height;
-      const camera = new THREE.PerspectiveCamera(FOV, aspect, 0.01, halfExtent * 100);
-      const camDist = halfExtent / Math.tan((FOV / 2) * Math.PI / 180);
-      camera.position.set(0, camDist, camDist * 0.14);
-      camera.lookAt(center);
-
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      renderer.setClearColor(0x000000, 0);
-      renderer.setSize(width, height);
-      renderer.setPixelRatio(dpr);
-
-      renderer.render(scene, camera);
-      container.appendChild(renderer.domElement);
-
-      return { renderer };
-    }
-
     // ============================================================
     // FRAME ADDRESS (unified preview)
     // ============================================================
     function updateFrameAddress() {
-      frameStreet.textContent = addressStreet.value || '';
-      frameCity.textContent = addressCity.value || '';
+      if (frameStreet && addressStreet) frameStreet.textContent = addressStreet.value || '';
+      if (frameCity && addressCity) frameCity.textContent = addressCity.value || '';
     }
 
     // ============================================================
@@ -2950,12 +2886,6 @@
       return excludeKeywords.some(kw => name.includes(kw));
     }
 
-    function isExtraFloor(floor) {
-      const name = (floor.name || '').toLowerCase();
-      const extraKeywords = ['berging', 'garage', 'schuur', 'zolder', 'kelder', 'storage', 'attic', 'basement'];
-      return extraKeywords.some(kw => name.includes(kw));
-    }
-
     function toggleFloorExclusion(index) {
       if (excludedFloors.has(index)) {
         excludedFloors.delete(index);
@@ -3111,6 +3041,12 @@
           el.classList.remove('view-entering', 'view-leaving');
         }
 
+        // Stop floor review animation loop when leaving step 3
+        if (n !== 3 && floorReviewViewer && floorReviewViewer.animId) {
+          cancelAnimationFrame(floorReviewViewer.animId);
+          floorReviewViewer.animId = null;
+        }
+
         if (n === 1) {
           hideView(floorReviewViewerEl);
           fadeOutView(unifiedFramePreview, function() {
@@ -3192,7 +3128,7 @@
                 for (var _wi = 0; _wi < wraps.length; _wi++) {
                   attachDragHandlers(wraps[_wi], _wi);
                 }
-                addGridFloorButtons();
+          
               }
             }, 50);
           } else {
@@ -3374,8 +3310,11 @@
       const strip = document.getElementById('floorReviewThumbstrip');
       if (!strip) return;
 
-      // Dispose old renderers
-      thumbstripRenderers.forEach(r => { if (r.renderer) r.renderer.dispose(); });
+      // Dispose old renderers + scenes
+      thumbstripRenderers.forEach(r => {
+        if (r.scene) disposeScene(r.scene);
+        if (r.renderer) r.renderer.dispose();
+      });
       thumbstripRenderers = [];
       strip.innerHTML = '';
 
@@ -3494,13 +3433,6 @@
 
       // Update thumbstrip state (highlight active + status indicators)
       updateThumbstripState();
-    }
-
-    function navigateFloorReview(direction) {
-      currentFloorReviewIndex += direction;
-      if (currentFloorReviewIndex < 0) currentFloorReviewIndex = floors.length - 1;
-      if (currentFloorReviewIndex >= floors.length) currentFloorReviewIndex = 0;
-      renderFloorReview();
     }
 
     // ── Step 3: New review handlers ──
@@ -3883,7 +3815,6 @@
                     floorSettings[floorIdx].alignX = val;
                     showLayoutLoading();
                     setTimeout(function() {
-                      reSnapFloorAlignment(floorIdx);
                       showResetButton();
                       renderPreviewThumbnails();
                       renderGridOverlayIfStep4();
@@ -3915,7 +3846,6 @@
                     floorSettings[floorIdx].alignY = val;
                     showLayoutLoading();
                     setTimeout(function() {
-                      reSnapFloorAlignment(floorIdx);
                       showResetButton();
                       renderPreviewThumbnails();
                       renderGridOverlayIfStep4();
@@ -3966,7 +3896,7 @@
             _dragCleanups.forEach(function(fn) { fn(); });
             _dragCleanups = [];
             for (var _rw = 0; _rw < wraps.length; _rw++) attachDragHandlers(wraps[_rw], _rw);
-            addGridFloorButtons();
+      
           }
           renderLayoutView();
           btnReset.style.display = 'none';
@@ -4014,7 +3944,7 @@
           if (floorsGrid) floorsGrid.classList.toggle('zone-editing', showGridOverlay);
           if (showGridOverlay) {
             renderGridOverlay();
-            addGridFloorButtons();
+      
           } else {
             // Remove grid overlay + alignment overlay
             var gridEl = floorsGrid ? floorsGrid.querySelector('.grid-overlay') : null;
@@ -6190,7 +6120,7 @@
         btnWizardNext.style.display = 'none';
       } finally {
         clearInterval(_loadTimer);
-        if (btnFunda.style.display !== 'none') btnFunda.disabled = false;
+        if (myLoadId === _fundaLoadId && btnFunda.style.display !== 'none') btnFunda.disabled = false;
       }
     }
 
