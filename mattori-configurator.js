@@ -4666,6 +4666,24 @@
 
       const floorVoids = floor.voids ?? [];
 
+      // DEBUG: dump balkon surfaces, balustrades, and nearby walls
+      (function _balkonDebug() {
+        var bSurfs = (design.surfaces ?? []).filter(s => ((s.name||'')+(s.customName||'')).toLowerCase().includes('balkon'));
+        if (!bSurfs.length) return;
+        for (var bi = 0; bi < bSurfs.length; bi++) {
+          var bs = bSurfs[bi];
+          console.log('[BALKON-DBG] Surface ' + bi + ' "' + (bs.name||bs.customName) + '" poly:', JSON.stringify(bs.poly));
+        }
+        console.log('[BALKON-DBG] All balustrades (' + (design.balustrades||[]).length + '):');
+        (design.balustrades ?? []).forEach(function(b, i) {
+          console.log('  bal[' + i + '] a:', JSON.stringify(b.a), 'b:', JSON.stringify(b.b), 'c:', b.c ? JSON.stringify(b.c) : 'none', 'thick:', b.thickness);
+        });
+        console.log('[BALKON-DBG] All walls (' + walls.length + '):');
+        walls.forEach(function(w, i) {
+          console.log('  wall[' + i + '] a:', JSON.stringify(w.a), 'b:', JSON.stringify(w.b), 'thick:', w.thickness, 'openings:', (w.openings||[]).length);
+        });
+      })();
+
       {
         const floorSources = [];
 
