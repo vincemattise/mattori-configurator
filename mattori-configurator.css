@@ -1007,7 +1007,7 @@
     .mattori-configurator .new-eyebrow {
       position: absolute;
       top: -0.55rem;
-      right: -0.3rem;
+      right: 0.5rem;
       font-size: 0.7rem;
       font-weight: 600;
       letter-spacing: 0.2px;
@@ -1098,8 +1098,8 @@
 
     .mattori-configurator .btn-start-configurator:hover:not(:disabled) {
       background: #333;
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
 
     .mattori-configurator .btn-start-configurator svg {
