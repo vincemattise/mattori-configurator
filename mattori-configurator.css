@@ -1004,6 +1004,21 @@
       color: #1a1a1a;
     }
 
+    .mattori-configurator .new-badge {
+      display: inline-block;
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: #2d6a2e;
+      background: #e8f5e9;
+      padding: 0.25em 0.65em;
+      border-radius: 50px;
+      vertical-align: middle;
+      position: relative;
+      top: -0.15em;
+    }
+
     .mattori-configurator .product-price-block {
       display: flex;
       align-items: baseline;
