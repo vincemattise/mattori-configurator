@@ -647,7 +647,9 @@
         for (const pt of area.poly ?? []) points.push(pt);
       }
       for (const surface of design.surfaces ?? []) {
-        if (isSurfaceOutsideWalls(surface, wallBBox)) continue;
+        const _sn = ((surface.name ?? '') + ' ' + (surface.customName ?? '')).toLowerCase();
+        const _isOutdoor = ['balkon','terras','loggia','patio','veranda'].some(k => _sn.includes(k));
+        if (!_isOutdoor && isSurfaceOutsideWalls(surface, wallBBox)) continue;
         const tessellated = tessellateSurfacePoly(surface.poly ?? []);
         for (const pt of tessellated) points.push(pt);
       }
@@ -2022,14 +2024,17 @@
         if (tess.length >= 3) sources.push(tess);
       }
 
-      // Surface polygons (non-cutout, inside walls, with valid names)
+      // Surface polygons (non-cutout, inside walls or named outdoor, with valid names)
       var surfaces = design.surfaces || [];
+      var _outdoorKeys = ['balkon','terras','loggia','patio','veranda'];
       for (var si = 0; si < surfaces.length; si++) {
         var surf = surfaces[si];
         if (surf.isCutout) continue;
-        if (isSurfaceOutsideWalls(surf, wallBBox)) continue;
         var sN = (surf.name || '').trim();
         var cN = (surf.customName || '').trim();
+        var _dn = (sN + ' ' + cN).toLowerCase();
+        var _isOutdoor = _outdoorKeys.some(function(k){ return _dn.indexOf(k) >= 0; });
+        if (!_isOutdoor && isSurfaceOutsideWalls(surf, wallBBox)) continue;
         if (!sN && !cN) continue;
         if (sN && cN && cN.toLowerCase() !== sN.toLowerCase()) continue;
         var st = tessellateSurfacePoly(surf.poly || []);
@@ -4664,22 +4669,24 @@
       {
         const floorSources = [];
 
-        console.log('[FLOOR-DBG] areas:', design.areas?.length, 'surfaces:', design.surfaces?.length, 'balustrades:', design.balustrades?.length);
         for (const area of design.areas ?? []) {
           const tessellated = tessellateSurfacePoly(area.poly ?? []);
-          console.log('[FLOOR-DBG] area:', area.name || '(unnamed)', 'pts:', tessellated.length);
           if (tessellated.length >= 3) floorSources.push(tessellated);
         }
 
+        // Surface names that should always get floor even if outside wall bounds
+        const OUTDOOR_FLOOR_NAMES = ['balkon', 'terras', 'loggia', 'patio', 'veranda'];
         for (const surface of design.surfaces ?? []) {
-          if (surface.isCutout) { console.log('[FLOOR-DBG] skip surface (cutout):', surface.name, surface.customName); continue; }
-          if (isSurfaceOutsideWalls(surface, wallBBox)) { console.log('[FLOOR-DBG] skip surface (outsideWalls):', surface.name, surface.customName, JSON.stringify(surface.poly?.slice(0,3))); continue; }
+          if (surface.isCutout) continue;
           const sName = (surface.name ?? "").trim();
           const cName = (surface.customName ?? "").trim();
-          if (!sName && !cName) { console.log('[FLOOR-DBG] skip surface (no name):', JSON.stringify(surface.poly?.slice(0,3))); continue; }
-          if (sName && cName && cName.toLowerCase() !== sName.toLowerCase()) { console.log('[FLOOR-DBG] skip surface (name mismatch):', sName, cName); continue; }
+          const displayName = (sName || cName).toLowerCase();
+          // Only apply outsideWalls check if it's NOT a known outdoor-floor surface
+          const isOutdoorFloor = OUTDOOR_FLOOR_NAMES.some(k => displayName.includes(k));
+          if (!isOutdoorFloor && isSurfaceOutsideWalls(surface, wallBBox)) continue;
+          if (!sName && !cName) continue;
+          if (sName && cName && cName.toLowerCase() !== sName.toLowerCase()) continue;
           const tessellated = tessellateSurfacePoly(surface.poly ?? []);
-          console.log('[FLOOR-DBG] INCLUDE surface:', sName || cName, 'pts:', tessellated.length);
           if (tessellated.length >= 3) floorSources.push(tessellated);
         }
 
@@ -4753,8 +4760,6 @@
         for (const fill of balFillsOBJ) {
           if (fill.length >= 3) floorSources.push(fill);
         }
-
-        console.log('[FLOOR-DBG] total floorSources:', floorSources.length, 'balStrips:', balStripsOBJ.length, 'balFills:', balFillsOBJ.length);
 
         // --- Polygon-based floor: union all sources, subtract voids, extrude ---
 
