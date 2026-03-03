@@ -1002,6 +1002,28 @@
       line-height: 1.1;
       letter-spacing: -1.2px;
       color: #1a1a1a;
+      margin-bottom: 2px;
+    }
+
+    /* ── Review Stars ── */
+    .mattori-configurator .product-reviews-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5.6px;
+      text-decoration: none;
+      margin-bottom: 16px;
+    }
+
+    .mattori-configurator .review-stars {
+      font-size: 16px;
+      color: #1a1a1a;
+      line-height: 1;
+    }
+
+    .mattori-configurator .review-score {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #777;
     }
 
     .mattori-configurator .new-eyebrow {
@@ -1018,30 +1040,47 @@
       z-index: 1;
     }
 
+    /* ── Price Block ── */
     .mattori-configurator .product-price-block {
       display: flex;
-      align-items: baseline;
-      gap: 0.6rem;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      margin-bottom: 22px;
     }
 
-    .mattori-configurator .product-price-old {
-      font-size: 1rem;
-      font-weight: 500;
-      color: #aaa;
-      text-decoration: line-through;
+    .mattori-configurator .product-price-pair {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
     }
 
     .mattori-configurator .product-price-new {
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       font-weight: 700;
       color: #1a1a1a;
       letter-spacing: -0.5px;
       line-height: 1;
     }
 
+    .mattori-configurator .product-price-old {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: #aaa;
+      text-decoration: line-through;
+    }
+
+    .mattori-configurator .product-price-save {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #777;
+      background: #f0f0ec;
+      padding: 4px 9.6px;
+      border-radius: 50px;
+    }
+
     .mattori-configurator .product-price-tax {
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       font-weight: 500;
       color: #aaa;
     }
@@ -2549,7 +2588,7 @@
         letter-spacing: -0.8px;
       }
       .mattori-configurator .product-price-new {
-        font-size: 1.4rem;
+        font-size: 1.5rem;
       }
       .mattori-configurator .product-description {
         font-size: 0.88rem;
