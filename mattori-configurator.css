@@ -440,6 +440,7 @@
     .mattori-configurator .product-hero-image {
       width: 75%;
       margin: 0 auto;
+      transition: opacity 0.45s ease, transform 0.45s ease;
     }
 
     .mattori-configurator .product-image-wrapper {
@@ -493,6 +494,18 @@
       border-radius: 0;
       padding: 0;
       box-shadow: none;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .mattori-configurator .view-entering {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+
+    .mattori-configurator .view-leaving {
+      opacity: 0;
+      transform: scale(0.96);
+      pointer-events: none;
     }
 
     .mattori-configurator .unified-frame-container {
@@ -1312,6 +1325,7 @@
       background: #ffffff;
       position: relative;
       box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1);
+      transition: opacity 0.5s ease, transform 0.5s ease;
     }
 
     .mattori-configurator .floor-review-hint {

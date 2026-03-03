@@ -3086,20 +3086,57 @@
         if (unifiedLabelsOverlay) unifiedLabelsOverlay.classList.toggle('zone-editing', n === 5);
 
         // Switch between hero image (step 1) and unified frame preview (step 2+)
+        // Animated fade transitions between views
+        function fadeOutView(el) {
+          if (!el || el.style.display === 'none') return;
+          el.classList.add('view-leaving');
+          setTimeout(function() {
+            el.style.display = 'none';
+            el.classList.remove('view-leaving');
+          }, 450);
+        }
+        function fadeInView(el) {
+          if (!el) return;
+          el.classList.add('view-entering');
+          el.style.display = '';
+          requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+              el.classList.remove('view-entering');
+            });
+          });
+        }
+        function hideView(el) {
+          if (!el) return;
+          el.style.display = 'none';
+          el.classList.remove('view-entering', 'view-leaving');
+        }
+
         if (n === 1) {
-          if (productHeroImage) productHeroImage.style.display = '';
-          if (unifiedFramePreview) unifiedFramePreview.style.display = 'none';
-          if (floorReviewViewerEl) floorReviewViewerEl.style.display = 'none';
+          fadeOutView(unifiedFramePreview);
+          hideView(floorReviewViewerEl);
+          if (productHeroImage && productHeroImage.style.display === 'none') {
+            setTimeout(function() { fadeInView(productHeroImage); }, 300);
+          }
         } else if (n === 3) {
           // Step 3: floor review viewer in left column
-          if (productHeroImage) productHeroImage.style.display = 'none';
-          if (unifiedFramePreview) unifiedFramePreview.style.display = 'none';
-          if (floorReviewViewerEl) floorReviewViewerEl.style.display = '';
+          fadeOutView(productHeroImage);
+          fadeOutView(unifiedFramePreview);
+          setTimeout(function() { fadeInView(floorReviewViewerEl); }, 300);
         } else {
           // Steps 2, 4, 5: unified frame preview
-          if (productHeroImage) productHeroImage.style.display = 'none';
-          if (floorReviewViewerEl) floorReviewViewerEl.style.display = 'none';
-          if (floors.length > 0 && unifiedFramePreview) unifiedFramePreview.style.display = '';
+          if (productHeroImage && productHeroImage.style.display !== 'none') {
+            fadeOutView(productHeroImage);
+            hideView(floorReviewViewerEl);
+            if (floors.length > 0 && unifiedFramePreview) {
+              setTimeout(function() { fadeInView(unifiedFramePreview); }, 300);
+            }
+          } else {
+            hideView(productHeroImage);
+            hideView(floorReviewViewerEl);
+            if (floors.length > 0 && unifiedFramePreview && unifiedFramePreview.style.display === 'none') {
+              fadeInView(unifiedFramePreview);
+            }
+          }
         }
 
         // Show/hide order button + disclaimer (only on last step)
