@@ -440,7 +440,7 @@
     .mattori-configurator .product-hero-image {
       width: 75%;
       margin: 0 auto;
-      transition: opacity 0.45s ease, transform 0.45s ease;
+      transition: opacity 1s ease, transform 1s ease;
     }
 
     .mattori-configurator .product-image-wrapper {
@@ -494,7 +494,7 @@
       border-radius: 0;
       padding: 0;
       box-shadow: none;
-      transition: opacity 0.5s ease, transform 0.5s ease;
+      transition: opacity 1s ease, transform 1s ease;
     }
 
     .mattori-configurator .view-entering {
@@ -1325,7 +1325,7 @@
       background: #ffffff;
       position: relative;
       box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1);
-      transition: opacity 0.5s ease, transform 0.5s ease;
+      transition: opacity 1s ease, transform 1s ease;
     }
 
     .mattori-configurator .floor-review-hint {
@@ -2643,4 +2643,16 @@
       color: #1a1a1a;
       font-size: 13px;
       padding: 16px 0;
+    }
+
+    /* Prevent iOS Safari auto-zoom on input focus (triggers when font-size < 16px) */
+    @supports (-webkit-touch-callout: none) {
+      .mattori-configurator input[type="text"],
+      .mattori-configurator input[type="url"],
+      .mattori-configurator input[type="number"],
+      .mattori-configurator input:not([type]),
+      .mattori-configurator textarea,
+      .mattori-configurator select {
+        font-size: 16px !important;
+      }
     }

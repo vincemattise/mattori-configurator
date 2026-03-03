@@ -3093,17 +3093,15 @@
           setTimeout(function() {
             el.style.display = 'none';
             el.classList.remove('view-leaving');
-          }, 450);
+          }, 1000);
         }
         function fadeInView(el) {
           if (!el) return;
           el.classList.add('view-entering');
           el.style.display = '';
-          requestAnimationFrame(function() {
-            requestAnimationFrame(function() {
-              el.classList.remove('view-entering');
-            });
-          });
+          setTimeout(function() {
+            el.classList.remove('view-entering');
+          }, 50);
         }
         function hideView(el) {
           if (!el) return;
@@ -3115,20 +3113,20 @@
           fadeOutView(unifiedFramePreview);
           hideView(floorReviewViewerEl);
           if (productHeroImage && productHeroImage.style.display === 'none') {
-            setTimeout(function() { fadeInView(productHeroImage); }, 300);
+            setTimeout(function() { fadeInView(productHeroImage); }, 600);
           }
         } else if (n === 3) {
           // Step 3: floor review viewer in left column
           fadeOutView(productHeroImage);
           fadeOutView(unifiedFramePreview);
-          setTimeout(function() { fadeInView(floorReviewViewerEl); }, 300);
+          setTimeout(function() { fadeInView(floorReviewViewerEl); }, 600);
         } else {
           // Steps 2, 4, 5: unified frame preview
           if (productHeroImage && productHeroImage.style.display !== 'none') {
             fadeOutView(productHeroImage);
             hideView(floorReviewViewerEl);
             if (floors.length > 0 && unifiedFramePreview) {
-              setTimeout(function() { fadeInView(unifiedFramePreview); }, 300);
+              setTimeout(function() { fadeInView(unifiedFramePreview); }, 600);
             }
           } else {
             hideView(productHeroImage);
