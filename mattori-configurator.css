@@ -2126,6 +2126,8 @@
       flex-direction: column;
       gap: 6px;
       max-width: 400px;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .mattori-configurator .labels-fields .label-field-row {
@@ -2146,6 +2148,7 @@
 
     .mattori-configurator .labels-fields input {
       flex: 1;
+      min-width: 0;
       height: 40px;
       padding: 0 0.8rem;
       font-size: 0.88rem;
@@ -2507,6 +2510,9 @@
       }
       .mattori-configurator .floor-review-viewer {
         margin-bottom: -10px;
+      }
+      .mattori-configurator .labels-fields .label-field-row span {
+        width: 105px;
       }
     }
 
