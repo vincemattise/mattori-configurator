@@ -3087,13 +3087,15 @@
 
         // Switch between hero image (step 1) and unified frame preview (step 2+)
         // Animated fade transitions between views
-        function fadeOutView(el) {
-          if (!el || el.style.display === 'none') return;
+        var VIEW_FADE_MS = 500;
+        function fadeOutView(el, cb) {
+          if (!el || el.style.display === 'none') { if (cb) cb(); return; }
           el.classList.add('view-leaving');
           setTimeout(function() {
             el.style.display = 'none';
             el.classList.remove('view-leaving');
-          }, 1000);
+            if (cb) cb();
+          }, VIEW_FADE_MS);
         }
         function fadeInView(el) {
           if (!el) return;
@@ -3110,27 +3112,26 @@
         }
 
         if (n === 1) {
-          fadeOutView(unifiedFramePreview);
           hideView(floorReviewViewerEl);
-          if (productHeroImage && productHeroImage.style.display === 'none') {
-            setTimeout(function() { fadeInView(productHeroImage); }, 600);
-          }
+          fadeOutView(unifiedFramePreview, function() {
+            fadeInView(productHeroImage);
+          });
         } else if (n === 3) {
           // Step 3: floor review viewer in left column
-          fadeOutView(productHeroImage);
-          fadeOutView(unifiedFramePreview);
-          setTimeout(function() { fadeInView(floorReviewViewerEl); }, 600);
+          hideView(floorReviewViewerEl);
+          var outEl = (productHeroImage && productHeroImage.style.display !== 'none') ? productHeroImage : unifiedFramePreview;
+          fadeOutView(outEl, function() {
+            fadeInView(floorReviewViewerEl);
+          });
         } else {
           // Steps 2, 4, 5: unified frame preview
+          hideView(floorReviewViewerEl);
           if (productHeroImage && productHeroImage.style.display !== 'none') {
-            fadeOutView(productHeroImage);
-            hideView(floorReviewViewerEl);
-            if (floors.length > 0 && unifiedFramePreview) {
-              setTimeout(function() { fadeInView(unifiedFramePreview); }, 600);
-            }
+            fadeOutView(productHeroImage, function() {
+              if (floors.length > 0 && unifiedFramePreview) fadeInView(unifiedFramePreview);
+            });
           } else {
             hideView(productHeroImage);
-            hideView(floorReviewViewerEl);
             if (floors.length > 0 && unifiedFramePreview && unifiedFramePreview.style.display === 'none') {
               fadeInView(unifiedFramePreview);
             }
