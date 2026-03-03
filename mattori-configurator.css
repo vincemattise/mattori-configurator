@@ -1097,9 +1097,9 @@
     }
 
     .mattori-configurator .btn-start-configurator:hover:not(:disabled) {
-      background: #333;
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      background: #333 !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
     }
 
     .mattori-configurator .btn-start-configurator svg {
