@@ -1005,13 +1005,17 @@
       margin-bottom: 2px;
     }
 
-    /* ── Review Stars ── */
+    /* ── Review Stars (inside h1 to prevent Shopify reordering) ── */
     .mattori-configurator .product-reviews-link {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       gap: 5.6px;
       text-decoration: none;
-      margin-bottom: 16px;
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 0;
+      line-height: 1;
+      margin-top: 8px;
     }
 
     .mattori-configurator .review-stars {
@@ -1049,7 +1053,7 @@
       margin-bottom: 22px;
     }
 
-    .mattori-configurator .product-price-pair {
+    .mattori-configurator .product-price-row {
       display: flex;
       align-items: baseline;
       gap: 8px;
