@@ -1006,6 +1006,7 @@
 
     .mattori-configurator .btn-start-wrapper {
       position: relative;
+      overflow: visible !important;
     }
 
     .mattori-configurator .new-eyebrow {
