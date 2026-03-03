@@ -1005,11 +1005,12 @@
     }
 
     .mattori-configurator .new-eyebrow {
+      display: block;
       font-size: 0.75rem;
       font-weight: 600;
       letter-spacing: 0.5px;
       color: #2d6a2e;
-      margin-bottom: -1.2rem !important;
+      margin-bottom: 0.3rem;
     }
 
     .mattori-configurator .product-price-block {
