@@ -4664,19 +4664,22 @@
       {
         const floorSources = [];
 
+        console.log('[FLOOR-DBG] areas:', design.areas?.length, 'surfaces:', design.surfaces?.length, 'balustrades:', design.balustrades?.length);
         for (const area of design.areas ?? []) {
           const tessellated = tessellateSurfacePoly(area.poly ?? []);
+          console.log('[FLOOR-DBG] area:', area.name || '(unnamed)', 'pts:', tessellated.length);
           if (tessellated.length >= 3) floorSources.push(tessellated);
         }
 
         for (const surface of design.surfaces ?? []) {
-          if (surface.isCutout) continue; // cutouts are voids, not floor sources
-          if (isSurfaceOutsideWalls(surface, wallBBox)) continue;
+          if (surface.isCutout) { console.log('[FLOOR-DBG] skip surface (cutout):', surface.name, surface.customName); continue; }
+          if (isSurfaceOutsideWalls(surface, wallBBox)) { console.log('[FLOOR-DBG] skip surface (outsideWalls):', surface.name, surface.customName, JSON.stringify(surface.poly?.slice(0,3))); continue; }
           const sName = (surface.name ?? "").trim();
           const cName = (surface.customName ?? "").trim();
-          if (!sName && !cName) continue; // skip only if BOTH name and customName are empty
-          if (sName && cName && cName.toLowerCase() !== sName.toLowerCase()) continue;
+          if (!sName && !cName) { console.log('[FLOOR-DBG] skip surface (no name):', JSON.stringify(surface.poly?.slice(0,3))); continue; }
+          if (sName && cName && cName.toLowerCase() !== sName.toLowerCase()) { console.log('[FLOOR-DBG] skip surface (name mismatch):', sName, cName); continue; }
           const tessellated = tessellateSurfacePoly(surface.poly ?? []);
+          console.log('[FLOOR-DBG] INCLUDE surface:', sName || cName, 'pts:', tessellated.length);
           if (tessellated.length >= 3) floorSources.push(tessellated);
         }
 
@@ -4750,6 +4753,8 @@
         for (const fill of balFillsOBJ) {
           if (fill.length >= 3) floorSources.push(fill);
         }
+
+        console.log('[FLOOR-DBG] total floorSources:', floorSources.length, 'balStrips:', balStripsOBJ.length, 'balFills:', balFillsOBJ.length);
 
         // --- Polygon-based floor: union all sources, subtract voids, extrude ---
 
