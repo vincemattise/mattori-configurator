@@ -1004,16 +1004,22 @@
       color: #1a1a1a;
     }
 
+    .mattori-configurator .btn-start-wrapper {
+      position: relative;
+    }
+
     .mattori-configurator .new-eyebrow {
-      display: table;
-      font-size: 0.8rem;
+      position: absolute;
+      top: -0.55rem;
+      right: -0.3rem;
+      font-size: 0.7rem;
       font-weight: 600;
       letter-spacing: 0.2px;
       color: #777;
       background: rgba(0,0,0,0.05);
-      padding: 0.35rem 0.9rem;
+      padding: 0.25rem 0.7rem;
       border-radius: 50px;
-      margin-bottom: 0.5rem;
+      z-index: 1;
     }
 
     .mattori-configurator .product-price-block {
