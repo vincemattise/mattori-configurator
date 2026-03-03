@@ -1009,7 +1009,7 @@
       font-weight: 600;
       letter-spacing: 0.5px;
       color: #2d6a2e;
-      margin-bottom: 0.3rem;
+      margin-bottom: -1.2rem !important;
     }
 
     .mattori-configurator .product-price-block {
