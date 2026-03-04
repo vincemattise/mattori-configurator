@@ -3163,7 +3163,7 @@
               // Smart exclude by floor name keywords
               var fn = (floors[ei].name || '').toLowerCase();
               var skipKeywords = ['situatie', 'site', 'tuin', 'garden', 'buitenruimte', 'omgeving',
-                'terrein', 'perceel', 'berging', 'garage', 'schuur', 'storage', 'dakterras', 'balkon', 'parkeer', 'optioneel'];
+                'terrein', 'perceel', 'berging', 'garage', 'schuur', 'storage', 'dakterras', 'balkon', 'parkeer', 'optioneel', 'kelder'];
               var shouldExclude = skipKeywords.some(function(kw) { return fn.includes(kw); });
               if (shouldExclude) excludedFloors.add(ei);
             }
