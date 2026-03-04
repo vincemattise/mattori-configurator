@@ -555,7 +555,7 @@
     // Color options
     var colorOptions = [
       { id: 'clay', label: 'Clay', wall: 0xAA9A82, floor: 0xB0A594, floorFlat: 0xD2C7B6, hex: '#AA9A82', img: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Clay_65de5c1e-cb31-41ef-be00-e4109dc4c41e.png?v=1772631764' },
-      { id: 'redbrick', label: 'Red Brick', wall: 0x803830, floor: 0x873B36, floorFlat: 0x9E4843, hex: '#803830', img: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Red_Brick_863633ab-4687-4736-b722-c14ae3283451.png?v=1772631764' }
+      { id: 'redbrick', label: 'Red Brick', wall: 0xA6483E, floor: 0xAF4D46, floorFlat: 0xCD5D56, hex: '#A6483E', img: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Red_Brick_863633ab-4687-4736-b722-c14ae3283451.png?v=1772631764' }
     ];
     var selectedColor = 'clay';
 
