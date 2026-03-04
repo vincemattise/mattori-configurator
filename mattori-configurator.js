@@ -5409,6 +5409,13 @@
         btn.type = 'button';
         btn.className = 'color-option' + (opt.id === selectedColor ? ' active' : '');
         btn.dataset.colorId = opt.id;
+        // "Nieuw" pill for Red Brick
+        if (opt.id === 'redbrick') {
+          var pill = document.createElement('span');
+          pill.className = 'new-eyebrow';
+          pill.innerHTML = '\u2728 Nieuw';
+          btn.appendChild(pill);
+        }
         var img = document.createElement('img');
         img.src = opt.img;
         img.alt = opt.label;
@@ -5418,14 +5425,20 @@
         btn.appendChild(img);
         btn.appendChild(label);
         btn.addEventListener('click', function() {
+          if (selectedColor === opt.id) return; // already selected
           selectedColor = opt.id;
           // Update active state
           container.querySelectorAll('.color-option').forEach(function(el) {
             el.classList.toggle('active', el.dataset.colorId === opt.id);
           });
-          // Re-render 3D previews if layout is already calculated
+          // Show loading overlay + re-render 3D previews
           if (currentLayout && currentLayout.positions && currentLayout.positions.length > 0) {
-            renderPreviewThumbnails();
+            var overlay = document.getElementById('loadingOverlay');
+            if (overlay) overlay.classList.add('active');
+            setTimeout(function() {
+              renderPreviewThumbnails();
+              if (overlay) overlay.classList.remove('active');
+            }, 50);
           }
         });
         container.appendChild(btn);
