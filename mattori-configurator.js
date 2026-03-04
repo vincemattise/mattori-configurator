@@ -552,6 +552,18 @@
     ];
     var selectedHouseIcon = 'huisje1'; // default
 
+    // Color options
+    var colorOptions = [
+      { id: 'clay', label: 'Clay', wall: 0xAA9A82, floor: 0xB0A594, floorFlat: 0xD2C7B6, hex: '#AA9A82' },
+      { id: 'redbrick', label: 'Red Brick', wall: 0xFF2600, floor: 0xFF2600, floorFlat: 0xFF2600, hex: '#FF2600' }
+    ];
+    var selectedColor = 'clay';
+
+    function getSelectedColorOpts() {
+      var opt = colorOptions.find(function(o) { return o.id === selectedColor; });
+      return opt || colorOptions[0];
+    }
+
     // ============================================================
     // BOUNDING BOX
     // ============================================================
@@ -1352,9 +1364,9 @@
     }
 
     // Build a Three.js scene for a floor (reused by preview thumbnails, floor review, layout)
-    // Editing floor color — warm beige (3D), lighter variant (2D/flat) for wall contrast
-    var EDIT_FLOOR_COLOR = 0xB0A594;
-    var EDIT_FLOOR_COLOR_FLAT = 0xD2C7B6;
+    // Editing floor color — derived from selected color option
+    function getEditFloorColor() { return getSelectedColorOpts().floor; }
+    function getEditFloorColorFlat() { return getSelectedColorOpts().floorFlat; }
 
     // Diagonal stripe texture for floor surfaces (mimics real product engraving)
     var _stripeCanvas = null;
@@ -1420,14 +1432,15 @@
         groups.floor.setAttribute('uv', new THREE.BufferAttribute(floorUvs, 2));
       }
 
+      var colorOpt = getSelectedColorOpts();
       const wallMaterial = new THREE.MeshPhongMaterial({
-        color: 0xAA9A82,
+        color: colorOpt.wall,
         flatShading: true,
         side: THREE.DoubleSide,
         shininess: 18,
         specular: 0x444444
       });
-      var fColor = (floorColor !== undefined) ? floorColor : 0xAA9A82;
+      var fColor = (floorColor !== undefined) ? floorColor : colorOpt.wall;
       var stripeMap = _createStripeTexture();
       const floorMaterial = new THREE.MeshPhongMaterial({
         color: fColor,
@@ -2630,7 +2643,7 @@
 
         floorsGrid.appendChild(wrap);
 
-        var renderOpts = { ortho: useOrtho, floorColor: useOrtho ? EDIT_FLOOR_COLOR_FLAT : EDIT_FLOOR_COLOR };
+        var renderOpts = { ortho: useOrtho, floorColor: useOrtho ? getEditFloorColorFlat() : getEditFloorColor() };
         renderStaticThumbnailSized(pos.index, wrap, pos.w, pos.h, renderOpts);
       }
 
@@ -5372,6 +5385,32 @@
       });
     })();
 
+    // Color picker — render options
+    (function renderColorPicker() {
+      var container = document.getElementById('colorOptions');
+      if (!container) return;
+      container.innerHTML = '';
+      colorOptions.forEach(function(opt) {
+        var btn = document.createElement('div');
+        btn.className = 'color-option' + (opt.id === selectedColor ? ' active' : '');
+        btn.dataset.colorId = opt.id;
+        btn.style.backgroundColor = opt.hex;
+        btn.title = opt.label;
+        btn.addEventListener('click', function() {
+          selectedColor = opt.id;
+          // Update active state
+          container.querySelectorAll('.color-option').forEach(function(el) {
+            el.classList.toggle('active', el.dataset.colorId === opt.id);
+          });
+          // Re-render 3D previews if layout is already calculated
+          if (currentLayout && currentLayout.positions && currentLayout.positions.length > 0) {
+            renderPreviewThumbnails();
+          }
+        });
+        container.appendChild(btn);
+      });
+    })();
+
     // Wizard navigation
     btnWizardPrev.addEventListener('click', () => prevWizardStep());
     btnWizardNext.addEventListener('click', () => nextWizardStep());
@@ -5617,6 +5656,7 @@
         // Compact config — only include non-default values
         var config = { u: fundaLink, a: [street, city], f: floorConfigs };
         if (selectedHouseIcon !== 'huisje1') config.i = selectedHouseIcon;
+        if (selectedColor !== 'clay') config.cl = selectedColor;
         if (layoutScaleFactor !== 1) config.s = layoutScaleFactor;
         if (layoutAlignX !== 'center') config.ax = layoutAlignX;
         if (layoutAlignY !== 'bottom') config.ay = layoutAlignY;
@@ -5708,6 +5748,17 @@
         if (iconContainer) {
           iconContainer.querySelectorAll('.house-icon-option').forEach(function(el) {
             el.classList.toggle('active', el.dataset.iconId === config.i);
+          });
+        }
+      }
+
+      // Set color
+      if (config.cl) {
+        selectedColor = config.cl;
+        var clrContainer = document.getElementById('colorOptions');
+        if (clrContainer) {
+          clrContainer.querySelectorAll('.color-option').forEach(function(el) {
+            el.classList.toggle('active', el.dataset.colorId === config.cl);
           });
         }
       }
@@ -6324,6 +6375,10 @@
       // House icon (before address for readability)
       var houseOpt = houseIconOptions.find(function(o) { return o.id === selectedHouseIcon; });
       if (houseOpt) itemProperties['Huisje'] = houseOpt.label;
+
+      // Color
+      var colorOpt = colorOptions.find(function(o) { return o.id === selectedColor; });
+      if (colorOpt) itemProperties['Kleur'] = colorOpt.label;
 
       // Address fields
       var street = addressStreet ? addressStreet.value.trim() : '';
