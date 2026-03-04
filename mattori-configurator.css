@@ -459,6 +459,113 @@
       border-radius: 4px;
     }
 
+    /* ── Hero Blueprint Animation ── */
+    .mattori-configurator .hero-blueprint-overlay {
+      position: absolute;
+      top: 17%;
+      bottom: 17%;
+      left: 14.5%;
+      right: 13.5%;
+      pointer-events: none;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mattori-configurator .hero-blueprint-svg {
+      width: 72%;
+      height: auto;
+    }
+
+    .mattori-configurator .hero-blueprint-svg .bp-line {
+      fill: none;
+      stroke: #c0c0c0;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Grid: subtle, fades in first */
+    .mattori-configurator .hero-blueprint-svg .bp-grid line {
+      stroke-dasharray: 800;
+      stroke-dashoffset: 800;
+      animation: bp-draw-grid 10s ease-in-out infinite;
+    }
+
+    /* Outer walls: draw after grid */
+    .mattori-configurator .hero-blueprint-svg .bp-walls-outer rect {
+      stroke-dasharray: 1200;
+      stroke-dashoffset: 1200;
+      animation: bp-draw-walls 10s ease-in-out infinite;
+    }
+
+    /* Inner walls: draw after outer */
+    .mattori-configurator .hero-blueprint-svg .bp-walls-inner line {
+      stroke-dasharray: 600;
+      stroke-dashoffset: 600;
+      animation: bp-draw-inner 10s ease-in-out infinite;
+    }
+
+    /* Details (doors, dimensions): draw last */
+    .mattori-configurator .hero-blueprint-svg .bp-details path,
+    .mattori-configurator .hero-blueprint-svg .bp-details line {
+      stroke-dasharray: 400;
+      stroke-dashoffset: 400;
+      animation: bp-draw-details 10s ease-in-out infinite;
+    }
+
+    @keyframes bp-draw-grid {
+      0%   { stroke-dashoffset: 800; opacity: 0; }
+      3%   { opacity: 0.3; }
+      12%  { stroke-dashoffset: 0; }
+      50%  { stroke-dashoffset: 0; opacity: 0.25; }
+      65%  { opacity: 0; }
+      100% { opacity: 0; stroke-dashoffset: 800; }
+    }
+
+    @keyframes bp-draw-walls {
+      0%   { stroke-dashoffset: 1200; opacity: 0; }
+      8%   { opacity: 0; }
+      10%  { opacity: 0.45; }
+      25%  { stroke-dashoffset: 0; }
+      50%  { stroke-dashoffset: 0; opacity: 0.45; }
+      65%  { opacity: 0; }
+      100% { opacity: 0; stroke-dashoffset: 1200; }
+    }
+
+    @keyframes bp-draw-inner {
+      0%   { stroke-dashoffset: 600; opacity: 0; }
+      15%  { stroke-dashoffset: 600; opacity: 0; }
+      18%  { opacity: 0.4; }
+      35%  { stroke-dashoffset: 0; }
+      50%  { stroke-dashoffset: 0; opacity: 0.4; }
+      65%  { opacity: 0; }
+      100% { opacity: 0; stroke-dashoffset: 600; }
+    }
+
+    @keyframes bp-draw-details {
+      0%   { stroke-dashoffset: 400; opacity: 0; }
+      25%  { stroke-dashoffset: 400; opacity: 0; }
+      28%  { opacity: 0.35; }
+      42%  { stroke-dashoffset: 0; }
+      50%  { stroke-dashoffset: 0; opacity: 0.35; }
+      65%  { opacity: 0; }
+      100% { opacity: 0; stroke-dashoffset: 400; }
+    }
+
+    /* Reduced motion: show static blueprint */
+    @media (prefers-reduced-motion: reduce) {
+      .mattori-configurator .hero-blueprint-svg .bp-grid line,
+      .mattori-configurator .hero-blueprint-svg .bp-walls-outer rect,
+      .mattori-configurator .hero-blueprint-svg .bp-walls-inner line,
+      .mattori-configurator .hero-blueprint-svg .bp-details path,
+      .mattori-configurator .hero-blueprint-svg .bp-details line {
+        animation: none;
+        stroke-dashoffset: 0;
+        opacity: 0.25;
+      }
+    }
+
     .mattori-configurator .product-example-badge {
       position: absolute;
       top: 12px;

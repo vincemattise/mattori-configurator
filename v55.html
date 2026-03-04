@@ -1,4 +1,4 @@
-<!-- Mattori Frame³ Configurator v55.22 — Fix reviews inside h1, fix price row order -->
+<!-- Mattori Frame³ Configurator v55.23 — Empty frame hero with blueprint animation -->
 <script>
 (function(){
   var sheets = [
@@ -120,10 +120,48 @@
     <!-- LEFT COLUMN: Unified Frame Preview -->
     <div class="page-col-left">
 
-      <!-- Initieel: productafbeelding (verborgen na Funda laden) -->
+      <!-- Initieel: lege lijst met blueprint animatie (verborgen na Funda laden) -->
       <div class="product-hero-image stagger-in" id="productHeroImage" style="--stagger:0s">
         <div class="product-image-wrapper">
-          <img src="https://cdn.shopify.com/s/files/1/0958/8614/7958/files/One_6d739714-6517-40e3-99c6-a238000f2dad.png?v=1772393844" alt="Mattori Frame³ – voorbeeld van een 3D ingelijste plattegrond">
+          <img src="https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Two_2ea7e364-8d19-4ebf-a33b-86df839bb390.png?v=1772385215" alt="Mattori Frame³ – ontwerp je eigen ingelijste plattegrond">
+          <div class="hero-blueprint-overlay">
+            <svg class="hero-blueprint-svg" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Grid lines -->
+              <g class="bp-line bp-grid">
+                <line x1="0" y1="75" x2="400" y2="75" stroke-width="0.3"/>
+                <line x1="0" y1="150" x2="400" y2="150" stroke-width="0.3"/>
+                <line x1="0" y1="225" x2="400" y2="225" stroke-width="0.3"/>
+                <line x1="100" y1="0" x2="100" y2="300" stroke-width="0.3"/>
+                <line x1="200" y1="0" x2="200" y2="300" stroke-width="0.3"/>
+                <line x1="300" y1="0" x2="300" y2="300" stroke-width="0.3"/>
+              </g>
+              <!-- Outer walls -->
+              <g class="bp-line bp-walls-outer">
+                <rect x="60" y="40" width="280" height="220" stroke-width="2.5" rx="1"/>
+              </g>
+              <!-- Inner walls -->
+              <g class="bp-line bp-walls-inner">
+                <line x1="200" y1="40" x2="200" y2="160" stroke-width="1.8"/>
+                <line x1="200" y1="160" x2="340" y2="160" stroke-width="1.8"/>
+                <line x1="60" y1="180" x2="160" y2="180" stroke-width="1.8"/>
+                <line x1="130" y1="180" x2="130" y2="260" stroke-width="1.8"/>
+                <line x1="270" y1="160" x2="270" y2="260" stroke-width="1.8"/>
+              </g>
+              <!-- Door arcs -->
+              <g class="bp-line bp-details">
+                <path d="M160 180 A20 20 0 0 1 180 160" stroke-width="1"/>
+                <path d="M200 120 A20 20 0 0 0 220 140" stroke-width="1"/>
+                <path d="M270 220 A20 20 0 0 1 250 200" stroke-width="1"/>
+                <!-- Dimension lines -->
+                <line x1="60" y1="30" x2="340" y2="30" stroke-width="0.5" stroke-dasharray="4 2"/>
+                <line x1="55" y1="26" x2="55" y2="34" stroke-width="0.5"/>
+                <line x1="345" y1="26" x2="345" y2="34" stroke-width="0.5"/>
+                <line x1="350" y1="40" x2="350" y2="260" stroke-width="0.5" stroke-dasharray="4 2"/>
+                <line x1="346" y1="35" x2="354" y2="35" stroke-width="0.5"/>
+                <line x1="346" y1="265" x2="354" y2="265" stroke-width="0.5"/>
+              </g>
+            </svg>
+          </div>
         </div>
       </div>
 
