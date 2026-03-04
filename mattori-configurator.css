@@ -486,181 +486,160 @@
       stroke-linejoin: round;
     }
 
-    /* ── Layer 1: Grid (like configurator step-4 grid) ── */
+    /* ── Layer 1: Grid (configurator step-4 style) ── */
     .mattori-configurator .hero-blueprint-svg .bp-grid line {
-      stroke: #c8c8c8;
+      stroke: #d0d0d0;
+      stroke-width: 0.3;
       stroke-dasharray: 500;
       stroke-dashoffset: 500;
-      animation: bp-grid 12s ease-in-out infinite;
+      animation: bp-grid 13s ease-in-out infinite;
+    }
+    .mattori-configurator .hero-blueprint-svg .bp-grid .bp-grid-mid {
+      stroke-width: 0.6;
+      stroke: rgba(0,0,0,0.18);
     }
 
-    /* ── Layer 2: Outer walls ── */
-    .mattori-configurator .hero-blueprint-svg .bp-walls polyline,
-    .mattori-configurator .hero-blueprint-svg .bp-walls line {
-      stroke: #888;
-      stroke-dasharray: 1400;
-      stroke-dashoffset: 1400;
-      animation: bp-walls 12s ease-in-out infinite;
-    }
-
-    /* ── Layer 3: Inner walls ── */
-    .mattori-configurator .hero-blueprint-svg .bp-inner line {
+    /* ── Layer 2: Address label (top, like configurator) ── */
+    .mattori-configurator .hero-blueprint-svg .bp-address path,
+    .mattori-configurator .hero-blueprint-svg .bp-address line {
       stroke: #999;
-      stroke-dasharray: 600;
-      stroke-dashoffset: 600;
-      animation: bp-inner 12s ease-in-out infinite;
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: bp-address-line 13s ease-in-out infinite;
     }
-
-    /* ── Layer 4: Doors ── */
-    .mattori-configurator .hero-blueprint-svg .bp-doors path,
-    .mattori-configurator .hero-blueprint-svg .bp-doors line {
-      stroke: #aaa;
-      stroke-dasharray: 300;
-      stroke-dashoffset: 300;
-      animation: bp-doors 12s ease-in-out infinite;
-    }
-
-    /* ── Layer 5: Room labels (text fade-in) ── */
-    .mattori-configurator .hero-blueprint-svg .bp-labels text {
+    .mattori-configurator .hero-blueprint-svg .bp-address text {
       opacity: 0;
-      animation: bp-text 12s ease-in-out infinite;
+      animation: bp-address-text 13s ease-in-out infinite;
     }
 
-    /* ── Layer 6: Dimension annotations ── */
-    .mattori-configurator .hero-blueprint-svg .bp-dims line {
-      stroke: #bbb;
-      stroke-dasharray: 400;
-      stroke-dashoffset: 400;
-      animation: bp-dims 12s ease-in-out infinite;
+    /* ── Layer 3+4: Floor plans (walls + doors) ── */
+    .mattori-configurator .hero-blueprint-svg .bp-floor-left polyline,
+    .mattori-configurator .hero-blueprint-svg .bp-floor-left line,
+    .mattori-configurator .hero-blueprint-svg .bp-floor-right polyline,
+    .mattori-configurator .hero-blueprint-svg .bp-floor-right line {
+      stroke: #777;
+      stroke-dasharray: 800;
+      stroke-dashoffset: 800;
+      animation: bp-floors 13s ease-in-out infinite;
     }
-    .mattori-configurator .hero-blueprint-svg .bp-dims text {
+    .mattori-configurator .hero-blueprint-svg .bp-floor-left path,
+    .mattori-configurator .hero-blueprint-svg .bp-floor-right path {
+      stroke: #999;
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: bp-doors 13s ease-in-out infinite;
+    }
+
+    /* ── Layer 5: Floor plan labels (bottom) ── */
+    .mattori-configurator .hero-blueprint-svg .bp-floor-labels text {
       opacity: 0;
-      animation: bp-dim-text 12s ease-in-out infinite;
+      animation: bp-floor-label-text 13s ease-in-out infinite;
     }
 
-    /* ── Layer 7: Dashed label boxes (like configurator labels) ── */
-    .mattori-configurator .hero-blueprint-svg .bp-label-boxes rect {
-      stroke: #bbb;
-      stroke-dasharray: 4 2.5;
+    /* ── Layer 6: Drop shadows behind floor plans ── */
+    .mattori-configurator .hero-blueprint-svg .bp-shadows rect {
       opacity: 0;
-      animation: bp-boxes 12s ease-in-out infinite;
-    }
-    .mattori-configurator .hero-blueprint-svg .bp-label-boxes text {
-      opacity: 0;
-      animation: bp-box-text 12s ease-in-out infinite;
+      animation: bp-shadow 13s ease-in-out infinite;
     }
 
-    /* ═══ KEYFRAMES (12s cycle) ═══ */
+    /* ═══ KEYFRAMES (13s cycle) ═══ */
 
-    /* Grid: 0-2s draw, hold, fade 8-10s */
+    /* Grid: fade in immediately, draw, hold long, gentle fade */
     @keyframes bp-grid {
       0%   { stroke-dashoffset: 500; opacity: 0; }
-      2%   { opacity: 0.35; }
-      15%  { stroke-dashoffset: 0; }
-      65%  { stroke-dashoffset: 0; opacity: 0.2; }
-      80%  { opacity: 0; }
+      3%   { opacity: 0.4; }
+      18%  { stroke-dashoffset: 0; }
+      68%  { stroke-dashoffset: 0; opacity: 0.25; }
+      82%  { opacity: 0; }
       100% { opacity: 0; stroke-dashoffset: 500; }
     }
 
-    /* Outer walls: start 5%, draw by 22% */
-    @keyframes bp-walls {
-      0%   { stroke-dashoffset: 1400; opacity: 0; }
-      5%   { stroke-dashoffset: 1400; opacity: 0; }
-      7%   { opacity: 0.7; }
-      22%  { stroke-dashoffset: 0; }
-      65%  { stroke-dashoffset: 0; opacity: 0.6; }
-      80%  { opacity: 0; }
-      100% { opacity: 0; stroke-dashoffset: 1400; }
+    /* Shadows appear behind floors early */
+    @keyframes bp-shadow {
+      0%   { opacity: 0; }
+      8%   { opacity: 0; }
+      14%  { opacity: 1; }
+      68%  { opacity: 1; }
+      82%  { opacity: 0; }
+      100% { opacity: 0; }
     }
 
-    /* Inner walls: start 14%, draw by 32% */
-    @keyframes bp-inner {
-      0%   { stroke-dashoffset: 600; opacity: 0; }
-      14%  { stroke-dashoffset: 600; opacity: 0; }
-      16%  { opacity: 0.6; }
-      32%  { stroke-dashoffset: 0; }
-      65%  { stroke-dashoffset: 0; opacity: 0.55; }
-      80%  { opacity: 0; }
-      100% { opacity: 0; stroke-dashoffset: 600; }
+    /* Floor plan walls: start 8%, fully drawn by 35% */
+    @keyframes bp-floors {
+      0%   { stroke-dashoffset: 800; opacity: 0; }
+      8%   { stroke-dashoffset: 800; opacity: 0; }
+      10%  { opacity: 0.8; }
+      35%  { stroke-dashoffset: 0; }
+      68%  { stroke-dashoffset: 0; opacity: 0.7; }
+      82%  { opacity: 0; }
+      100% { opacity: 0; stroke-dashoffset: 800; }
     }
 
-    /* Doors: start 22%, draw by 38% */
+    /* Doors: start 25%, draw by 42% */
     @keyframes bp-doors {
-      0%   { stroke-dashoffset: 300; opacity: 0; }
-      22%  { stroke-dashoffset: 300; opacity: 0; }
-      25%  { opacity: 0.5; }
-      38%  { stroke-dashoffset: 0; }
-      65%  { stroke-dashoffset: 0; opacity: 0.45; }
-      80%  { opacity: 0; }
-      100% { opacity: 0; stroke-dashoffset: 300; }
+      0%   { stroke-dashoffset: 200; opacity: 0; }
+      25%  { stroke-dashoffset: 200; opacity: 0; }
+      28%  { opacity: 0.6; }
+      42%  { stroke-dashoffset: 0; }
+      68%  { stroke-dashoffset: 0; opacity: 0.5; }
+      82%  { opacity: 0; }
+      100% { opacity: 0; stroke-dashoffset: 200; }
     }
 
-    /* Room labels: fade in 30-38%, hold, fade out */
-    @keyframes bp-text {
+    /* Address icon lines: draw from 5% */
+    @keyframes bp-address-line {
+      0%   { stroke-dashoffset: 200; opacity: 0; }
+      5%   { stroke-dashoffset: 200; opacity: 0; }
+      8%   { opacity: 0.6; }
+      20%  { stroke-dashoffset: 0; }
+      68%  { stroke-dashoffset: 0; opacity: 0.5; }
+      82%  { opacity: 0; }
+      100% { opacity: 0; stroke-dashoffset: 200; }
+    }
+
+    /* Address text: fade in after icon */
+    @keyframes bp-address-text {
       0%   { opacity: 0; }
-      30%  { opacity: 0; }
-      38%  { opacity: 0.55; }
-      65%  { opacity: 0.5; }
-      80%  { opacity: 0; }
+      15%  { opacity: 0; }
+      22%  { opacity: 0.65; }
+      68%  { opacity: 0.6; }
+      82%  { opacity: 0; }
       100% { opacity: 0; }
     }
 
-    /* Dimensions: start 35%, draw by 48% */
-    @keyframes bp-dims {
-      0%   { stroke-dashoffset: 400; opacity: 0; }
-      35%  { stroke-dashoffset: 400; opacity: 0; }
-      38%  { opacity: 0.45; }
-      48%  { stroke-dashoffset: 0; }
-      65%  { stroke-dashoffset: 0; opacity: 0.4; }
-      80%  { opacity: 0; }
-      100% { opacity: 0; stroke-dashoffset: 400; }
-    }
-    @keyframes bp-dim-text {
+    /* Floor labels: fade in after floor plans are drawn */
+    @keyframes bp-floor-label-text {
       0%   { opacity: 0; }
-      42%  { opacity: 0; }
-      48%  { opacity: 0.45; }
-      65%  { opacity: 0.4; }
-      80%  { opacity: 0; }
-      100% { opacity: 0; }
-    }
-
-    /* Label boxes: fade in 45-52% */
-    @keyframes bp-boxes {
-      0%   { opacity: 0; }
-      45%  { opacity: 0; }
-      52%  { opacity: 0.5; }
-      65%  { opacity: 0.45; }
-      80%  { opacity: 0; }
-      100% { opacity: 0; }
-    }
-    @keyframes bp-box-text {
-      0%   { opacity: 0; }
-      50%  { opacity: 0; }
-      56%  { opacity: 0.5; }
-      65%  { opacity: 0.45; }
-      80%  { opacity: 0; }
+      38%  { opacity: 0; }
+      46%  { opacity: 0.65; }
+      68%  { opacity: 0.6; }
+      82%  { opacity: 0; }
       100% { opacity: 0; }
     }
 
     /* Reduced motion: show static blueprint */
     @media (prefers-reduced-motion: reduce) {
       .mattori-configurator .hero-blueprint-svg .bp-grid line,
-      .mattori-configurator .hero-blueprint-svg .bp-walls polyline,
-      .mattori-configurator .hero-blueprint-svg .bp-walls line,
-      .mattori-configurator .hero-blueprint-svg .bp-inner line,
-      .mattori-configurator .hero-blueprint-svg .bp-doors path,
-      .mattori-configurator .hero-blueprint-svg .bp-doors line,
-      .mattori-configurator .hero-blueprint-svg .bp-dims line {
+      .mattori-configurator .hero-blueprint-svg .bp-address path,
+      .mattori-configurator .hero-blueprint-svg .bp-address line,
+      .mattori-configurator .hero-blueprint-svg .bp-floor-left polyline,
+      .mattori-configurator .hero-blueprint-svg .bp-floor-left line,
+      .mattori-configurator .hero-blueprint-svg .bp-floor-left path,
+      .mattori-configurator .hero-blueprint-svg .bp-floor-right polyline,
+      .mattori-configurator .hero-blueprint-svg .bp-floor-right line,
+      .mattori-configurator .hero-blueprint-svg .bp-floor-right path {
         animation: none;
         stroke-dashoffset: 0;
-        opacity: 0.3;
+        opacity: 0.35;
       }
-      .mattori-configurator .hero-blueprint-svg .bp-labels text,
-      .mattori-configurator .hero-blueprint-svg .bp-dims text,
-      .mattori-configurator .hero-blueprint-svg .bp-label-boxes rect,
-      .mattori-configurator .hero-blueprint-svg .bp-label-boxes text {
+      .mattori-configurator .hero-blueprint-svg .bp-address text,
+      .mattori-configurator .hero-blueprint-svg .bp-floor-labels text {
         animation: none;
-        opacity: 0.3;
+        opacity: 0.35;
+      }
+      .mattori-configurator .hero-blueprint-svg .bp-shadows rect {
+        animation: none;
+        opacity: 1;
       }
     }
 
