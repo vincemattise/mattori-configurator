@@ -246,7 +246,7 @@
 
     // Wizard state
     let currentWizardStep = 1;
-    const TOTAL_WIZARD_STEPS = 5;
+    const TOTAL_WIZARD_STEPS = 6;
     let currentFloorReviewIndex = 0;
     var viewedFloors = new Set();
     var floorReviewStatus = {};   // { floorIndex: 'confirmed' | 'issue' | 'major' }
@@ -1432,15 +1432,16 @@
         groups.floor.setAttribute('uv', new THREE.BufferAttribute(floorUvs, 2));
       }
 
-      var colorOpt = getSelectedColorOpts();
+      var clayOpt = colorOptions[0]; // Clay = default/neutral
+      var wallColor = (floorColor !== undefined) ? floorColor : clayOpt.wall;
       const wallMaterial = new THREE.MeshPhongMaterial({
-        color: colorOpt.wall,
+        color: wallColor,
         flatShading: true,
         side: THREE.DoubleSide,
         shininess: 18,
         specular: 0x444444
       });
-      var fColor = (floorColor !== undefined) ? floorColor : colorOpt.wall;
+      var fColor = wallColor;
       var stripeMap = _createStripeTexture();
       const floorMaterial = new THREE.MeshPhongMaterial({
         color: fColor,
@@ -2937,7 +2938,8 @@
       2: 'Controleer het adres',
       3: 'Controleer de plattegronden',
       4: 'Ontwerp je indeling',
-      5: 'Pas de labels aan'
+      5: 'Kies je kleur',
+      6: 'Pas de labels aan'
     };
 
     function showWizardStep(n) {
@@ -3011,9 +3013,9 @@
           }
         }
 
-        // Show/hide labels overlay (visible from step 5 onward)
+        // Show/hide labels overlay (visible from step 6 onward)
         if (unifiedLabelsOverlay) {
-          if (n >= 5) {
+          if (n >= 6) {
             unifiedLabelsOverlay.style.display = '';
             unifiedLabelsOverlay.style.opacity = '0';
             nexaFontReady.then(() => {
@@ -3206,6 +3208,9 @@
             }
           }
         } else if (n === 5) {
+          // Step 5: color picker — re-render previews with chosen color
+          renderPreviewThumbnails();
+        } else if (n === 6) {
           // Force 3D mode on for final preview
           if (!use3dMode) {
             use3dMode = true;
@@ -3998,15 +4003,15 @@
     function renderLabelsFields() {
       floorLabels = getIncludedFloorLabels();
 
-      var step5 = document.getElementById('wizardStep5');
-      if (!step5) return;
+      var step6 = document.getElementById('wizardStep6');
+      if (!step6) return;
 
       // Find or create container after step-description
-      var container = step5.querySelector('.labels-step-container');
+      var container = step6.querySelector('.labels-step-container');
       if (!container) {
         container = document.createElement('div');
         container.className = 'labels-step-container';
-        step5.appendChild(container);
+        step6.appendChild(container);
       }
       container.innerHTML = '';
 
@@ -5967,7 +5972,7 @@
         };
         if (_fcGuardInterval) clearInterval(_fcGuardInterval);
         _fcGuardInterval = setInterval(function() {
-          if (currentWizardStep !== 5 || !_fcRenderGuard) {
+          if (currentWizardStep !== 6 || !_fcRenderGuard) {
             clearInterval(_fcGuardInterval);
             _fcGuardInterval = null;
             return;
