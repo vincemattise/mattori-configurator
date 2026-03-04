@@ -554,8 +554,8 @@
 
     // Color options
     var colorOptions = [
-      { id: 'clay', label: 'Clay', wall: 0xAA9A82, floor: 0xB0A594, floorFlat: 0xD2C7B6, hex: '#AA9A82' },
-      { id: 'redbrick', label: 'Red Brick', wall: 0xFF2600, floor: 0xFF2600, floorFlat: 0xFF2600, hex: '#FF2600' }
+      { id: 'clay', label: 'Clay', wall: 0xAA9A82, floor: 0xB0A594, floorFlat: 0xD2C7B6, hex: '#AA9A82', img: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Clay_65de5c1e-cb31-41ef-be00-e4109dc4c41e.png?v=1772631764' },
+      { id: 'redbrick', label: 'Red Brick', wall: 0xFF2600, floor: 0xFF2600, floorFlat: 0xFF2600, hex: '#FF2600', img: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Red_Brick_863633ab-4687-4736-b722-c14ae3283451.png?v=1772631764' }
     ];
     var selectedColor = 'clay';
 
@@ -5399,17 +5399,24 @@
       });
     })();
 
-    // Color picker — render options
+    // Color picker — render options (image + label buttons, matching product page style)
     (function renderColorPicker() {
       var container = document.getElementById('colorOptions');
       if (!container) return;
       container.innerHTML = '';
       colorOptions.forEach(function(opt) {
-        var btn = document.createElement('div');
+        var btn = document.createElement('button');
+        btn.type = 'button';
         btn.className = 'color-option' + (opt.id === selectedColor ? ' active' : '');
         btn.dataset.colorId = opt.id;
-        btn.style.backgroundColor = opt.hex;
-        btn.title = opt.label;
+        var img = document.createElement('img');
+        img.src = opt.img;
+        img.alt = opt.label;
+        var label = document.createElement('span');
+        label.className = 'color-option-label';
+        label.textContent = opt.label;
+        btn.appendChild(img);
+        btn.appendChild(label);
         btn.addEventListener('click', function() {
           selectedColor = opt.id;
           // Update active state

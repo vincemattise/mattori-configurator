@@ -2285,20 +2285,26 @@
       display: block;
     }
 
-    /* ── Color picker (step 2) ── */
+    /* ── Color picker (step 5) ── */
     .mattori-configurator .color-options {
       display: flex;
-      gap: 12px;
+      gap: 0.75rem;
       margin-top: 8px;
     }
 
     .mattori-configurator .color-option {
-      width: 40px;
-      height: 40px;
+      flex: 1;
+      padding: 0.6rem;
+      background: #fff;
       border: 2px solid #ddd;
-      border-radius: 50%;
+      border-radius: 14px;
       cursor: pointer;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: all 0.2s ease;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .mattori-configurator .color-option:hover {
@@ -2307,7 +2313,21 @@
 
     .mattori-configurator .color-option.active {
       border-color: #1a1a1a;
-      box-shadow: 0 0 0 1px #1a1a1a;
+    }
+
+    .mattori-configurator .color-option img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 8px;
+      display: block;
+    }
+
+    .mattori-configurator .color-option-label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #1a1a1a;
     }
 
     /* ── Order button (in wizard-nav) ── */
