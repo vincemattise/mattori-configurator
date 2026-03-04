@@ -3186,24 +3186,33 @@
               }
               btnCalc.disabled = !anyPreChecked;
               btnCalc.onclick = function() {
-                layoutCalculated = true;
-                this.style.display = 'none';
-                if (resultSection) resultSection.style.display = '';
-                if (noteSection) noteSection.style.display = '';
-                // Always show tools box (per-floor controls + rotation work for 1+ floors)
-                if (controlsBar) controlsBar.style.display = '';
-                // Ensure edit mode checkbox starts unchecked, controls disabled
-                var chkEM = document.getElementById('chkEditMode');
-                var ctrlIn = document.getElementById('layoutControlsInner');
-                if (chkEM) chkEM.checked = false;
-                if (ctrlIn) ctrlIn.classList.add('disabled');
-                gridEditMode = false;
-                customPositions = null;
-                renderPreviewThumbnails();
-                updateFloorLabels();
-                renderLayoutView(); // populate per-floor controls
-                updateWizardUI(); // show "Volgende" now
-                setTimeout(function() { renderGridOverlay(); }, 50);
+                // Show loading state
+                this.disabled = true;
+                this.dataset.origText = this.textContent;
+                this.innerHTML = '<span class="btn-spinner"></span>Berekenen...';
+
+                setTimeout(function() {
+                  layoutCalculated = true;
+                  btnCalc.style.display = 'none';
+                  btnCalc.innerHTML = btnCalc.dataset.origText;
+                  btnCalc.disabled = false;
+                  if (resultSection) resultSection.style.display = '';
+                  if (noteSection) noteSection.style.display = '';
+                  // Always show tools box (per-floor controls + rotation work for 1+ floors)
+                  if (controlsBar) controlsBar.style.display = '';
+                  // Ensure edit mode checkbox starts unchecked, controls disabled
+                  var chkEM = document.getElementById('chkEditMode');
+                  var ctrlIn = document.getElementById('layoutControlsInner');
+                  if (chkEM) chkEM.checked = false;
+                  if (ctrlIn) ctrlIn.classList.add('disabled');
+                  gridEditMode = false;
+                  customPositions = null;
+                  renderPreviewThumbnails();
+                  updateFloorLabels();
+                  renderLayoutView(); // populate per-floor controls
+                  updateWizardUI(); // show "Volgende" now
+                  setTimeout(function() { renderGridOverlay(); }, 50);
+                }, 50); // Allow UI to repaint with spinner before heavy work
               };
             }
           }
