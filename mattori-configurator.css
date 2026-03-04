@@ -462,8 +462,8 @@
     /* ── Hero Blueprint Animation ── */
     .mattori-configurator .hero-blueprint-overlay {
       position: absolute;
-      top: 16%;
-      bottom: 16%;
+      top: 13.5%;
+      bottom: 13.5%;
       left: 14%;
       right: 13%;
       pointer-events: none;
@@ -478,7 +478,7 @@
       background:
         repeating-linear-gradient(to right, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 0.5px, transparent 0.5px, transparent 100%),
         repeating-linear-gradient(to bottom, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 0.5px, transparent 0.5px, transparent 100%);
-      background-size: 2.94% 2.94%;
+      background-size: 2.94% 2.22%;
       opacity: 0;
       animation: hero-grid-glow 11s ease-in-out infinite;
     }
@@ -486,20 +486,19 @@
     /* ── Floors container ── */
     .mattori-configurator .hero-floors {
       position: absolute;
-      top: 18%;
-      bottom: 22%;
+      top: 15%;
+      bottom: 18%;
       left: 5%;
       right: 5%;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8%;
+      gap: 6%;
       perspective: 600px;
     }
 
     /* ── Individual floor plan ── */
     .mattori-configurator .hero-floor {
-      flex: 0 0 auto;
       opacity: 0;
       transform: rotateX(60deg) translateY(30px) scale(0.85);
       transform-origin: center bottom;
@@ -507,14 +506,12 @@
     }
     .mattori-configurator .hero-floor svg {
       display: block;
-      width: auto;
     }
-    .mattori-configurator .hero-floor-1 svg { height: 70%; height: min(70%, 180px); }
-    .mattori-configurator .hero-floor-2 svg { height: 55%; height: min(55%, 140px); }
+    .mattori-configurator .hero-floor-1 svg { width: 120px; height: auto; }
+    .mattori-configurator .hero-floor-2 svg { width: 95px; height: auto; }
 
     .mattori-configurator .hero-floor-1 {
       animation: hero-floor-rise 11s ease-in-out infinite;
-      animation-delay: 0s;
     }
     .mattori-configurator .hero-floor-2 {
       animation: hero-floor-rise 11s ease-in-out infinite;
@@ -524,7 +521,7 @@
     /* ── Address label (top, matching tool) ── */
     .mattori-configurator .hero-address-label {
       position: absolute;
-      top: 2%;
+      top: 1%;
       left: 0;
       right: 0;
       display: flex;
@@ -537,10 +534,10 @@
       animation-delay: 0.2s;
     }
     .mattori-configurator .hero-house-icon {
-      width: 4.5%;
-      height: auto;
+      width: 14px;
+      height: 14px;
       object-fit: contain;
-      margin-bottom: 1px;
+      margin-bottom: 2px;
     }
     .mattori-configurator .hero-street {
       font-family: 'Nexa Bold', 'Nexa', Georgia, sans-serif;
@@ -562,7 +559,7 @@
     /* ── Floor labels (bottom, matching tool) ── */
     .mattori-configurator .hero-floor-labels {
       position: absolute;
-      bottom: 4%;
+      bottom: 3%;
       left: 0;
       right: 0;
       display: flex;
@@ -583,34 +580,35 @@
 
     /* ═══ KEYFRAMES (11s cycle) ═══ */
 
-    /* Grid: glow in from 0, hold, fade at end */
+    /* Grid: 500ms delay, then glow in */
     @keyframes hero-grid-glow {
       0%   { opacity: 0; }
-      8%   { opacity: 0.8; }
-      12%  { opacity: 1; }
-      65%  { opacity: 0.7; }
-      80%  { opacity: 0; }
+      4.5% { opacity: 0; }
+      10%  { opacity: 0.8; }
+      14%  { opacity: 1; }
+      68%  { opacity: 0.7; }
+      85%  { opacity: 0; }
       100% { opacity: 0; }
     }
 
     /* Floors: rise from below with 3D rotation */
     @keyframes hero-floor-rise {
       0%   { opacity: 0; transform: rotateX(60deg) translateY(30px) scale(0.85); }
-      15%  { opacity: 0; transform: rotateX(60deg) translateY(30px) scale(0.85); }
+      16%  { opacity: 0; transform: rotateX(60deg) translateY(30px) scale(0.85); }
       30%  { opacity: 1; transform: rotateX(0deg) translateY(0) scale(1); }
-      65%  { opacity: 1; transform: rotateX(0deg) translateY(0) scale(1); }
-      80%  { opacity: 0; transform: rotateX(-10deg) translateY(-10px) scale(0.95); }
+      68%  { opacity: 1; transform: rotateX(0deg) translateY(0) scale(1); }
+      82%  { opacity: 0; transform: rotateX(-10deg) translateY(-10px) scale(0.95); }
       100% { opacity: 0; transform: rotateX(60deg) translateY(30px) scale(0.85); }
     }
 
     /* Labels: pop in with slight scale bounce */
     @keyframes hero-label-pop {
       0%   { opacity: 0; transform: translateY(var(--pop-y, -8px)) scale(0.92); }
-      30%  { opacity: 0; transform: translateY(var(--pop-y, -8px)) scale(0.92); }
-      38%  { opacity: 1; transform: translateY(0) scale(1.03); }
-      42%  { opacity: 1; transform: translateY(0) scale(1); }
-      65%  { opacity: 1; transform: translateY(0) scale(1); }
-      80%  { opacity: 0; transform: translateY(var(--pop-y, -8px)) scale(0.92); }
+      32%  { opacity: 0; transform: translateY(var(--pop-y, -8px)) scale(0.92); }
+      40%  { opacity: 1; transform: translateY(0) scale(1.03); }
+      44%  { opacity: 1; transform: translateY(0) scale(1); }
+      68%  { opacity: 1; transform: translateY(0) scale(1); }
+      82%  { opacity: 0; transform: translateY(var(--pop-y, -8px)) scale(0.92); }
       100% { opacity: 0; transform: translateY(var(--pop-y, -8px)) scale(0.92); }
     }
 
