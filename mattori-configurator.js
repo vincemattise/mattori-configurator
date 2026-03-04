@@ -2962,8 +2962,8 @@
       var oldLoader = document.querySelector('.mattori-configurator .wizard-step-loading');
       if (oldLoader) oldLoader.remove();
 
-      // Steps that need 3D rendering: show brief loading spinner
-      var needsRender = (n === 3 || n === 4);
+      // Steps that need rendering/loading: show brief loading spinner
+      var needsRender = (n === 3 || n === 4 || n === 5);
       if (needsRender) {
         var loader = document.createElement('div');
         loader.className = 'wizard-step-loading';
@@ -3152,9 +3152,15 @@
               }
             }, 50);
           } else {
-            // ── First visit — smart pre-check based on floor names ──
+            // ── First visit — pre-check based on step 3 review + smart keywords ──
             excludedFloors = new Set();
             for (var ei = 0; ei < floors.length; ei++) {
+              // Respect step 3 "niet meenemen" choice
+              if (floorReviewStatus[ei] === 'excluded') {
+                excludedFloors.add(ei);
+                continue;
+              }
+              // Smart exclude by floor name keywords
               var fn = (floors[ei].name || '').toLowerCase();
               var skipKeywords = ['situatie', 'site', 'tuin', 'garden', 'buitenruimte', 'omgeving',
                 'terrein', 'perceel', 'berging', 'garage', 'schuur', 'storage', 'dakterras', 'balkon', 'parkeer', 'optioneel'];
@@ -3217,8 +3223,28 @@
             }
           }
         } else if (n === 5) {
-          // Step 5: color picker — re-render previews with chosen color
+          // Step 5: color picker — wait for color images to load before showing
           renderPreviewThumbnails();
+          var colorImgs = document.querySelectorAll('#colorOptions .color-option img');
+          var imgCount = colorImgs.length;
+          var imgLoaded = 0;
+          var stepEl5 = document.getElementById('wizardStep5');
+          if (imgCount > 0 && stepEl5) {
+            stepEl5.style.visibility = 'hidden';
+            colorImgs.forEach(function(im) {
+              if (im.complete) { imgLoaded++; } else {
+                im.addEventListener('load', function() {
+                  imgLoaded++;
+                  if (imgLoaded >= imgCount) stepEl5.style.visibility = '';
+                }, { once: true });
+                im.addEventListener('error', function() {
+                  imgLoaded++;
+                  if (imgLoaded >= imgCount) stepEl5.style.visibility = '';
+                }, { once: true });
+              }
+            });
+            if (imgLoaded >= imgCount) stepEl5.style.visibility = '';
+          }
         } else if (n === 6) {
           // Force 3D mode on for final preview
           if (!use3dMode) {
@@ -5431,13 +5457,20 @@
           container.querySelectorAll('.color-option').forEach(function(el) {
             el.classList.toggle('active', el.dataset.colorId === opt.id);
           });
-          // Show loading overlay + re-render 3D previews
+          // Show inline spinner in wizard panel + re-render 3D previews
           if (currentLayout && currentLayout.positions && currentLayout.positions.length > 0) {
-            var overlay = document.getElementById('loadingOverlay');
-            if (overlay) overlay.classList.add('active');
+            var wizEl = document.getElementById('wizard');
+            var navEl = document.getElementById('wizardNav');
+            var step5el = document.getElementById('wizardStep5');
+            if (step5el) step5el.style.display = 'none';
+            var loader = document.createElement('div');
+            loader.className = 'wizard-step-loading';
+            loader.innerHTML = '<div class="step-spinner"></div>';
+            if (wizEl && navEl) wizEl.insertBefore(loader, navEl);
             setTimeout(function() {
               renderPreviewThumbnails();
-              if (overlay) overlay.classList.remove('active');
+              loader.remove();
+              if (step5el) step5el.style.display = '';
             }, 50);
           }
         });

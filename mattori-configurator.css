@@ -2296,12 +2296,13 @@
     .mattori-configurator .color-option {
       flex: 1;
       padding: 0.5rem;
-      background: #fff;
+      background: #fff !important;
       border: 2px solid #ddd;
       border-radius: 14px;
       cursor: pointer;
       transition: all 0.2s ease;
       text-align: center;
+      color: #1a1a1a;
       display: flex;
       flex-direction: column;
       align-items: center;
