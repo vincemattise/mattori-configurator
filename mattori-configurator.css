@@ -462,8 +462,8 @@
     /* ── Hero Blueprint Animation ── */
     .mattori-configurator .hero-blueprint-overlay {
       position: absolute;
-      top: 13.5%;
-      bottom: 13.5%;
+      top: 11%;
+      bottom: 11%;
       left: 14%;
       right: 13%;
       pointer-events: none;
@@ -494,7 +494,8 @@
       align-items: center;
       justify-content: center;
       gap: 6%;
-      perspective: 600px;
+      perspective: 800px;
+      transform-style: preserve-3d;
     }
 
     /* ── Individual floor plan ── */
@@ -502,7 +503,6 @@
       opacity: 0;
       transform: rotateX(60deg) translateY(30px) scale(0.85);
       transform-origin: center bottom;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
     }
     .mattori-configurator .hero-floor svg {
       display: block;
@@ -534,8 +534,10 @@
       animation-delay: 0.2s;
     }
     .mattori-configurator .hero-house-icon {
-      width: 14px;
-      height: 14px;
+      width: 14px !important;
+      height: 14px !important;
+      max-width: 14px !important;
+      max-height: 14px !important;
       object-fit: contain;
       margin-bottom: 2px;
     }
@@ -593,12 +595,12 @@
 
     /* Floors: rise from below with 3D rotation */
     @keyframes hero-floor-rise {
-      0%   { opacity: 0; transform: rotateX(60deg) translateY(30px) scale(0.85); }
-      16%  { opacity: 0; transform: rotateX(60deg) translateY(30px) scale(0.85); }
-      30%  { opacity: 1; transform: rotateX(0deg) translateY(0) scale(1); }
-      68%  { opacity: 1; transform: rotateX(0deg) translateY(0) scale(1); }
-      82%  { opacity: 0; transform: rotateX(-10deg) translateY(-10px) scale(0.95); }
-      100% { opacity: 0; transform: rotateX(60deg) translateY(30px) scale(0.85); }
+      0%   { opacity: 0; transform: rotateX(60deg) translateY(30px) scale(0.85); filter: drop-shadow(0 0 0 transparent); }
+      16%  { opacity: 0; transform: rotateX(60deg) translateY(30px) scale(0.85); filter: drop-shadow(0 0 0 transparent); }
+      30%  { opacity: 1; transform: rotateX(0deg) translateY(0) scale(1); filter: drop-shadow(0 6px 12px rgba(0,0,0,0.18)); }
+      68%  { opacity: 1; transform: rotateX(0deg) translateY(0) scale(1); filter: drop-shadow(0 6px 12px rgba(0,0,0,0.18)); }
+      82%  { opacity: 0; transform: rotateX(-10deg) translateY(-10px) scale(0.95); filter: drop-shadow(0 0 0 transparent); }
+      100% { opacity: 0; transform: rotateX(60deg) translateY(30px) scale(0.85); filter: drop-shadow(0 0 0 transparent); }
     }
 
     /* Labels: pop in with slight scale bounce */
