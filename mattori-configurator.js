@@ -554,8 +554,8 @@
 
     // Color options
     var colorOptions = [
-      { id: 'clay', label: 'Clay', wall: 0xAA9A82, floor: 0xB0A594, floorFlat: 0xD2C7B6, hex: '#AA9A82', img: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Clay_65de5c1e-cb31-41ef-be00-e4109dc4c41e.png?v=1772631764' },
-      { id: 'redbrick', label: 'Red Brick', wall: 0xA6483E, floor: 0xAF4D46, floorFlat: 0xB5574D, hex: '#A6483E', img: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Red_Brick_863633ab-4687-4736-b722-c14ae3283451.png?v=1772631764' }
+      { id: 'clay', label: 'Clay', wall: 0xAA9A82, floor: 0xB0A594, floorFlat: 0xD2C7B6, wallFlat: 0xE0D5C4, hex: '#AA9A82', img: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Clay_65de5c1e-cb31-41ef-be00-e4109dc4c41e.png?v=1772631764' },
+      { id: 'redbrick', label: 'Red Brick', wall: 0xA6483E, floor: 0xAF4D46, floorFlat: 0xB5574D, wallFlat: 0xC97066, hex: '#A6483E', img: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Red_Brick_863633ab-4687-4736-b722-c14ae3283451.png?v=1772631764' }
     ];
     var selectedColor = 'clay';
 
@@ -1395,7 +1395,7 @@
       return tex;
     }
 
-    function buildFloorScene(floorIndex, floorColor) {
+    function buildFloorScene(floorIndex, floorColor, wallColorOverride) {
       const floor = floors[floorIndex];
       if (!floor) return null;
 
@@ -1433,7 +1433,7 @@
       }
 
       var clayOpt = colorOptions[0]; // Clay = default/neutral
-      var wallColor = (floorColor !== undefined) ? floorColor : clayOpt.wall;
+      var wallColor = (wallColorOverride !== undefined) ? wallColorOverride : (floorColor !== undefined) ? floorColor : clayOpt.wall;
       const wallMaterial = new THREE.MeshPhongMaterial({
         color: wallColor,
         flatShading: true,
@@ -1441,7 +1441,7 @@
         shininess: 18,
         specular: 0x444444
       });
-      var fColor = wallColor;
+      var fColor = (floorColor !== undefined) ? floorColor : wallColor;
       var stripeMap = _createStripeTexture();
       const floorMaterial = new THREE.MeshPhongMaterial({
         color: fColor,
@@ -1495,11 +1495,12 @@
       renderStaticThumbnailSized(floorIndex, container, null, null, {});
     }
 
-    // opts: { ortho: bool, floorColor: hex, noTrack: bool }
+    // opts: { ortho: bool, floorColor: hex, wallColor: hex, noTrack: bool }
     function renderStaticThumbnailSized(floorIndex, container, forceW, forceH, opts) {
       opts = opts || {};
       var floorColor = (opts.floorColor !== undefined) ? opts.floorColor : undefined;
-      const result = buildFloorScene(floorIndex, floorColor);
+      var wallColor = (opts.wallColor !== undefined) ? opts.wallColor : undefined;
+      const result = buildFloorScene(floorIndex, floorColor, wallColor);
       if (!result) return;
       const { scene, size, center, globalSize } = result;
 
@@ -2644,7 +2645,8 @@
 
         floorsGrid.appendChild(wrap);
 
-        var renderOpts = { ortho: useOrtho, floorColor: useOrtho ? getEditFloorColorFlat() : getEditFloorColor() };
+        var colorOpt = getSelectedColorOpts();
+        var renderOpts = { ortho: useOrtho, floorColor: useOrtho ? colorOpt.floorFlat : colorOpt.floor, wallColor: useOrtho ? colorOpt.wallFlat : undefined };
         renderStaticThumbnailSized(pos.index, wrap, pos.w, pos.h, renderOpts);
       }
 
