@@ -462,70 +462,169 @@
     /* ── Hero Blueprint Animation ── */
     .mattori-configurator .hero-blueprint-overlay {
       position: absolute;
-      top: 17%;
-      bottom: 17%;
-      left: 14.5%;
-      right: 13.5%;
+      top: 16%;
+      bottom: 16%;
+      left: 14%;
+      right: 13%;
       pointer-events: none;
       z-index: 2;
+      overflow: hidden;
+    }
+
+    /* ── Grid: CSS repeating gradient, edge to edge ── */
+    .mattori-configurator .hero-grid {
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(to right, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 0.5px, transparent 0.5px, transparent 100%),
+        repeating-linear-gradient(to bottom, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 0.5px, transparent 0.5px, transparent 100%);
+      background-size: 2.94% 2.94%;
+      opacity: 0;
+      animation: hero-grid-glow 11s ease-in-out infinite;
+    }
+
+    /* ── Floors container ── */
+    .mattori-configurator .hero-floors {
+      position: absolute;
+      top: 18%;
+      bottom: 22%;
+      left: 5%;
+      right: 5%;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 8%;
+      perspective: 600px;
     }
 
-    .mattori-configurator .hero-blueprint-svg {
-      width: 100%;
-      height: 100%;
-    }
-
-    /* ── Grid lines ── */
-    .mattori-configurator .hero-blueprint-svg .bp-grid line {
-      stroke: #d0d0d0;
-      stroke-width: 0.3;
+    /* ── Individual floor plan ── */
+    .mattori-configurator .hero-floor {
+      flex: 0 0 auto;
       opacity: 0;
-      animation: bp-grid 13s ease-in-out infinite;
+      transform: rotateX(60deg) translateY(30px) scale(0.85);
+      transform-origin: center bottom;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
     }
-    .mattori-configurator .hero-blueprint-svg .bp-grid .bp-grid-mid {
-      stroke-width: 0.6;
-      stroke: rgba(0,0,0,0.18);
+    .mattori-configurator .hero-floor svg {
+      display: block;
+      width: auto;
+    }
+    .mattori-configurator .hero-floor-1 svg { height: 70%; height: min(70%, 180px); }
+    .mattori-configurator .hero-floor-2 svg { height: 55%; height: min(55%, 140px); }
+
+    .mattori-configurator .hero-floor-1 {
+      animation: hero-floor-rise 11s ease-in-out infinite;
+      animation-delay: 0s;
+    }
+    .mattori-configurator .hero-floor-2 {
+      animation: hero-floor-rise 11s ease-in-out infinite;
+      animation-delay: 0.3s;
     }
 
-    /* ── Filled floor plan shapes (tool color #D2C7B6) ── */
-    .mattori-configurator .hero-blueprint-svg .bp-floor-fill {
-      fill: #D2C7B6;
-      stroke: none;
+    /* ── Address label (top, matching tool) ── */
+    .mattori-configurator .hero-address-label {
+      position: absolute;
+      top: 2%;
+      left: 0;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
       opacity: 0;
-      animation: bp-floor 13s ease-in-out infinite;
+      transform: translateY(-8px) scale(0.92);
+      animation: hero-label-pop 11s ease-in-out infinite;
+      animation-delay: 0.2s;
+    }
+    .mattori-configurator .hero-house-icon {
+      width: 4.5%;
+      height: auto;
+      object-fit: contain;
+      margin-bottom: 1px;
+    }
+    .mattori-configurator .hero-street {
+      font-family: 'Nexa Bold', 'Nexa', Georgia, sans-serif;
+      font-size: min(3.2cqi, 14px);
+      font-weight: 700;
+      color: #1a1a1a;
+      letter-spacing: 0.02em;
+      line-height: 1.3;
+    }
+    .mattori-configurator .hero-city {
+      font-family: 'Nexa Bold', 'Nexa', Georgia, sans-serif;
+      font-size: min(2.2cqi, 10px);
+      font-weight: 700;
+      color: #1a1a1a;
+      letter-spacing: 0.02em;
+      margin-top: -1px;
     }
 
-    /* ═══ KEYFRAMES ═══ */
+    /* ── Floor labels (bottom, matching tool) ── */
+    .mattori-configurator .hero-floor-labels {
+      position: absolute;
+      bottom: 4%;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-evenly;
+      opacity: 0;
+      transform: translateY(6px) scale(0.92);
+      animation: hero-label-pop 11s ease-in-out infinite;
+      animation-delay: 0.5s;
+    }
+    .mattori-configurator .hero-floor-label {
+      font-family: 'Nexa Bold', 'Nexa', Georgia, sans-serif;
+      font-size: min(2.2cqi, 10px);
+      font-weight: 700;
+      color: #1a1a1a;
+      letter-spacing: 0.02em;
+    }
 
-    @keyframes bp-grid {
+    /* ═══ KEYFRAMES (11s cycle) ═══ */
+
+    /* Grid: glow in from 0, hold, fade at end */
+    @keyframes hero-grid-glow {
       0%   { opacity: 0; }
-      5%   { opacity: 0.35; }
-      70%  { opacity: 0.25; }
-      85%  { opacity: 0; }
+      8%   { opacity: 0.8; }
+      12%  { opacity: 1; }
+      65%  { opacity: 0.7; }
+      80%  { opacity: 0; }
       100% { opacity: 0; }
     }
 
-    @keyframes bp-floor {
-      0%   { opacity: 0; }
-      10%  { opacity: 0; }
-      20%  { opacity: 0.6; }
-      70%  { opacity: 0.55; }
-      85%  { opacity: 0; }
-      100% { opacity: 0; }
+    /* Floors: rise from below with 3D rotation */
+    @keyframes hero-floor-rise {
+      0%   { opacity: 0; transform: rotateX(60deg) translateY(30px) scale(0.85); }
+      15%  { opacity: 0; transform: rotateX(60deg) translateY(30px) scale(0.85); }
+      30%  { opacity: 1; transform: rotateX(0deg) translateY(0) scale(1); }
+      65%  { opacity: 1; transform: rotateX(0deg) translateY(0) scale(1); }
+      80%  { opacity: 0; transform: rotateX(-10deg) translateY(-10px) scale(0.95); }
+      100% { opacity: 0; transform: rotateX(60deg) translateY(30px) scale(0.85); }
+    }
+
+    /* Labels: pop in with slight scale bounce */
+    @keyframes hero-label-pop {
+      0%   { opacity: 0; transform: translateY(var(--pop-y, -8px)) scale(0.92); }
+      30%  { opacity: 0; transform: translateY(var(--pop-y, -8px)) scale(0.92); }
+      38%  { opacity: 1; transform: translateY(0) scale(1.03); }
+      42%  { opacity: 1; transform: translateY(0) scale(1); }
+      65%  { opacity: 1; transform: translateY(0) scale(1); }
+      80%  { opacity: 0; transform: translateY(var(--pop-y, -8px)) scale(0.92); }
+      100% { opacity: 0; transform: translateY(var(--pop-y, -8px)) scale(0.92); }
     }
 
     /* Reduced motion */
     @media (prefers-reduced-motion: reduce) {
-      .mattori-configurator .hero-blueprint-svg .bp-grid line {
-        animation: none;
-        opacity: 0.25;
-      }
-      .mattori-configurator .hero-blueprint-svg .bp-floor-fill {
+      .mattori-configurator .hero-grid,
+      .mattori-configurator .hero-floor,
+      .mattori-configurator .hero-address-label,
+      .mattori-configurator .hero-floor-labels {
         animation: none;
         opacity: 0.5;
+      }
+      .mattori-configurator .hero-floor {
+        transform: none;
       }
     }
 
