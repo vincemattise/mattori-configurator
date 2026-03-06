@@ -4732,11 +4732,15 @@
 
         // Surface names that should always get floor even if outside wall bounds
         const OUTDOOR_FLOOR_NAMES = ['balkon', 'terras', 'loggia', 'patio', 'veranda'];
+        // Surface names to exclude from floor geometry (large outdoor areas)
+        const EXCLUDE_FLOOR_NAMES = ['tuin', 'garden', 'erf', 'parkeren', 'oprit'];
         for (const surface of design.surfaces ?? []) {
           if (surface.isCutout) continue;
           const sName = (surface.name ?? "").trim();
           const cName = (surface.customName ?? "").trim();
           const displayName = (sName || cName).toLowerCase();
+          // Skip large outdoor surfaces
+          if (EXCLUDE_FLOOR_NAMES.some(k => displayName.includes(k))) continue;
           // Only apply outsideWalls check if it's NOT a known outdoor-floor surface
           const isOutdoorFloor = OUTDOOR_FLOOR_NAMES.some(k => displayName.includes(k));
           if (!isOutdoorFloor && isSurfaceOutsideWalls(surface, wallBBox)) continue;
