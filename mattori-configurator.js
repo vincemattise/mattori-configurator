@@ -554,8 +554,8 @@
 
     // Color options
     var colorOptions = [
-      { id: 'clay', label: 'Clay', wall: 0xAA9A82, wallFlat: 0xE0D5C4, hex: '#AA9A82', img: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Clay_65de5c1e-cb31-41ef-be00-e4109dc4c41e.png?v=1772631764' },
-      { id: 'redbrick', label: 'Red Brick', wall: 0xA6483E, wallFlat: 0xC97066, hex: '#A6483E', img: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Red_Brick_863633ab-4687-4736-b722-c14ae3283451.png?v=1772631764' }
+      { id: 'clay', label: 'Clay', wall: 0xAA9A82, floor: 0xB0A594, floorFlat: 0xD2C7B6, wallFlat: 0xE0D5C4, hex: '#AA9A82', img: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Clay_65de5c1e-cb31-41ef-be00-e4109dc4c41e.png?v=1772631764' },
+      { id: 'redbrick', label: 'Red Brick', wall: 0xA6483E, floor: 0xAF4D46, floorFlat: 0xB5574D, wallFlat: 0xC97066, hex: '#A6483E', img: 'https://cdn.shopify.com/s/files/1/0958/8614/7958/files/Red_Brick_863633ab-4687-4736-b722-c14ae3283451.png?v=1772631764' }
     ];
     var selectedColor = 'clay';
 
@@ -1364,8 +1364,38 @@
     }
 
     // Build a Three.js scene for a floor (reused by preview thumbnails, floor review, layout)
+    // Editing floor color — derived from selected color option
+    function getEditFloorColor() { return getSelectedColorOpts().floor; }
+    function getEditFloorColorFlat() { return getSelectedColorOpts().floorFlat; }
 
-    function buildFloorScene(floorIndex, floorColor) {
+    // Diagonal stripe texture for floor surfaces (mimics real product engraving)
+    var _stripeCanvas = null;
+    function _createStripeTexture() {
+      if (!_stripeCanvas) {
+        var s = 128;
+        _stripeCanvas = document.createElement('canvas');
+        _stripeCanvas.width = s;
+        _stripeCanvas.height = s;
+        var ctx = _stripeCanvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, s, s);
+        ctx.strokeStyle = 'rgba(0,0,0,0.16)';
+        ctx.lineWidth = 0.8;
+        for (var i = -s; i < s * 2; i += 3) {
+          ctx.beginPath();
+          ctx.moveTo(i, s);
+          ctx.lineTo(i + s, 0);
+          ctx.stroke();
+        }
+      }
+      var tex = new THREE.CanvasTexture(_stripeCanvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.minFilter = THREE.LinearFilter;
+      return tex;
+    }
+
+    function buildFloorScene(floorIndex, floorColor, wallColorOverride) {
       const floor = floors[floorIndex];
       if (!floor) return null;
 
@@ -1384,13 +1414,26 @@
       const offsetY = -center.y;
       const offsetZ = -center.z;
       if (groups.walls) groups.walls.translate(offsetX, offsetY, offsetZ);
+      if (groups.floor) groups.floor.translate(offsetX, offsetY, offsetZ);
       center.set(0, 0, 0);
 
       const scene = new THREE.Scene();
       scene.background = null;
 
+      // Generate planar UVs for floor geometry (top-down XZ projection for stripe texture)
+      if (groups.floor) {
+        var floorPos = groups.floor.getAttribute('position');
+        var floorUvs = new Float32Array(floorPos.count * 2);
+        var STRIPE_SCALE = 0.15;
+        for (var ui = 0; ui < floorPos.count; ui++) {
+          floorUvs[ui * 2] = floorPos.getX(ui) * STRIPE_SCALE;
+          floorUvs[ui * 2 + 1] = floorPos.getZ(ui) * STRIPE_SCALE;
+        }
+        groups.floor.setAttribute('uv', new THREE.BufferAttribute(floorUvs, 2));
+      }
+
       var clayOpt = colorOptions[0]; // Clay = default/neutral
-      var wallColor = (floorColor !== undefined) ? floorColor : clayOpt.wall;
+      var wallColor = (wallColorOverride !== undefined) ? wallColorOverride : (floorColor !== undefined) ? floorColor : clayOpt.wall;
       const wallMaterial = new THREE.MeshPhongMaterial({
         color: wallColor,
         flatShading: true,
@@ -1398,9 +1441,21 @@
         shininess: 18,
         specular: 0x444444
       });
+      var fColor = (floorColor !== undefined) ? floorColor : wallColor;
+      var stripeMap = _createStripeTexture();
+      const floorMaterial = new THREE.MeshPhongMaterial({
+        color: fColor,
+        map: stripeMap,
+        flatShading: true,
+        side: THREE.DoubleSide,
+        shininess: 18,
+        specular: 0x444444
+      });
 
       var wallMesh = groups.walls ? new THREE.Mesh(groups.walls, wallMaterial) : null;
+      var floorMesh = groups.floor ? new THREE.Mesh(groups.floor, floorMaterial) : null;
       if (wallMesh) scene.add(wallMesh);
+      if (floorMesh) scene.add(floorMesh);
 
       // Soft background glow: semi-transparent plane showing the floor's bounding extent.
       // Helps visualize overall footprint size, especially for situatie/site plan floors
@@ -1440,11 +1495,12 @@
       renderStaticThumbnailSized(floorIndex, container, null, null, {});
     }
 
-    // opts: { ortho: bool, floorColor: hex, noTrack: bool }
+    // opts: { ortho: bool, floorColor: hex, wallColor: hex, noTrack: bool }
     function renderStaticThumbnailSized(floorIndex, container, forceW, forceH, opts) {
       opts = opts || {};
       var floorColor = (opts.floorColor !== undefined) ? opts.floorColor : undefined;
-      const result = buildFloorScene(floorIndex, floorColor);
+      var wallColor = (opts.wallColor !== undefined) ? opts.wallColor : undefined;
+      const result = buildFloorScene(floorIndex, floorColor, wallColor);
       if (!result) return;
       const { scene, size, center, globalSize } = result;
 
@@ -2590,7 +2646,7 @@
         floorsGrid.appendChild(wrap);
 
         var colorOpt = getSelectedColorOpts();
-        var renderOpts = { ortho: useOrtho, floorColor: useOrtho ? colorOpt.wallFlat : colorOpt.wall };
+        var renderOpts = { ortho: useOrtho, floorColor: useOrtho ? colorOpt.floorFlat : colorOpt.floor, wallColor: useOrtho ? colorOpt.wallFlat : undefined };
         renderStaticThumbnailSized(pos.index, wrap, pos.w, pos.h, renderOpts);
       }
 
@@ -4619,10 +4675,567 @@
         }
       }
 
-      // Floor geometry removed — walls-only rendering (no colored floor slab)
+      faces.push('g floor');
+
+      const FLOOR_THICKNESS = 0.30;
+
+      function extrudePolygon(poly) {
+        if (poly.length < 3) return;
+        const n = poly.length;
+
+        let cx = 0, cy = 0;
+        for (const pt of poly) { cx += pt.x; cy += pt.y; }
+        cx /= n; cy /= n;
+
+        const baseBot = vertexIndex;
+        for (const pt of poly) {
+          vertices.push(`v ${pt.x.toFixed(4)} ${(-FLOOR_THICKNESS).toFixed(4)} ${pt.y.toFixed(4)}`);
+          vertexIndex++;
+        }
+        vertices.push(`v ${cx.toFixed(4)} ${(-FLOOR_THICKNESS).toFixed(4)} ${cy.toFixed(4)}`);
+        const botCenter = vertexIndex;
+        vertexIndex++;
+
+        const baseTop = vertexIndex;
+        for (const pt of poly) {
+          vertices.push(`v ${pt.x.toFixed(4)} ${(0).toFixed(4)} ${pt.y.toFixed(4)}`);
+          vertexIndex++;
+        }
+        vertices.push(`v ${cx.toFixed(4)} ${(0).toFixed(4)} ${cy.toFixed(4)}`);
+        const topCenter = vertexIndex;
+        vertexIndex++;
+
+        for (let i = 0; i < n; i++) {
+          const j = (i + 1) % n;
+          addTriFace(botCenter, baseBot + j, baseBot + i);
+        }
+        for (let i = 0; i < n; i++) {
+          const j = (i + 1) % n;
+          addTriFace(topCenter, baseTop + i, baseTop + j);
+        }
+        for (let i = 0; i < n; i++) {
+          const j = (i + 1) % n;
+          addFace(baseBot + i, baseBot + j, baseTop + j, baseTop + i);
+        }
+      }
+
+      const floorVoids = floor.voids ?? [];
+
+
+      {
+        const floorSources = [];
+
+        for (const area of design.areas ?? []) {
+          const tessellated = tessellateSurfacePoly(area.poly ?? []);
+          if (tessellated.length >= 3) floorSources.push(tessellated);
+        }
+
+        // Surface names that should always get floor even if outside wall bounds
+        const OUTDOOR_FLOOR_NAMES = ['balkon', 'terras', 'loggia', 'patio', 'veranda'];
+        for (const surface of design.surfaces ?? []) {
+          if (surface.isCutout) continue;
+          const sName = (surface.name ?? "").trim();
+          const cName = (surface.customName ?? "").trim();
+          const displayName = (sName || cName).toLowerCase();
+          // Only apply outsideWalls check if it's NOT a known outdoor-floor surface
+          const isOutdoorFloor = OUTDOOR_FLOOR_NAMES.some(k => displayName.includes(k));
+          if (!isOutdoorFloor && isSurfaceOutsideWalls(surface, wallBBox)) continue;
+          if (!sName && !cName) continue;
+          if (sName && cName && cName.toLowerCase() !== sName.toLowerCase()) continue;
+          const tessellated = tessellateSurfacePoly(surface.poly ?? []);
+          if (tessellated.length >= 3) floorSources.push(tessellated);
+        }
+
+        // Use the same unioned wall polygons for floor sources
+        for (const polygon of wallUnion) {
+          for (const ring of polygon) {
+            const pts = ring.slice();
+            // Remove closing duplicate if present
+            if (pts.length > 1) {
+              const f = pts[0], l = pts[pts.length - 1];
+              if (Math.hypot(f[0] - l[0], f[1] - l[1]) < 0.01) pts.pop();
+            }
+            if (pts.length >= 3) {
+              floorSources.push(pts.map(p => ({ x: p[0], y: p[1] })));
+            }
+          }
+        }
+        // Also add individual wall rects as floor sources — with small expansion
+        // to ensure overlap with adjacent area polygons (prevents gap at boundaries)
+        for (const w of walls) {
+          if ((w.thickness ?? 20) < 0.1) continue; // skip zero-thickness (handled separately below)
+          const r = wallToRect(w, 1, 1);
+          if (r) {
+            floorSources.push(r.slice(0, 4).map(p => ({ x: p[0], y: p[1] })));
+          }
+        }
+        // Add zero-thickness walls as thin floor strips (they separate areas but have no 3D geometry)
+        for (const w of walls) {
+          if ((w.thickness ?? 20) > 0.1) continue; // only zero-thickness walls
+          const zLen = Math.hypot(w.b.x - w.a.x, w.b.y - w.a.y);
+          if (zLen < 0.1) continue;
+          const zw = { a: w.a, b: w.b, thickness: 6 }; // give a small floor-only thickness
+          const zr = wallToRect(zw, 0, 0);
+          if (zr) {
+            const pts = zr.slice(0, 4).map(p => ({ x: p[0], y: p[1] }));
+            floorSources.push(pts);
+          }
+        }
+        // Also add opening walls (not in the union) — with L-junction extension
+        for (const w of openingWalls) {
+          const _dx = w.b.x - w.a.x, _dy = w.b.y - w.a.y;
+          const _len = Math.hypot(_dx, _dy);
+          const _isDiag = _len > 0.1 && Math.min(Math.abs(_dx / _len), Math.abs(_dy / _len)) > 0.15;
+          let _extA = 0, _extB = 0;
+          if (!_isDiag && _len > 0.1) {
+            for (const other of walls) {
+              if (other === w) continue;
+              const odx = other.b.x - other.a.x, ody = other.b.y - other.a.y;
+              const olen = Math.hypot(odx, ody);
+              if (olen < 0.1) continue;
+              if (Math.min(Math.abs(odx / olen), Math.abs(ody / olen)) > 0.15) continue;
+              const oHt = (other.thickness ?? 20) / 2;
+              if (Math.hypot(w.a.x - other.a.x, w.a.y - other.a.y) < 3 ||
+                  Math.hypot(w.a.x - other.b.x, w.a.y - other.b.y) < 3) _extA = Math.max(_extA, oHt);
+              if (Math.hypot(w.b.x - other.a.x, w.b.y - other.a.y) < 3 ||
+                  Math.hypot(w.b.x - other.b.x, w.b.y - other.b.y) < 3) _extB = Math.max(_extB, oHt);
+            }
+          }
+          const r = wallToRect(w, _extA, _extB);
+          if (r) {
+            const pts = r.slice(0, 4).map(p => ({ x: p[0], y: p[1] }));
+            floorSources.push(pts);
+          }
+        }
+
+        const balStripsOBJ = mergeBalustradeStrips(design.balustrades ?? []);
+        for (const strip of balStripsOBJ) {
+          if (strip.length >= 3) floorSources.push(strip);
+        }
+        const balFillsOBJ = buildBalustradeFillPolygons(design.balustrades ?? []);
+        for (const fill of balFillsOBJ) {
+          if (fill.length >= 3) floorSources.push(fill);
+        }
+
+        // --- Polygon-based floor: union all sources, subtract voids, extrude ---
+
+        // Expand each floor source slightly so adjacent polygons overlap,
+        // guaranteeing the union merges them into one continuous shape.
+        const FLOOR_EXPAND = 4;
+        for (let si = 0; si < floorSources.length; si++) {
+          const poly = floorSources[si];
+          if (poly.length < 3) continue;
+          const n = poly.length;
+          const expanded = [];
+          // Compute centroid once
+          let cx = 0, cy = 0;
+          for (const p of poly) { cx += p.x; cy += p.y; }
+          cx /= n; cy /= n;
+          for (let i = 0; i < n; i++) {
+            const prev = poly[(i - 1 + n) % n];
+            const curr = poly[i];
+            const next = poly[(i + 1) % n];
+            const e1dx = curr.x - prev.x, e1dy = curr.y - prev.y;
+            const e1len = Math.hypot(e1dx, e1dy) || 1;
+            const n1x = -e1dy / e1len, n1y = e1dx / e1len;
+            const e2dx = next.x - curr.x, e2dy = next.y - curr.y;
+            const e2len = Math.hypot(e2dx, e2dy) || 1;
+            const n2x = -e2dy / e2len, n2y = e2dx / e2len;
+            let nx = n1x + n2x, ny = n1y + n2y;
+            const nlen = Math.hypot(nx, ny);
+            if (nlen < 0.01) {
+              // Near-collinear or anti-parallel edges — fallback to first edge normal
+              nx = n1x; ny = n1y;
+            } else {
+              nx /= nlen; ny /= nlen;
+            }
+            const toCx = cx - curr.x, toCy = cy - curr.y;
+            if (nx * toCx + ny * toCy > 0) { nx = -nx; ny = -ny; }
+            expanded.push({ x: curr.x + nx * FLOOR_EXPAND, y: curr.y + ny * FLOOR_EXPAND });
+          }
+          floorSources[si] = expanded;
+        }
+
+        // Convert floorSources {x,y}[] to polygonClipping format [[[x,y],...]]
+        const floorPolys = [];
+        for (const src of floorSources) {
+          if (src.length < 3) continue;
+          const ring = src.map(p => [p.x, p.y]);
+          const f = ring[0], l = ring[ring.length - 1];
+          if (Math.hypot(f[0] - l[0], f[1] - l[1]) > 0.01) ring.push([f[0], f[1]]);
+          floorPolys.push([ring]);
+        }
+
+        // Union all floor sources into combined polygons
+        let floorResult = [];
+        if (floorPolys.length > 0) {
+          try {
+            floorResult = polygonClipping.union(...floorPolys);
+          } catch (e) {
+            console.warn('Floor union failed, using individual polygons', e);
+            floorResult = floorPolys;
+          }
+        }
+
+
+        // Second union pass: expand result polygons slightly and re-union to close
+        // micro-gaps between adjacent polygons that the first union missed.
+        if (floorResult.length > 1) {
+          const GAP_CLOSE = 2; // cm — small enough to not affect shape visibly
+          const reExpandedPolys = [];
+          for (const poly of floorResult) {
+            const outerRing = poly[0];
+            if (!outerRing || outerRing.length < 4) { reExpandedPolys.push(poly); continue; }
+            // Expand outer ring outward by GAP_CLOSE
+            const pts = outerRing.map(p => ({ x: p[0], y: p[1] }));
+            // Remove closing duplicate for expansion
+            const last = pts[pts.length - 1], first = pts[0];
+            if (Math.hypot(last.x - first.x, last.y - first.y) < 0.01) pts.pop();
+            if (pts.length < 3) { reExpandedPolys.push(poly); continue; }
+            const n = pts.length;
+            let cx = 0, cy = 0;
+            for (const p of pts) { cx += p.x; cy += p.y; }
+            cx /= n; cy /= n;
+            const expanded = [];
+            for (let i = 0; i < n; i++) {
+              const prev = pts[(i - 1 + n) % n], curr = pts[i], next = pts[(i + 1) % n];
+              const e1dx = curr.x - prev.x, e1dy = curr.y - prev.y;
+              const e1len = Math.hypot(e1dx, e1dy) || 1;
+              const n1x = -e1dy / e1len, n1y = e1dx / e1len;
+              const e2dx = next.x - curr.x, e2dy = next.y - curr.y;
+              const e2len = Math.hypot(e2dx, e2dy) || 1;
+              const n2x = -e2dy / e2len, n2y = e2dx / e2len;
+              let nx = n1x + n2x, ny = n1y + n2y;
+              const nlen = Math.hypot(nx, ny);
+              if (nlen < 0.01) { nx = n1x; ny = n1y; }
+              else { nx /= nlen; ny /= nlen; }
+              const toCx = cx - curr.x, toCy = cy - curr.y;
+              if (nx * toCx + ny * toCy > 0) { nx = -nx; ny = -ny; }
+              expanded.push([curr.x + nx * GAP_CLOSE, curr.y + ny * GAP_CLOSE]);
+            }
+            expanded.push([expanded[0][0], expanded[0][1]]); // close ring
+            reExpandedPolys.push([expanded]);
+          }
+          try {
+            const reUnion = polygonClipping.union(...reExpandedPolys);
+            if (reUnion.length > 0) floorResult = reUnion;
+          } catch (e) { /* keep original if re-union fails */ }
+        }
+
+        // Subtract voids (stair openings) — per-polygon to avoid SweepLine crash
+        for (const v of floorVoids) {
+          if (v.length < 3) continue;
+          const vRing = v.map(p => [p.x, p.y]);
+          const vf = vRing[0], vl = vRing[vRing.length - 1];
+          if (Math.hypot(vf[0] - vl[0], vf[1] - vl[1]) > 0.01) vRing.push([vf[0], vf[1]]);
+          const newFloorResult = [];
+          for (const poly of floorResult) {
+            try {
+              const diff = polygonClipping.difference([poly], [[vRing]]);
+              for (const d of diff) newFloorResult.push(d);
+            } catch (e) {
+              newFloorResult.push(poly);
+            }
+          }
+          floorResult = newFloorResult;
+        }
+
+        // === Polish: grid-scan to detect and fill micro-holes in the floor ===
+        // Scans a 2D grid, flood-fills from edges to find "outside", then any
+        // uncovered interior cell is a hole. Small hole clusters get filled.
+        (function polishFloorHoles() {
+          if (floorResult.length === 0) return;
+          var CELL = 2; // cm grid resolution — fine enough to catch thin slits
+          var MAX_HOLE_AREA = 1500; // cm² — safe: real voids already subtracted, this catches all artifacts
+          // Compute floor bbox with 1-cell margin for flood fill
+          var fb = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+          for (var p = 0; p < floorResult.length; p++) {
+            var ring = floorResult[p][0];
+            for (var k = 0; k < ring.length; k++) {
+              if (ring[k][0] < fb.x0) fb.x0 = ring[k][0];
+              if (ring[k][1] < fb.y0) fb.y0 = ring[k][1];
+              if (ring[k][0] > fb.x1) fb.x1 = ring[k][0];
+              if (ring[k][1] > fb.y1) fb.y1 = ring[k][1];
+            }
+          }
+          fb.x0 -= CELL; fb.y0 -= CELL; fb.x1 += CELL; fb.y1 += CELL;
+          var cols = Math.ceil((fb.x1 - fb.x0) / CELL);
+          var rows = Math.ceil((fb.y1 - fb.y0) / CELL);
+          if (cols * rows > 500000) return; // safety: skip if grid too large
+
+          // Point-in-ring test for [x,y] ring format
+          function pipRing(px, py, ring) {
+            var inside = false;
+            for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+              var xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+              if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi)
+                inside = !inside;
+            }
+            return inside;
+          }
+
+          // Build coverage grid: 1 = floor, 0 = uncovered
+          var grid = new Uint8Array(rows * cols);
+          for (var r = 0; r < rows; r++) {
+            var py = fb.y0 + (r + 0.5) * CELL;
+            for (var c = 0; c < cols; c++) {
+              var px = fb.x0 + (c + 0.5) * CELL;
+              for (var p = 0; p < floorResult.length; p++) {
+                if (pipRing(px, py, floorResult[p][0])) {
+                  var inHole = false;
+                  for (var h = 1; h < floorResult[p].length; h++) {
+                    if (pipRing(px, py, floorResult[p][h])) { inHole = true; break; }
+                  }
+                  if (!inHole) { grid[r * cols + c] = 1; break; }
+                }
+              }
+            }
+          }
+
+          // Flood-fill from all edge cells to mark "outside" (value 2)
+          var queue = [];
+          for (var r = 0; r < rows; r++) {
+            if (!grid[r * cols]) { grid[r * cols] = 2; queue.push(r * cols); }
+            if (!grid[r * cols + cols - 1]) { grid[r * cols + cols - 1] = 2; queue.push(r * cols + cols - 1); }
+          }
+          for (var c = 0; c < cols; c++) {
+            if (!grid[c]) { grid[c] = 2; queue.push(c); }
+            if (!grid[(rows - 1) * cols + c]) { grid[(rows - 1) * cols + c] = 2; queue.push((rows - 1) * cols + c); }
+          }
+          while (queue.length > 0) {
+            var idx = queue.pop();
+            var gr = (idx / cols) | 0, gc = idx % cols;
+            if (gr > 0     && !grid[(gr - 1) * cols + gc]) { grid[(gr - 1) * cols + gc] = 2; queue.push((gr - 1) * cols + gc); }
+            if (gr < rows-1 && !grid[(gr + 1) * cols + gc]) { grid[(gr + 1) * cols + gc] = 2; queue.push((gr + 1) * cols + gc); }
+            if (gc > 0     && !grid[gr * cols + gc - 1])    { grid[gr * cols + gc - 1] = 2;    queue.push(gr * cols + gc - 1); }
+            if (gc < cols-1 && !grid[gr * cols + gc + 1])    { grid[gr * cols + gc + 1] = 2;    queue.push(gr * cols + gc + 1); }
+          }
+
+          // Remaining 0-cells are interior holes. Cluster them via flood-fill.
+          var visited = new Uint8Array(rows * cols);
+          var patches = [];
+          for (var r = 0; r < rows; r++) {
+            for (var c = 0; c < cols; c++) {
+              if (grid[r * cols + c] !== 0 || visited[r * cols + c]) continue;
+              // BFS to collect cluster
+              var cluster = [];
+              var q = [r * cols + c];
+              visited[r * cols + c] = 1;
+              while (q.length > 0) {
+                var ci = q.pop();
+                cluster.push(ci);
+                var cr = (ci / cols) | 0, cc = ci % cols;
+                var nbrs = [];
+                if (cr > 0)      nbrs.push((cr-1)*cols+cc);
+                if (cr < rows-1) nbrs.push((cr+1)*cols+cc);
+                if (cc > 0)      nbrs.push(cr*cols+cc-1);
+                if (cc < cols-1) nbrs.push(cr*cols+cc+1);
+                for (var ni = 0; ni < nbrs.length; ni++) {
+                  if (grid[nbrs[ni]] === 0 && !visited[nbrs[ni]]) {
+                    visited[nbrs[ni]] = 1;
+                    q.push(nbrs[ni]);
+                  }
+                }
+              }
+              var clusterArea = cluster.length * CELL * CELL;
+              if (clusterArea < MAX_HOLE_AREA) {
+                // Generate fill patches for each cell in cluster
+                for (var ci = 0; ci < cluster.length; ci++) {
+                  var cr = (cluster[ci] / cols) | 0, cc = cluster[ci] % cols;
+                  var x = fb.x0 + cc * CELL, y = fb.y0 + cr * CELL;
+                  patches.push([[
+                    [x, y], [x + CELL, y], [x + CELL, y + CELL], [x, y + CELL], [x, y]
+                  ]]);
+                }
+              }
+            }
+          }
+
+          // Merge patches into floorResult
+          if (patches.length > 0) {
+            try {
+              floorResult = polygonClipping.union(...floorResult, ...patches);
+            } catch (e) {
+              // Fallback: just append patches
+              for (var i = 0; i < patches.length; i++) floorResult.push(patches[i]);
+            }
+          }
+        })();
+
+        // === Bridge slabs: fill floor-thickness material under walls/balustrades floating over voids ===
+        // Without these, walls crossing stairwell openings float in mid-air (breaks 3D printing).
+        const bridgePolys = [];
+        for (const v of floorVoids) {
+          if (v.length < 3) continue;
+          const vRing = v.map(p => [p.x, p.y]);
+          const vf2 = vRing[0], vl2 = vRing[vRing.length - 1];
+          if (Math.hypot(vf2[0] - vl2[0], vf2[1] - vl2[1]) > 0.01) vRing.push([vf2[0], vf2[1]]);
+
+          // Intersect solid wall union footprints with this void
+          for (const wPoly of wallUnion) {
+            try {
+              const inter = polygonClipping.intersection([wPoly], [[vRing]]);
+              for (const p of inter) bridgePolys.push(p);
+            } catch (e) { /* skip on error */ }
+          }
+
+          // Intersect opening wall footprints with this void
+          for (const ow of openingWalls) {
+            const owr = wallToRect(ow, 0, 0);
+            if (!owr || owr.length < 4) continue;
+            const owRing = owr.slice(0, 4).map(p => [p[0], p[1]]);
+            owRing.push([owRing[0][0], owRing[0][1]]);
+            try {
+              const inter = polygonClipping.intersection([[owRing]], [[vRing]]);
+              for (const p of inter) bridgePolys.push(p);
+            } catch (e) { /* skip */ }
+          }
+
+          // Intersect balustrade strip/fill footprints with this void
+          const allBalPolys = [...balStripsOBJ, ...balFillsOBJ];
+          for (const bStrip of allBalPolys) {
+            if (bStrip.length < 3) continue;
+            const bRing = bStrip.map(p => [p.x, p.y]);
+            const bf = bRing[0], bl = bRing[bRing.length - 1];
+            if (Math.hypot(bf[0] - bl[0], bf[1] - bl[1]) > 0.01) bRing.push([bf[0], bf[1]]);
+            try {
+              const inter = polygonClipping.intersection([[bRing]], [[vRing]]);
+              for (const p of inter) bridgePolys.push(p);
+            } catch (e) { /* skip */ }
+          }
+        }
+        // Add bridge slabs to floor result — they'll be extruded with the same floor thickness
+        for (const bp of bridgePolys) floorResult.push(bp);
+
+        // Extrude each result polygon
+        const botY = (-FLOOR_THICKNESS).toFixed(4);
+        const topY = (0).toFixed(4);
+
+        for (const polygon of floorResult) {
+          // Collect outer ring
+          const ring0 = polygon[0].slice();
+          if (ring0.length > 1) {
+            const ff = ring0[0], ll = ring0[ring0.length - 1];
+            if (Math.hypot(ff[0] - ll[0], ff[1] - ll[1]) < 0.01) ring0.pop();
+          }
+          if (ring0.length < 3) continue;
+
+          const outerObjPts = ring0.map(p => ({
+            x: (p[0] - centerX) * SCALE,
+            y: (p[1] - centerY) * SCALE
+          }));
+
+          // Collect hole rings
+          const holeObjPtsArr = [];
+          for (let hi = 1; hi < polygon.length; hi++) {
+            const hRing = polygon[hi].slice();
+            if (hRing.length > 1) {
+              const hf = hRing[0], hl = hRing[hRing.length - 1];
+              if (Math.hypot(hf[0] - hl[0], hf[1] - hl[1]) < 0.01) hRing.pop();
+            }
+            if (hRing.length >= 3) {
+              holeObjPtsArr.push(hRing.map(p => ({
+                x: (p[0] - centerX) * SCALE,
+                y: (p[1] - centerY) * SCALE
+              })));
+            }
+          }
+
+          if (holeObjPtsArr.length > 0 && typeof THREE !== 'undefined' && THREE.ShapeUtils) {
+            // Polygon WITH holes — use Three.js ShapeUtils for robust triangulation
+            const contour = outerObjPts.map(p => new THREE.Vector2(p.x, p.y));
+            const holes = holeObjPtsArr.map(h => h.map(p => new THREE.Vector2(p.x, p.y)));
+            const tris = THREE.ShapeUtils.triangulateShape(contour, holes);
+
+            // Combined vertex array: outer + all hole vertices
+            const allPts = [...outerObjPts];
+            for (const hole of holeObjPtsArr) allPts.push(...hole);
+
+            const baseBot = vertexIndex;
+            for (const pt of allPts) {
+              vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
+            }
+            vertexIndex += allPts.length;
+            const baseTop = vertexIndex;
+            for (const pt of allPts) {
+              vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
+            }
+            vertexIndex += allPts.length;
+            for (const [a, b, c] of tris) {
+              addTriFace(baseBot + a, baseBot + c, baseBot + b);
+              addTriFace(baseTop + a, baseTop + b, baseTop + c);
+            }
+
+            // Side faces — outer ring
+            const nOuter = outerObjPts.length;
+            const sideBaseBotO = vertexIndex;
+            for (const pt of outerObjPts) vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
+            vertexIndex += nOuter;
+            const sideBaseTopO = vertexIndex;
+            for (const pt of outerObjPts) vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
+            vertexIndex += nOuter;
+            for (let i = 0; i < nOuter; i++) {
+              const j = (i + 1) % nOuter;
+              addFace(sideBaseBotO + i, sideBaseBotO + j, sideBaseTopO + j, sideBaseTopO + i);
+            }
+
+            // Side faces — each hole ring (inner walls of void)
+            for (const holePts of holeObjPtsArr) {
+              const nH = holePts.length;
+              const sideBaseBotH = vertexIndex;
+              for (const pt of holePts) vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
+              vertexIndex += nH;
+              const sideBaseTopH = vertexIndex;
+              for (const pt of holePts) vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
+              vertexIndex += nH;
+              for (let i = 0; i < nH; i++) {
+                const j = (i + 1) % nH;
+                // Reverse winding for inner walls
+                addFace(sideBaseBotH + j, sideBaseBotH + i, sideBaseTopH + i, sideBaseTopH + j);
+              }
+            }
+          } else {
+            // Simple polygon without holes
+            // Prefer THREE.ShapeUtils (robust) over ear-clip for complex concave polygons
+            var tris;
+            if (typeof THREE !== 'undefined' && THREE.ShapeUtils) {
+              var contour = outerObjPts.map(function(p) { return new THREE.Vector2(p.x, p.y); });
+              tris = THREE.ShapeUtils.triangulateShape(contour, []);
+            } else {
+              tris = earClipTriangulate(outerObjPts);
+            }
+            const baseBot = vertexIndex;
+            for (const pt of outerObjPts) {
+              vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
+            }
+            vertexIndex += outerObjPts.length;
+            const baseTop = vertexIndex;
+            for (const pt of outerObjPts) {
+              vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
+            }
+            vertexIndex += outerObjPts.length;
+            for (const [a, b, c] of tris) {
+              addTriFace(baseBot + a, baseBot + c, baseBot + b);
+              addTriFace(baseTop + a, baseTop + b, baseTop + c);
+            }
+
+            // Side faces
+            const nPts = outerObjPts.length;
+            const sideBaseBot = vertexIndex;
+            for (const pt of outerObjPts) vertices.push(`v ${pt.x.toFixed(4)} ${botY} ${pt.y.toFixed(4)}`);
+            vertexIndex += nPts;
+            const sideBaseTop = vertexIndex;
+            for (const pt of outerObjPts) vertices.push(`v ${pt.x.toFixed(4)} ${topY} ${pt.y.toFixed(4)}`);
+            vertexIndex += nPts;
+            for (let i = 0; i < nPts; i++) {
+              const j = (i + 1) % nPts;
+              addFace(sideBaseBot + i, sideBaseBot + j, sideBaseTop + j, sideBaseTop + i);
+            }
+          }
+        }
+      }
 
       faces.push('g walls_balustrades');
-
 
       const extBalsOBJ = extendBalustrades(design.balustrades ?? []);
       for (const bal of extBalsOBJ) {
