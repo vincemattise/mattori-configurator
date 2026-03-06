@@ -6710,6 +6710,7 @@
             body: JSON.stringify({
               message: msg,
               step: currentWizardStep,
+              funda: fundaUrlInput ? fundaUrlInput.value.trim() : '',
               page: window.location.href,
               ua: navigator.userAgent
             })
